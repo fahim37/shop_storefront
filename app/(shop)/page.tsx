@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowRight,
   RotateCcw,
   ShieldCheck,
   Store,
@@ -10,6 +9,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeroSlider } from "@/components/home/hero-slider";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ProductGrid } from "@/components/product/product-grid";
 import { categoryIcon } from "@/lib/category-icons";
@@ -53,41 +53,15 @@ export default async function HomePage() {
   const newArrivals = fresh.slice(5, 10);
 
   return (
-    <div className="flex flex-col gap-12 pb-16 pt-5">
-      {/* Hero */}
+    <div className="flex flex-col gap-8 pb-12 pt-4">
+      {/* Hero slider */}
       <section className="wrap">
-        <div className="relative flex min-h-[300px] flex-col justify-center overflow-hidden rounded-2xl bg-primary px-6 py-10 text-white sm:px-12 md:min-h-[360px]">
-          <div className="absolute -right-24 -top-24 size-[420px] rounded-full bg-[oklch(0.56_0.19_258)]" />
-          <div className="absolute -bottom-40 right-44 size-[300px] rounded-full bg-[oklch(0.42_0.2_261)]" />
-          <div className="relative z-10 max-w-xl">
-            <span className="inline-block -rotate-2 rounded-md bg-amber px-3.5 py-1.5 font-display text-sm font-extrabold tracking-wide text-blue-deep shadow-[3px_3px_0_oklch(0.3_0.12_262)]">
-              DEALS WEEK · UP TO 50% OFF
-            </span>
-            <h1 className="mt-5 font-display text-4xl font-extrabold uppercase leading-[1.02] tracking-tight sm:text-5xl md:text-[54px]">
-              Big brands.
-              <br />
-              Local <em className="not-italic text-amber">prices.</em>
-            </h1>
-            <p className="mt-4 max-w-md text-sm opacity-85 sm:text-[15px]">
-              36,000+ products from 1,200 verified Bangladeshi sellers — cash on
-              delivery, everywhere.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Button asChild variant="accent" size="lg">
-                <Link href="/search?q=flash">
-                  Shop flash sale <ArrowRight className="size-4" strokeWidth={2.4} />
-                </Link>
-              </Button>
-              <Button asChild variant="line" size="lg">
-                <Link href="/search?q=">Browse stores</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+        <h1 className="sr-only">GCL — Bangladesh&apos;s online marketplace</h1>
+        <HeroSlider />
       </section>
 
       {/* USP strip */}
-      <section className="wrap -mt-6">
+      <section className="wrap -mt-4">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { icon: Wallet, title: "Cash on delivery", sub: "Pay at your door" },
