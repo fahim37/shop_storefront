@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/lib/config";
+import { CLIENT_API_BASE } from "@/lib/config";
 
 /**
  * Image variants exposed by the backend media service. The backend resizes on
@@ -6,30 +6,30 @@ import { API_BASE_URL } from "@/lib/config";
  */
 export type MediaVariant = "original" | "thumbnail" | "card" | "hero";
 
-/** Origin without the trailing `/v1` (e.g. `http://localhost:4000`). */
-const API_ORIGIN = API_BASE_URL.replace(/\/v1\/?$/, "");
-
 /**
- * Resolve a media asset id to a stable image URL. The backend endpoint
- * `GET /v1/media/:id/:variant` 302-redirects to a freshly presigned URL; the
- * browser follows it transparently when used as an `<img src>`. Returns null
- * for a missing id so callers can render a placeholder.
+ * Resolve a media asset id to an image URL. We route through the same-origin
+ * BFF proxy (`/bff/v1/media/:id/:variant`) so images work from an HTTPS
+ * (Vercel) page against an HTTP backend without mixed-content errors — the
+ * backend 302-redirects to a presigned (HTTPS) object-storage URL, which the
+ * browser follows transparently. Returns null for a missing id so callers can
+ * render a placeholder.
  */
 export function mediaUrl(
   mediaId: string | null | undefined,
   variant: MediaVariant = "card",
 ): string | null {
   if (!mediaId) return null;
-  return `${API_BASE_URL}/media/${mediaId}/${variant}`;
+  return `${CLIENT_API_BASE}/media/${mediaId}/${variant}`;
 }
 
 /**
  * Resolve a relative media path the backend sometimes embeds directly
- * (e.g. `order_items.imageUrlSnapshot = "/v1/media/<id>/card"`) into an
- * absolute URL by prefixing the API origin.
+ * (e.g. `order_items.imageUrlSnapshot = "/v1/media/<id>/card"`) to a
+ * same-origin proxied URL (`/bff/v1/media/<id>/card`).
  */
 export function resolveMediaPath(path: string | null | undefined): string | null {
   if (!path) return null;
   if (/^https?:\/\//.test(path)) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? "" : "/"}${path}`;
+  if (path.startsWith("/v1/")) return `/bff${path}`;
+  return `${CLIENT_API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 }
