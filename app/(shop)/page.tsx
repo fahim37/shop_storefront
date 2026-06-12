@@ -195,10 +195,10 @@ export default async function HomePage() {
 
       {/* Dual promo */}
       <section className="wrap grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex items-center gap-5 rounded-2xl bg-navy px-7 py-7 text-white">
-          <Store className="size-9 shrink-0" strokeWidth={1.4} />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-display text-lg font-extrabold">Sell on GCL</h3>
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-navy px-5 py-5 text-white sm:gap-5 sm:px-7 sm:py-7">
+          <Store className="size-8 shrink-0 sm:size-9" strokeWidth={1.4} />
+          <div className="min-w-0 flex-1 basis-40">
+            <h3 className="font-display text-base font-extrabold sm:text-lg">Sell on GCL</h3>
             <p className="mt-0.5 text-[12.5px] font-semibold opacity-75">
               1,200+ sellers already ship to all 64 districts.
             </p>
@@ -207,10 +207,10 @@ export default async function HomePage() {
             <Link href="/pages/about">Open a store</Link>
           </Button>
         </div>
-        <div className="flex items-center gap-5 rounded-2xl bg-amber px-7 py-7 text-blue-deep">
-          <Tag className="size-9 shrink-0" strokeWidth={1.4} />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-display text-lg font-extrabold">
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-amber px-5 py-5 text-blue-deep sm:gap-5 sm:px-7 sm:py-7">
+          <Tag className="size-8 shrink-0 sm:size-9" strokeWidth={1.4} />
+          <div className="min-w-0 flex-1 basis-40">
+            <h3 className="font-display text-base font-extrabold sm:text-lg">
               <span className="bn">৳</span>100 off first order
             </h3>
             <p className="mt-0.5 text-[12.5px] font-semibold opacity-75">

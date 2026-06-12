@@ -123,7 +123,7 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
                   <TileLink
                     href={s.linkUrl}
                     label={s.caption}
-                    className="block aspect-[16/8] w-full lg:aspect-[2/1]"
+                    className="block aspect-[21/9] w-full lg:aspect-[2/1]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -183,21 +183,23 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
         </div>
       )}
 
-      {/* Banner tiles — Daraz-style bento beside the slider. Wide tiles span
-          both columns; with 3–4 tiles the LAST TWO share a row half/half:
+      {/* Banner tiles — Daraz-style bento beside the slider, DESKTOP ONLY
+          (mobile shows just the main slider to keep the top of the page
+          tight). Wide tiles span both columns; with 3–4 tiles the LAST TWO
+          share a row half/half:
             1 tile  → [full]
             2 tiles → [full, full]
             3 tiles → [full, half+half]
             4 tiles → [full, full, half+half]
           Images are absolutely positioned so the tiles contribute ZERO
-          intrinsic height on lg — the slider's aspect ratio alone sets the
-          hero height and every tile crops (object-cover) into its cell.
-          Without this the natural image heights stretch the row and leave a
-          hole under the slider. */}
+          intrinsic height — the slider's aspect ratio alone sets the hero
+          height and every tile crops (object-cover) into its cell. Without
+          this the natural image heights stretch the row and leave a hole
+          under the slider. */}
       {tiles.length > 0 && (
         <div
           className={cn(
-            "grid grid-cols-2 gap-3 lg:h-full lg:min-h-0",
+            "hidden gap-3 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-2",
             tiles.length === 1 && "lg:grid-rows-1",
             tiles.length === 2 && "lg:grid-rows-2",
             tiles.length === 3 && "lg:grid-rows-2",
@@ -213,10 +215,8 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
                 href={b.linkUrl}
                 label={b.altText ?? b.title}
                 className={cn(
-                  "group/tile relative block overflow-hidden rounded-xl lg:h-full lg:min-h-0",
-                  half
-                    ? "col-span-1 aspect-square sm:aspect-[2/1] lg:aspect-auto"
-                    : "col-span-2 aspect-[2/1] lg:aspect-auto",
+                  "group/tile relative block h-full min-h-0 overflow-hidden rounded-xl",
+                  half ? "col-span-1" : "col-span-2",
                 )}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
