@@ -1,0 +1,72 @@
+import Link from "next/link";
+import { Logo } from "@/components/layout/logo";
+
+const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
+  {
+    heading: "Marketplace",
+    links: [
+      { label: "All categories", href: "/category/electronics" },
+      { label: "Flash deals", href: "/search?q=deals" },
+      { label: "New arrivals", href: "/search?q=new&sort=newest" },
+      { label: "Top stores", href: "/search?q=" },
+    ],
+  },
+  {
+    heading: "For sellers",
+    links: [
+      { label: "Become a seller", href: "/pages/about" },
+      { label: "Seller handbook", href: "/pages/faq" },
+      { label: "Commission rates", href: "/pages/terms" },
+    ],
+  },
+  {
+    heading: "Support",
+    links: [
+      { label: "Track order", href: "/account/orders" },
+      { label: "Returns & refunds", href: "/pages/terms" },
+      { label: "Payment methods", href: "/pages/faq" },
+      { label: "Contact us", href: "/pages/about" },
+    ],
+  },
+];
+
+export function Footer() {
+  return (
+    <footer className="mt-auto bg-[oklch(0.18_0.045_262)] text-[oklch(0.85_0.015_255)]">
+      <div className="wrap py-11">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
+          <div>
+            <Logo light size="sm" />
+            <p className="mt-3 max-w-xs text-[13px] leading-relaxed opacity-65">
+              Bangladesh&apos;s marketplace for verified local sellers. Cash on
+              delivery, nationwide shipping, 7-day easy returns.
+            </p>
+          </div>
+          {COLUMNS.map((col) => (
+            <div key={col.heading}>
+              <h4 className="mb-3.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white opacity-55">
+                {col.heading}
+              </h4>
+              <ul className="flex flex-col gap-2.5 text-[13px]">
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="opacity-90 transition-opacity hover:opacity-100">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-9 flex flex-col justify-between gap-2 border-t border-white/10 pt-4 text-xs opacity-55 sm:flex-row">
+          <span>© 2026 GCL Ltd. Dhaka, Bangladesh</span>
+          <span>
+            <span className="bn">বাংলা</span> · English &nbsp;·&nbsp;{" "}
+            <span className="bn">৳</span> BDT
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
+}

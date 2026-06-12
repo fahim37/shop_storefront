@@ -1,0 +1,524 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  HelpCircle,
+  MessageSquare,
+  PencilLine,
+  Star,
+  ThumbsUp,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Field } from "@/components/ui/field";
+import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MediaImage } from "@/components/ui/media-image";
+import { RatingStars } from "@/components/ui/rating-stars";
+import { toast } from "@/components/ui/sonner";
+import { ApiError } from "@/lib/api/http";
+import { formatRating, formatRelative, initials } from "@/lib/format";
+import {
+  useAskQuestion,
+  useProductQuestions,
+  useProductReviews,
+  useReviewHelpful,
+} from "@/lib/api/reviews";
+import { useAuth } from "@/lib/auth/auth-context";
+import type {
+  ProductCardRow,
+  Question,
+  Review,
+} from "@/lib/api/types";
+
+export interface ReviewsSectionProps {
+  product: ProductCardRow;
+}
+
+/** Tabbed PDP detail block: Description / Specifications / Reviews / Questions. */
+export function ReviewsSection({ product }: ReviewsSectionProps) {
+  const [tab, setTab] = React.useState<
+    "description" | "specifications" | "reviews" | "questions"
+  >("description");
+
+  const attributeEntries = React.useMemo(
+    () => specEntries(product.attributes),
+    [product.attributes],
+  );
+
+  const tabs: Array<{ key: typeof tab; label: string }> = [
+    { key: "description", label: "Description" },
+    ...(attributeEntries.length
+      ? [{ key: "specifications" as const, label: "Specifications" }]
+      : []),
+    { key: "reviews", label: "Reviews" },
+    { key: "questions", label: "Questions" },
+  ];
+
+  // Keep the active tab valid if specs are absent.
+  const active = tabs.some((t) => t.key === tab) ? tab : "description";
+
+  return (
+    <section className="mt-10">
+      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto border-b-2 border-border">
+        {tabs.map((t) => {
+          const on = active === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              aria-pressed={on}
+              className={cn(
+                "relative -mb-0.5 whitespace-nowrap px-4 py-3 text-sm font-extrabold transition-colors outline-none",
+                on
+                  ? "text-primary shadow-[inset_0_-3px_0_var(--primary)]"
+                  : "text-faint hover:text-sub",
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5">
+        {active === "description" && <DescriptionTab product={product} />}
+        {active === "specifications" && (
+          <SpecificationsTab entries={attributeEntries} />
+        )}
+        {active === "reviews" && <ReviewsTab product={product} />}
+        {active === "questions" && <QuestionsTab productId={product.id} />}
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Description                                                             */
+/* ----------------------------------------------------------------------- */
+
+function DescriptionTab({ product }: { product: ProductCardRow }) {
+  const text = product.description?.trim();
+  if (!text) {
+    return (
+      <p className="text-sm leading-relaxed text-sub">
+        The seller has not added a detailed description for{" "}
+        <span className="font-bold text-ink">{product.title}</span> yet. Check
+        the specifications tab or ask a question below.
+      </p>
+    );
+  }
+  return (
+    <div className="max-w-3xl whitespace-pre-line text-[14.5px] leading-relaxed text-sub">
+      {text}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Specifications                                                         */
+/* ----------------------------------------------------------------------- */
+
+function specEntries(
+  attributes: Record<string, unknown>,
+): Array<[string, string]> {
+  return Object.entries(attributes ?? {})
+    .map(([key, value]): [string, string] => [key, formatSpecValue(value)])
+    .filter(([, value]) => value.length > 0);
+}
+
+function formatSpecValue(value: unknown): string {
+  if (value == null) return "";
+  if (Array.isArray(value)) {
+    return value.map((v) => formatSpecValue(v)).filter(Boolean).join(", ");
+  }
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "object") return "";
+  return String(value).trim();
+}
+
+function humanizeKey(key: string): string {
+  const spaced = key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z\d])([A-Z])/g, "$1 $2")
+    .trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function SpecificationsTab({ entries }: { entries: Array<[string, string]> }) {
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-sub">No specifications listed.</p>
+    );
+  }
+  return (
+    <dl className="grid max-w-3xl grid-cols-1 gap-x-8 gap-y-0 sm:grid-cols-2">
+      {entries.map(([key, value], i) => (
+        <div
+          key={key}
+          className={cn(
+            "flex items-start justify-between gap-4 border-b border-border py-2.5 text-[13.5px]",
+            i < 2 && "border-t sm:border-t-0",
+          )}
+        >
+          <dt className="font-bold text-faint">{humanizeKey(key)}</dt>
+          <dd className="text-right font-semibold text-ink">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Reviews                                                                */
+/* ----------------------------------------------------------------------- */
+
+function ReviewsTab({ product }: { product: ProductCardRow }) {
+  const { data, isLoading, isError } = useProductReviews(product.id);
+  const reviews = data?.reviews ?? [];
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      {/* Rating summary */}
+      <Card className="h-fit lg:sticky lg:top-24">
+        <CardContent className="flex flex-col items-center gap-2 py-7 text-center">
+          <span className="font-display text-5xl font-extrabold leading-none">
+            {formatRating(product.ratingAverage)}
+          </span>
+          <RatingStars value={product.ratingAverage} size={18} precise />
+          <span className="text-[12.5px] font-bold text-faint">
+            {product.ratingCount}{" "}
+            {product.ratingCount === 1 ? "rating" : "ratings"}
+          </span>
+          <Separator className="my-3" />
+          <p className="text-[12.5px] leading-relaxed text-sub">
+            Only verified buyers can review. Bought this?
+          </p>
+          <Button asChild variant="outline" size="sm" className="mt-1">
+            <Link href="/account/orders">
+              <PencilLine className="size-4" /> Write a review
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Review list */}
+      <div className="min-w-0">
+        {isLoading ? (
+          <ReviewListSkeleton />
+        ) : isError ? (
+          <EmptyState
+            icon={<Star className="size-6" />}
+            title="Couldn't load reviews"
+            description="Please try again in a moment."
+          />
+        ) : reviews.length === 0 ? (
+          <EmptyState
+            icon={<Star className="size-6" />}
+            title="No reviews yet"
+            description="Be the first to review this product after your order is delivered."
+            action={
+              <Button asChild variant="outline" size="sm">
+                <Link href="/account/orders">Go to my orders</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <ul className="flex flex-col gap-5">
+            {reviews.map((rv) => (
+              <ReviewItem key={rv.id} review={rv} productId={product.id} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReviewItem({
+  review,
+  productId,
+}: {
+  review: Review;
+  productId: string;
+}) {
+  const helpful = useReviewHelpful(productId);
+  const [bumped, setBumped] = React.useState(false);
+  const helpfulCount = review.helpfulCount + (bumped ? 1 : 0);
+
+  const markHelpful = () => {
+    if (bumped || helpful.isPending) return;
+    setBumped(true);
+    helpful.mutate(
+      { reviewId: review.id, isHelpful: true },
+      {
+        onError: (err) => {
+          setBumped(false);
+          toast.error(
+            err instanceof ApiError ? err.message : "Couldn't record that.",
+          );
+        },
+      },
+    );
+  };
+
+  return (
+    <li className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <Avatar className="size-10">
+          <AvatarFallback>{initials(review.reviewerName)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[13.5px] font-extrabold text-ink">
+              {review.reviewerName ?? "Verified buyer"}
+            </span>
+            <Badge variant="success" size="sm">
+              <CheckCircle2 className="size-3" strokeWidth={2.4} /> Verified
+              purchase
+            </Badge>
+          </div>
+          <div className="mt-1 flex items-center gap-2">
+            <RatingStars value={review.rating} size={14} />
+            <span className="text-[11.5px] font-semibold text-faint">
+              {formatRelative(review.createdAt)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {review.title && (
+        <h4 className="mt-3 text-sm font-extrabold text-ink">
+          {review.title}
+        </h4>
+      )}
+      {review.body && (
+        <p className="mt-1 whitespace-pre-line text-[13.5px] leading-relaxed text-sub">
+          {review.body}
+        </p>
+      )}
+
+      {review.media.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {review.media.map((m) => (
+            <div
+              key={m.id}
+              className="size-16 overflow-hidden rounded-lg border border-border bg-muted"
+            >
+              <MediaImage src={m.url} alt="Review attachment" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {review.response && (
+        <div className="mt-3 rounded-xl border border-border bg-blue-soft/50 p-3">
+          <div className="flex items-center gap-1.5 text-[12px] font-extrabold text-primary">
+            <MessageSquare className="size-3.5" strokeWidth={2.4} /> Seller
+            response
+          </div>
+          <p className="mt-1 text-[13px] leading-relaxed text-sub">
+            {review.response.body}
+          </p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={markHelpful}
+        disabled={bumped || helpful.isPending}
+        className={cn(
+          "mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold transition-colors",
+          bumped
+            ? "border-primary/40 bg-blue-soft text-primary"
+            : "text-sub hover:border-primary/40 hover:text-primary",
+        )}
+      >
+        <ThumbsUp className={cn("size-3.5", bumped && "fill-primary")} />
+        Helpful ({helpfulCount})
+      </button>
+    </li>
+  );
+}
+
+function ReviewListSkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border p-5">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+          <Skeleton className="mt-4 h-3 w-full" />
+          <Skeleton className="mt-2 h-3 w-4/5" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Questions                                                              */
+/* ----------------------------------------------------------------------- */
+
+function QuestionsTab({ productId }: { productId: string }) {
+  const { data, isLoading, isError } = useProductQuestions(productId);
+  const questions = data ?? [];
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="min-w-0">
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : isError ? (
+          <EmptyState
+            icon={<HelpCircle className="size-6" />}
+            title="Couldn't load questions"
+            description="Please try again in a moment."
+          />
+        ) : questions.length === 0 ? (
+          <EmptyState
+            icon={<HelpCircle className="size-6" />}
+            title="No questions yet"
+            description="Ask the seller anything about this product — they usually reply within a day."
+          />
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {questions.map((q) => (
+              <QuestionItem key={q.id} question={q} />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <AskQuestionForm productId={productId} />
+    </div>
+  );
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  vendor: "Seller",
+  admin: "GCL",
+  customer: "Buyer",
+};
+
+function QuestionItem({ question }: { question: Question }) {
+  return (
+    <li className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-navy text-[11px] font-extrabold text-white">
+          Q
+        </span>
+        <p className="text-[14px] font-bold leading-snug text-ink">
+          {question.body}
+        </p>
+      </div>
+
+      {question.answers.length > 0 ? (
+        <div className="mt-3 space-y-3 border-l-2 border-border pl-4">
+          {question.answers.map((a) => (
+            <div key={a.id} className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-blue-soft text-[11px] font-extrabold text-primary">
+                A
+              </span>
+              <div className="min-w-0">
+                {a.responderRole && (
+                  <span className="block text-[11px] font-extrabold uppercase tracking-wide text-faint">
+                    {ROLE_LABEL[a.responderRole] ?? a.responderRole}
+                  </span>
+                )}
+                <p className="text-[13.5px] leading-relaxed text-sub">
+                  {a.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 pl-8 text-[12.5px] font-semibold text-faint">
+          Awaiting an answer from the seller.
+        </p>
+      )}
+    </li>
+  );
+}
+
+function AskQuestionForm({ productId }: { productId: string }) {
+  const { requireAuth } = useAuth();
+  const ask = useAskQuestion(productId);
+  const [body, setBody] = React.useState("");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = body.trim();
+    if (trimmed.length < 5) {
+      toast.error("Please enter a more detailed question.");
+      return;
+    }
+    requireAuth(() => {
+      ask.mutate(trimmed, {
+        onSuccess: () => {
+          setBody("");
+          toast.success("Question submitted", {
+            description: "We'll notify you when the seller replies.",
+          });
+        },
+        onError: (err) =>
+          toast.error(
+            err instanceof ApiError
+              ? err.message
+              : "Couldn't submit your question.",
+          ),
+      });
+    });
+  };
+
+  return (
+    <Card className="h-fit lg:sticky lg:top-24">
+      <CardContent className="py-5">
+        <h3 className="font-display text-base font-extrabold">
+          Ask a question
+        </h3>
+        <p className="mt-0.5 text-[12.5px] text-faint">
+          Get answers from the seller and other buyers.
+        </p>
+        <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
+          <Field id="ask-question" label="Your question">
+            <textarea
+              id="ask-question"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={4}
+              maxLength={500}
+              placeholder="e.g. Is this compatible with…?"
+              className="flex w-full resize-none rounded-[var(--radius)] border border-input bg-muted px-3.5 py-2.5 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </Field>
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            loading={ask.isPending}
+          >
+            {ask.isPending ? "Submitting…" : "Submit question"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

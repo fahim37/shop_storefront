@@ -1,0 +1,30 @@
+/**
+ * Centralized runtime configuration.
+ *
+ * Two API bases:
+ *  - {@link API_BASE_URL} — the ABSOLUTE backend URL. Used by Server Components
+ *    (`lib/api/server`) and to build media URLs (cross-origin <img> loads are
+ *    not CORS-restricted). Inlined at build time (NEXT_PUBLIC_*).
+ *  - {@link CLIENT_API_BASE} — the SAME-ORIGIN BFF proxy path the browser uses
+ *    for `fetch` (see `rewrites()` in next.config.ts). Routing client requests
+ *    through our own origin avoids cross-origin CORS entirely, so the storefront
+ *    works against a remote backend without that backend allowlisting us.
+ */
+
+/** Absolute backend base, already ending in `/v1`. */
+export const API_BASE_URL: string =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ??
+  "http://62.72.58.29:4000/v1";
+
+/** Same-origin proxy base the browser hits (mapped to API_BASE_URL by rewrites). */
+export const CLIENT_API_BASE = "/bff/v1";
+
+/**
+ * Google Identity Services client id used for "Continue with Google".
+ * When empty, the Google sign-in button is rendered disabled.
+ */
+export const GOOGLE_CLIENT_ID: string =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
+/** Whether social Google sign-in is configured/enabled. */
+export const isGoogleAuthEnabled: boolean = GOOGLE_CLIENT_ID.length > 0;

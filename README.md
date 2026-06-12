@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GCL — Storefront
 
-## Getting Started
+Customer-facing storefront for the GCL multivendor marketplace (Bangladesh). Built to the **"Bold Bazar"**
+design (deep blue + amber) and wired to the `store_backend` API.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router) · TypeScript strict · Tailwind v4 + shadcn-style primitives + Radix + lucide ·
+TanStack Query (server state) · Zustand (ephemeral UI) · URL search params (filters/sort) · React Hook Form + Zod (auth).
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Start the backend (in ../store_backend)
+docker compose up -d            # postgres + redis + minio
+npm install && npm run db:migrate && npm run db:seed
+npm run dev                     # API on http://localhost:4000
+
+# 2. Start the storefront
+npm install
+npm run dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Config: `.env.local` → `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:4000/v1`),
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` (optional, enables Google sign-in).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The backend's `CORS_ORIGINS` must include `http://localhost:3000` (it already does).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture
 
-## Learn More
+- **Design tokens** — `app/globals.css`: a raw brand palette (oklch) → semantic tokens → Tailwind `@theme`.
+  Change one variable to recolor the whole app. Fonts (Sora/Manrope/Noto Bengali) load via `next/font` in `app/layout.tsx`.
+- **API layer** — `lib/api/`:
+  - `http.ts` — typed fetch wrapper: injects the in-memory Bearer token, single-flight 401 refresh, unwraps `{ data }`.
+  - `server.ts` — `server-only` fetchers for **public** catalog/content (used by Server Components for SEO + ISR).
+  - `types.ts` — hand-authored types mirroring the backend (`API_CONTRACT.md`).
+  - per-domain hooks: `catalog`, `search`, `cart`, `orders`, `reviews`, `engagement`, `account` (TanStack Query).
+- **Money** — every `*Paisa` is a BDT-paisa **string**; format with `lib/format.formatPaisa` (BigInt-safe), never `Number()`.
+- **Images** — backend returns media **ids**; `<MediaImage mediaId>` resolves `/v1/media/:id/:variant` (302 → presigned).
+- **Cart** — server-owned; guests use an `X-Cart-Session` token (localStorage), merged into the user cart on login.
+- **Auth** — access token in memory, refresh via httpOnly cookie; presented as an on-demand modal (no route walls).
+- **Rendering** — public pages (home, PDP, category, CMS) are Server Components (SEO/ISR) with client islands for
+  interactivity; cart/checkout/account are client-rendered and auth-gated.
 
-To learn more about Next.js, take a look at the following resources:
+## Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`/` home · `/category/[slug]` browse+filters · `/search` · `/product/[slug]` PDP · `/cart` · `/checkout` ·
+`/account` (profile · orders · order tracking · wishlist · reviews · addresses · notifications · password) ·
+`/pages/[slug]` CMS (about/terms/privacy/faq).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Reference docs
+- `API_CONTRACT.md` — exact backend request/response shapes used by every hook.
+- `BUILD_KIT.md` — the component/hook/token catalogue pages are built against.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes / known backend constraints
+- Only `paymentMethod: "cod"` works today; bKash/SSLCommerz are shown as "coming soon".
+- There is no authenticated change-password endpoint — the password page emails a reset link.
+- There is no "list my reviews" endpoint — the reviews page surfaces delivered orders to review instead.
