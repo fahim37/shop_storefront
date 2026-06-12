@@ -17,6 +17,7 @@ export function CategoryMegaMenu() {
   const roots = tree ?? [];
   const active = roots.find((r) => r.id === activeId) ?? roots[0] ?? null;
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const handleEnter = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -26,8 +27,29 @@ export function CategoryMegaMenu() {
     closeTimer.current = setTimeout(() => setOpen(false), 120);
   };
 
+  // Dismiss on outside click / Escape (covers clicks on the header chrome that
+  // sit above the dim backdrop).
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
     <div
+      ref={menuRef}
       className="relative"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}

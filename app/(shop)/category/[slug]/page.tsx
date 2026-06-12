@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { CategoryListing } from "@/components/category/category-listing";
 import { ProductGridSkeleton } from "@/components/product/product-grid";
-import { findCategoryBySlug } from "@/lib/api/catalog";
+import { findCategoryBySlug } from "@/lib/category-tree";
 import {
   getBrands,
   getCategoryBreadcrumbs,
