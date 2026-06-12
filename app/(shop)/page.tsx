@@ -6,9 +6,10 @@ import {
   Tag,
   Truck,
   Wallet,
-  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CampaignPanel } from "@/components/home/campaign-panel";
+import { HeroBanners } from "@/components/home/hero-banners";
 import { HeroSlider } from "@/components/home/hero-slider";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -16,10 +17,17 @@ import { categoryIcon } from "@/lib/category-icons";
 import { fromProductRow, fromRecHit, type CardProduct } from "@/lib/api/card";
 import {
   getCategoryTree,
+  getHomepage,
   getHomeRecommendations,
   getProductsPage,
 } from "@/lib/api/server";
-import type { CategoryNode } from "@/lib/api/types";
+import type {
+  CategoryNode,
+  HomepageBannerConfig,
+  HomepageBlock,
+  HomepageCarouselConfig,
+} from "@/lib/api/types";
+import { resolveMediaPath } from "@/lib/media";
 
 export const revalidate = 120;
 
@@ -40,24 +48,55 @@ const TILE_TONES = [
 ];
 
 export default async function HomePage() {
-  const [tree, recs, productsPage] = await Promise.all([
+  const [tree, recs, productsPage, blocks] = await Promise.all([
     settle(getCategoryTree(), [] as CategoryNode[]),
     settle(getHomeRecommendations(), { items: [], placement: "home", modelVersion: "v1" }),
     settle(getProductsPage({ limit: 10 }), { data: [] }),
+    settle(getHomepage(), [] as HomepageBlock[]),
   ]);
 
-  const roots = tree.slice(0, 5);
+  // Flat category list for the circles row — roots first, then their
+  // children, in tree order (Daraz-style dense row). Capped at 12.
+  const circleCats = tree
+    .flatMap((root) => [root, ...(root.children ?? [])])
+    .slice(0, 12);
   const bestSellers: CardProduct[] = recs.items.slice(0, 10).map(fromRecHit);
   const fresh: CardProduct[] = productsPage.data.map(fromProductRow);
-  const flash = fresh.slice(0, 5);
+  const flash = fresh.slice(0, 8);
   const newArrivals = fresh.slice(5, 10);
+
+  // Admin-managed hero: first active carousel block + every banner block
+  // (already filtered/sorted by the backend). Falls back to the designed
+  // HeroSlider until the admin publishes a carousel with at least one slide.
+  const carouselBlock = blocks.find((b) => b.kind === "carousel");
+  const heroSlides = carouselBlock
+    ? ((carouselBlock.config as unknown as HomepageCarouselConfig).slides ?? []).filter(
+        (s) => Boolean(s.imageMediaId),
+      )
+    : [];
+  const heroBanners = blocks
+    .filter((b) => b.kind === "banner")
+    .map((b) => {
+      const cfg = b.config as unknown as HomepageBannerConfig;
+      return {
+        imageMediaId: cfg.imageMediaId,
+        linkUrl: cfg.linkUrl,
+        altText: cfg.altText,
+        title: b.title ?? undefined,
+      };
+    })
+    .filter((b) => Boolean(b.imageMediaId));
 
   return (
     <div className="flex flex-col gap-8 pb-12 pt-4">
-      {/* Hero slider */}
+      {/* Hero — admin-managed banners when published, designed fallback otherwise */}
       <section className="wrap">
         <h1 className="sr-only">GCL — Bangladesh&apos;s online marketplace</h1>
-        <HeroSlider />
+        {heroSlides.length > 0 ? (
+          <HeroBanners carousel={{ slides: heroSlides }} banners={heroBanners} />
+        ) : (
+          <HeroSlider />
+        )}
       </section>
 
       {/* USP strip */}
@@ -85,50 +124,46 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Category tiles */}
-      {roots.length > 0 && (
+      {/* Category circles — dense Daraz-style row (roots + subcategories).
+          Horizontal scroll on mobile; centered with snug fixed gaps on lg
+          (NOT stretched across the rail — that looks sparse with few cats). */}
+      {circleCats.length > 0 && (
         <section className="wrap">
           <SectionHeader title="Shop by category" subtitle="Browse every department" />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {roots.map((cat, i) => {
+          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-1 lg:justify-center lg:gap-9 lg:overflow-visible lg:pb-0">
+            {circleCats.map((cat, i) => {
               const Icon = categoryIcon(cat.slug);
               return (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-4 transition-transform hover:-translate-y-0.5 ${TILE_TONES[i % TILE_TONES.length]}`}
+                  className="group flex w-[76px] shrink-0 flex-col items-center gap-2.5 lg:w-[88px]"
                 >
-                  <Icon className="size-7 shrink-0" strokeWidth={1.5} />
-                  <span className="min-w-0">
-                    <b className="block truncate text-[13.5px] font-extrabold leading-tight">
-                      {cat.name}
-                    </b>
-                    <span className="text-[11px] font-bold opacity-60">
-                      {cat.children?.length ?? 0} subcategories
+                  {cat.iconUrl ? (
+                    <span className="block size-16 overflow-hidden rounded-full shadow-[var(--shadow-card)] ring-1 ring-border transition-all group-hover:-translate-y-0.5 group-hover:ring-2 group-hover:ring-primary/50 lg:size-20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={resolveMediaPath(cat.iconUrl)!}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     </span>
-                  </span>
+                  ) : (
+                    <span
+                      className={`flex size-16 items-center justify-center rounded-full transition-all group-hover:-translate-y-0.5 lg:size-20 ${TILE_TONES[i % TILE_TONES.length]}`}
+                    >
+                      <Icon className="size-7 lg:size-8" strokeWidth={1.5} />
+                    </span>
+                  )}
+                  <b className="line-clamp-2 w-full text-center text-[12px] font-extrabold leading-tight text-ink group-hover:text-primary">
+                    {cat.name}
+                  </b>
                 </Link>
               );
             })}
           </div>
-        </section>
-      )}
-
-      {/* Flash sale */}
-      {flash.length > 0 && (
-        <section className="wrap">
-          <SectionHeader
-            title="Flash sale"
-            subtitle="New deals every day"
-            linkLabel="See all deals"
-            linkHref="/search?q=flash"
-            extra={
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[oklch(0.96_0.02_25)] px-2.5 py-1 text-[11.5px] font-extrabold text-red">
-                <Zap className="size-3" strokeWidth={2.4} /> Ends soon
-              </span>
-            }
-          />
-          <ProductGrid products={flash} />
         </section>
       )}
 
@@ -187,6 +222,9 @@ export default async function HomePage() {
           </Button>
         </div>
       </section>
+
+      {/* Campaign panel — Daraz-style "bazar" board, anchored at the bottom */}
+      <CampaignPanel products={flash} title="Mega Bazar" subtitle="Deals of the month" />
     </div>
   );
 }

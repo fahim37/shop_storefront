@@ -131,6 +131,16 @@ export function getHomepageBlocks() {
   });
 }
 
+/**
+ * Active homepage blocks as a flat array (the backend already filters to
+ * active + in-schedule and sorts by `sortOrder`). Tolerates a missing
+ * `blocks` key so the home page can fall back to its designed hero.
+ */
+export async function getHomepage(): Promise<HomepageBlock[]> {
+  const { blocks } = await getHomepageBlocks();
+  return blocks ?? [];
+}
+
 export function getHomeRecommendations() {
   return serverGet<RecResponse>("/me/recommendations/home", { revalidate: 120 });
 }

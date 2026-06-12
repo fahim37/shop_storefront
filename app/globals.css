@@ -153,6 +153,15 @@
   --animate-accordion-up: accordion-up 0.24s var(--ease-out-soft);
 }
 
+/* Tailwind v4 preflight leaves buttons at `cursor: default`; interactive
+ * elements should always advertise clickability. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
 @keyframes accordion-down {
   from {
     height: 0;

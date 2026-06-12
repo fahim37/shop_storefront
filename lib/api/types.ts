@@ -648,6 +648,28 @@ export interface HomepageBlock {
   updatedAt: string;
 }
 
+/** `config` shape for `kind: "banner"` blocks (admin-uploaded artwork). */
+export interface HomepageBannerConfig {
+  imageMediaId: string;
+  /** Absolute URL or app-relative path ("/category/..."). */
+  linkUrl?: string;
+  altText?: string;
+  headline?: string;
+  subheadline?: string;
+}
+
+export interface HomepageCarouselSlide {
+  imageMediaId: string;
+  /** Absolute URL or app-relative path ("/category/..."). */
+  linkUrl?: string;
+  caption?: string;
+}
+
+/** `config` shape for `kind: "carousel"` blocks (1–10 slides). */
+export interface HomepageCarouselConfig {
+  slides: HomepageCarouselSlide[];
+}
+
 export interface CmsPage {
   slug: string;
   title: string;
