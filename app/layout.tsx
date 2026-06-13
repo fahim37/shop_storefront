@@ -19,7 +19,7 @@ const manrope = Manrope({
   display: "swap",
 });
 
-/* Bengali accents (৳, বাংলা, ঈদ) */
+/* Bengali accents (৳, বাংলা, */
 const notoBengali = Noto_Sans_Bengali({
   variable: "--font-bengali",
   subsets: ["bengali"],
