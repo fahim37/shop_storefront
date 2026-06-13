@@ -89,7 +89,7 @@ export function setRefreshHandler(fn: () => Promise<boolean>): void {
 /** Shared in-flight refresh promise so concurrent 401s trigger ONE refresh. */
 let inFlightRefresh: Promise<boolean> | null = null;
 
-function runSingleFlightRefresh(): Promise<boolean> {
+export function runSingleFlightRefresh(): Promise<boolean> {
   if (!refreshFn) return Promise.resolve(false);
   if (!inFlightRefresh) {
     inFlightRefresh = refreshFn()

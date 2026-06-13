@@ -23,6 +23,7 @@ import { ProductGrid } from "@/components/product/product-grid";
 import { toast } from "@/components/ui/sonner";
 import { ApiError } from "@/lib/api/http";
 import { formatPaisa } from "@/lib/format";
+import { visibleOptionEntries } from "@/lib/options";
 import { fromRecHit } from "@/lib/api/card";
 import {
   useApplyCoupon,
@@ -95,9 +96,9 @@ export default function CartPage() {
                         >
                           {line.productTitle}
                         </Link>
-                        {Object.keys(line.optionValues).length > 0 && (
+                        {visibleOptionEntries(line.optionValues).length > 0 && (
                           <span className="flex flex-wrap gap-1.5 text-[11.5px] font-bold text-faint">
-                            {Object.entries(line.optionValues).map(([k, v]) => (
+                            {visibleOptionEntries(line.optionValues).map(([k, v]) => (
                               <span key={k} className="rounded bg-muted px-1.5 py-0.5">
                                 {v}
                               </span>

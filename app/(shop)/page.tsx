@@ -147,7 +147,7 @@ export default async function HomePage() {
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="size-full scale-[1.38] object-cover transition-transform duration-300 group-hover:scale-[1.48]"
                       />
                     </span>
                   ) : (

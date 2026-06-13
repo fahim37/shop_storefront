@@ -94,13 +94,13 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
   if (slides.length === 0 && tiles.length === 0) return null;
 
   return (
-    <div className={cn("grid gap-3", tiles.length > 0 && "lg:grid-cols-3")}>
+    <div className={cn("grid gap-3", tiles.length > 0 && "lg:grid-cols-4")}>
       {/* Slider */}
       {slides.length > 0 && (
         <div
           className={cn(
             "group relative overflow-hidden rounded-2xl",
-            tiles.length > 0 && "lg:col-span-2",
+            tiles.length > 0 && "lg:col-span-3",
           )}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}

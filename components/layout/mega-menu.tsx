@@ -34,7 +34,7 @@ function CategoryCircleIcon({
           alt=""
           loading="lazy"
           decoding="async"
-          className="size-full object-cover"
+          className="size-full scale-[1.38] object-cover"
         />
       </span>
     );

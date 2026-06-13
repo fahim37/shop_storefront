@@ -129,9 +129,9 @@ export function CartButton() {
       type="button"
       onClick={openCart}
       aria-label={`Open cart, ${count} item${count === 1 ? "" : "s"}`}
-      className="flex items-center gap-2 text-xs font-bold text-ink"
+      className="group flex items-center gap-2 text-xs font-bold text-ink"
     >
-      <span className="relative">
+      <span className="relative transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-90">
         <ShoppingCart className="size-6" strokeWidth={1.6} />
         {count > 0 && (
           <span className="absolute -right-2 -top-2 flex min-w-[18px] items-center justify-center rounded-full bg-amber px-1 text-[10px] font-extrabold text-blue-deep">

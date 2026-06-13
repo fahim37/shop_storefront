@@ -36,9 +36,9 @@ export function MobileMenuButton() {
       type="button"
       onClick={open}
       aria-label="Open menu"
-      className="flex size-9 items-center justify-center rounded-lg text-ink md:hidden"
+      className="group flex size-9 items-center justify-center rounded-lg text-ink transition-transform duration-200 ease-out active:scale-90 md:hidden"
     >
-      <Menu className="size-6" />
+      <Menu className="size-6 transition-transform duration-200 ease-out group-hover:scale-110" />
     </button>
   );
 }

@@ -7,14 +7,35 @@ import {
 } from "@tanstack/react-query";
 import { http } from "@/lib/api/http";
 import { qk, type ProductListParams } from "@/lib/api/query-keys";
+import {
+  compactParams,
+  optionParams,
+  unionBrandIds,
+} from "@/lib/api/filter-params";
 import type {
   Brand,
   CategoryAttribute,
   CategoryNode,
+  Facets,
   ProductCardRow,
   ProductDetail,
   RecResponse,
 } from "@/lib/api/types";
+
+/** Build the flat filter query the /products (listing) endpoint reads. */
+function listingQuery(params: ProductListParams) {
+  return compactParams({
+    categoryId: params.categoryId,
+    brandIds: unionBrandIds(params.brandId, params.brandIds),
+    priceMinPaisa: params.minPricePaisa,
+    priceMaxPaisa: params.maxPricePaisa,
+    rating: params.rating,
+    inStock: params.inStock ? "true" : undefined,
+    onSale: params.onSale ? "true" : undefined,
+    sort: params.sort,
+    ...optionParams(params.options),
+  });
+}
 
 /* ----------------------------------------------------------------------- */
 /* Products                                                                */
@@ -29,16 +50,33 @@ export function useProductsInfinite(params: ProductListParams = {}) {
     queryFn: ({ pageParam }) =>
       http.getList<ProductCardRow>("/products", {
         params: {
-          categoryId: params.categoryId,
-          brandId: params.brandId,
-          minPricePaisa: params.minPricePaisa,
-          maxPricePaisa: params.maxPricePaisa,
+          ...listingQuery(params),
           limit,
           cursor: pageParam,
         },
       }),
     getNextPageParam: (last) =>
       last.meta?.hasMore ? (last.meta.nextCursor ?? undefined) : undefined,
+  });
+}
+
+/**
+ * Faceted-filter aggregates for the listing/category context.
+ * GET /v1/products/facets — returns the standard envelope { data: Facets }.
+ * Facet availability is computed over the BASE SET (category descendants); the
+ * backend ignores narrowing by the current selections, so passing them is safe
+ * but we only need categoryId here.
+ */
+export function useListingFacets(
+  params: ProductListParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: qk.listingFacets(params),
+    queryFn: () =>
+      http.get<Facets>("/products/facets", { params: listingQuery(params) }),
+    enabled: enabled && !!params.categoryId,
+    staleTime: 60_000,
   });
 }
 

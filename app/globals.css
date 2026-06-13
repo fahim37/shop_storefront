@@ -65,7 +65,7 @@
 
   --success: var(--green);
 
-  --radius: 0.75rem; /* 12px — cards/panels; pills use 9999px */
+  --radius: 0.4rem; /* ~6.5px — cards/panels (reduced from 12px); pills use 9999px */
 
   /* Layout */
   --wrap: 1280px;

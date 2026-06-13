@@ -7,26 +7,47 @@ import {
 } from "@tanstack/react-query";
 import { http } from "@/lib/api/http";
 import { qk, type SearchParams } from "@/lib/api/query-keys";
+import {
+  compactParams,
+  optionParams,
+  unionBrandIds,
+} from "@/lib/api/filter-params";
 import { cartSessionHeaders } from "@/lib/cart/cart-session";
 import { hasAccessToken } from "@/lib/auth/tokens";
 import type {
   AutocompleteItem,
+  Facets,
   RecResponse,
   SearchResponse,
 } from "@/lib/api/types";
 
-/** Build the bracketed `filters[...]` query the search endpoint expects. */
+/**
+ * Build the search filter query. The endpoint already flattens `filters[...]`
+ * (kept for category/brand/price/rating) and the contract says it ALSO accepts
+ * the NEW filters at the top level — so brandIds / inStock / onSale / opt[...]
+ * are emitted top-level (verbatim wire names).
+ */
+function searchFilterParams(params: SearchParams) {
+  return compactParams({
+    "filters[categoryId]": params.categoryId,
+    "filters[priceMinPaisa]": params.priceMinPaisa,
+    "filters[priceMaxPaisa]": params.priceMaxPaisa,
+    "filters[rating]": params.rating,
+    // NEW filters — top-level per contract.
+    brandIds: unionBrandIds(params.brandId, params.brandIds),
+    inStock: params.inStock ? "true" : undefined,
+    onSale: params.onSale ? "true" : undefined,
+    ...optionParams(params.options),
+  });
+}
+
 function searchQuery(params: SearchParams, cursor?: string) {
   return {
     q: params.q,
     sort: params.sort ?? "relevance",
     limit: params.limit ?? 24,
     cursor,
-    "filters[categoryId]": params.categoryId,
-    "filters[brandId]": params.brandId,
-    "filters[priceMinPaisa]": params.priceMinPaisa,
-    "filters[priceMaxPaisa]": params.priceMaxPaisa,
-    "filters[rating]": params.rating,
+    ...searchFilterParams(params),
   };
 }
 
@@ -39,6 +60,22 @@ export function useSearchInfinite(params: SearchParams, enabled = true) {
     queryFn: ({ pageParam }) =>
       http.get<SearchResponse>("/search", { params: searchQuery(params, pageParam) }),
     getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
+  });
+}
+
+/**
+ * Faceted-filter aggregates for the search context.
+ * GET /v1/search/facets (requires q) — returns { data: Facets }.
+ * Computed over the q-matched BASE SET; the backend ignores narrowing by the
+ * current selections (keeps options visible while toggling).
+ */
+export function useSearchFacets(params: SearchParams, enabled = true) {
+  return useQuery({
+    queryKey: qk.searchFacets(params),
+    queryFn: () =>
+      http.get<Facets>("/search/facets", { params: searchQuery(params) }),
+    enabled: enabled && params.q.trim().length > 0,
+    staleTime: 60_000,
   });
 }
 

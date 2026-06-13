@@ -6,13 +6,12 @@ import { CategoryListing } from "@/components/category/category-listing";
 import { ProductGridSkeleton } from "@/components/product/product-grid";
 import { findCategoryBySlug } from "@/lib/category-tree";
 import {
-  getBrands,
   getCategoryBreadcrumbs,
   getCategoryBySlug,
   getCategoryTree,
   NotFoundError,
 } from "@/lib/api/server";
-import type { Brand, Category, CategoryNode } from "@/lib/api/types";
+import type { Category, CategoryNode } from "@/lib/api/types";
 
 export const revalidate = 120;
 
@@ -64,10 +63,9 @@ export default async function CategoryPage({ params }: { params: Params }) {
   }
 
   // The rest is resilient (fall back to [] so the page still renders).
-  const [tree, crumbs, brands] = await Promise.all([
+  const [tree, crumbs] = await Promise.all([
     settle(getCategoryTree(), [] as CategoryNode[]),
     settle(getCategoryBreadcrumbs(category.id), [] as Category[]),
-    settle(getBrands(), [] as Brand[]),
   ]);
 
   // Locate this category's node in the tree to read its children (subcategories).
@@ -102,7 +100,6 @@ export default async function CategoryPage({ params }: { params: Params }) {
       <React.Suspense fallback={<ProductGridSkeleton count={10} cols={5} />}>
         <CategoryListing
           categoryId={category.id}
-          brands={brands}
           subcategories={subcategories}
         />
       </React.Suspense>

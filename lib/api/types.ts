@@ -184,12 +184,54 @@ export interface SearchResponse {
   hasMore: boolean;
   searchQueryId: string;
   semanticEnabled: boolean;
+  /** "Did you mean" — closest product title when the query returns nothing. */
+  suggestion: string | null;
 }
 
 export interface AutocompleteItem {
   id: string;
   title: string;
   slug: string;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Facets (faceted filtering — /v1/products/facets & /v1/search/facets)    */
+/* ----------------------------------------------------------------------- */
+
+export interface FacetBrand {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface FacetOptionValue {
+  value: string;
+  hex: string | null;
+  count: number;
+}
+
+export interface FacetOption {
+  key: string;
+  kind: "color" | "text";
+  values: FacetOptionValue[];
+}
+
+export interface FacetRatingCount {
+  /** Minimum average rating bucket (one of 4, 3, 2, 1; descending). */
+  min: number;
+  count: number;
+}
+
+/** Exact shape of the `data` payload from the *facets endpoints. */
+export interface Facets {
+  /** Products in the BASE SET (not narrowed by the user's selections). */
+  total: number;
+  priceRange: { minPaisa: string; maxPaisa: string } | null;
+  brands: FacetBrand[];
+  options: FacetOption[];
+  ratingCounts: FacetRatingCount[];
+  onSaleCount: number;
+  inStockCount: number;
 }
 
 /* ----------------------------------------------------------------------- */

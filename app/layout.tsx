@@ -51,9 +51,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${sora.variable} ${manrope.variable} ${notoBengali.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      {/* suppressHydrationWarning: browser extensions (password managers,
+          Grammarly, etc.) inject attributes like `__processed_<uuid>__` onto
+          <body> before React hydrates, which otherwise logs a dev mismatch.
+          Scoped to this element only. */}
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-background text-foreground"
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

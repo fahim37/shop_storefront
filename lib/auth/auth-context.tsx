@@ -6,6 +6,7 @@ import {
   setAccessToken,
 } from "@/lib/auth/tokens";
 import {
+  runSingleFlightRefresh,
   setOnUnauthorized,
   setRefreshHandler,
 } from "@/lib/api/http";
@@ -301,13 +302,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const tokens = await refreshApi();
-        if (cancelled) return;
-        applyTokens(tokens);
+      // Route the post-reload bootstrap through the SAME single-flight guard
+      // the http client uses for 401 refreshes. React StrictMode mounts this
+      // effect twice in dev (and extra tabs mount it in parallel); calling
+      // refreshApi() directly fired one POST /auth/refresh per mount with the
+      // same cookie. The first rotates the refresh token; the second then
+      // replays the now-revoked token, which the backend treats as theft and
+      // answers by revoking EVERY session for the user — bouncing them
+      // straight back to the login screen. Single-flighting collapses the
+      // concurrent calls into one refresh so rotation can't trip itself.
+      const ok = await runSingleFlightRefresh();
+      if (cancelled) return;
+      if (ok) {
         await loadProfile();
-      } catch {
-        if (!cancelled) clearSession();
+      } else {
+        clearSession();
       }
     })();
     return () => {

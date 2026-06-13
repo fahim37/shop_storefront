@@ -5,9 +5,18 @@
 
 export type ProductListParams = {
   categoryId?: string;
+  /** Single-brand (legacy); still honored alongside `brandIds`. */
   brandId?: string;
+  /** Multi-brand selection -> brandIds CSV on the wire. */
+  brandIds?: string[];
   minPricePaisa?: string;
   maxPricePaisa?: string;
+  rating?: number;
+  inStock?: boolean;
+  onSale?: boolean;
+  /** Dynamic option filter: { Color: ["Red","Blue"], Size: ["M"] } -> opt[<Key>]=csv. */
+  options?: Record<string, string[]>;
+  sort?: string;
   limit?: number;
 };
 
@@ -15,10 +24,17 @@ export type SearchParams = {
   q: string;
   sort?: string;
   categoryId?: string;
+  /** Single-brand (legacy); still honored alongside `brandIds`. */
   brandId?: string;
+  /** Multi-brand selection -> brandIds CSV on the wire. */
+  brandIds?: string[];
   priceMinPaisa?: string;
   priceMaxPaisa?: string;
   rating?: number;
+  inStock?: boolean;
+  onSale?: boolean;
+  /** Dynamic option filter: { Color: ["Red","Blue"], Size: ["M"] } -> opt[<Key>]=csv. */
+  options?: Record<string, string[]>;
   limit?: number;
 };
 
@@ -26,6 +42,9 @@ export const qk = {
   // catalog
   products: (params: ProductListParams = {}) => ["products", params] as const,
   product: (slug: string) => ["product", slug] as const,
+  listingFacets: (params: ProductListParams = {}) =>
+    ["facets", "products", params] as const,
+  searchFacets: (params: SearchParams) => ["facets", "search", params] as const,
   productRelated: (id: string) => ["product", id, "related"] as const,
   categories: () => ["categories"] as const,
   category: (slug: string) => ["category", slug] as const,

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Search as SearchIcon, SearchX, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,19 +15,24 @@ import {
   FilterSheet,
   FilterSidebar,
 } from "@/components/product/filters";
-import { SortSelect } from "@/components/product/sort-select";
+import {
+  SortSelect,
+  SEARCH_SORT_OPTIONS,
+} from "@/components/product/sort-select";
 import { fromSearchHit } from "@/lib/api/card";
 import { useFilterParams, takaToPaisa } from "@/lib/use-filters";
-import { useBrands } from "@/lib/api/catalog";
-import { recordSearchClick, useSearchInfinite } from "@/lib/api/search";
+import {
+  recordSearchClick,
+  useSearchFacets,
+  useSearchInfinite,
+} from "@/lib/api/search";
 import type { SearchParams } from "@/lib/api/query-keys";
 
 function SearchResults() {
-  const { get } = useFilterParams();
+  const { get, getList, getOptions } = useFilterParams();
 
   const q = get("q").trim();
   const sort = get("sort");
-  const brand = get("brand");
   const minPrice = get("minPrice");
   const maxPrice = get("maxPrice");
   const rating = get("rating");
@@ -34,14 +40,16 @@ function SearchResults() {
   const params: SearchParams = {
     q,
     sort: sort || undefined,
-    brandId: brand || undefined,
+    brandIds: getList("brand"),
     priceMinPaisa: takaToPaisa(minPrice),
     priceMaxPaisa: takaToPaisa(maxPrice),
     rating: rating ? Number(rating) : undefined,
+    inStock: get("instock") === "1" || undefined,
+    onSale: get("sale") === "1" || undefined,
+    options: getOptions(),
   };
 
-  const { data: brandData } = useBrands();
-  const brands = brandData ?? [];
+  const { data: facets } = useSearchFacets({ q });
 
   const {
     data,
@@ -111,17 +119,17 @@ function SearchResults() {
 
       {/* Toolbar: filters (mobile) + sort */}
       <div className="flex items-center justify-between gap-3">
-        <FilterSheet brands={brands} showRating />
+        <FilterSheet facets={facets} />
         <div className="ml-auto">
-          <SortSelect />
+          <SortSelect options={SEARCH_SORT_OPTIONS} defaultValue="relevance" />
         </div>
       </div>
 
-      <ActiveFilterChips brands={brands} />
+      <ActiveFilterChips facets={facets} />
 
       {/* Body: sidebar + results */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-        <FilterSidebar brands={brands} showRating />
+        <FilterSidebar facets={facets} />
 
         <div className="min-w-0">
           {isLoading ? (
@@ -137,6 +145,17 @@ function SearchResults() {
               icon={<SearchX className="size-6" strokeWidth={2.4} />}
               title={`No results for “${q}”`}
               description="Try a different search term or clear your filters to see more products."
+              action={
+                pages[0]?.suggestion ? (
+                  <Button asChild variant="outline">
+                    <Link
+                      href={`/search?q=${encodeURIComponent(pages[0].suggestion)}`}
+                    >
+                      Did you mean &ldquo;{pages[0].suggestion}&rdquo;?
+                    </Link>
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <>

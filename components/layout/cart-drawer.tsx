@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Store, Trash2, X } from "lucide-react";
+import { ShoppingBag, Store, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +14,7 @@ import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { formatPaisa } from "@/lib/format";
+import { visibleOptionEntries } from "@/lib/options";
 import { useUIStore } from "@/lib/store/ui";
 import {
   useCart,
@@ -32,7 +33,7 @@ export function CartDrawer() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
+      <SheetContent side="right" className="w-full max-w-none sm:max-w-md">
         <SheetHeader>
           <ShoppingBag className="size-5 text-primary" />
           <SheetTitle>Your cart{count ? ` (${count})` : ""}</SheetTitle>
@@ -91,9 +92,11 @@ export function CartDrawer() {
                         >
                           {line.productTitle}
                         </Link>
-                        {Object.keys(line.optionValues).length > 0 && (
+                        {visibleOptionEntries(line.optionValues).length > 0 && (
                           <span className="line-clamp-1 text-[11px] font-semibold text-faint">
-                            {Object.values(line.optionValues).join(" · ")}
+                            {visibleOptionEntries(line.optionValues)
+                              .map(([, v]) => v)
+                              .join(" · ")}
                           </span>
                         )}
                         {line.priceChanged && (
@@ -159,15 +162,6 @@ export function CartDrawer() {
             </div>
           </>
         )}
-
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Close cart"
-          className="absolute right-4 top-4 text-faint hover:text-ink sm:hidden"
-        >
-          <X className="size-5" />
-        </button>
       </SheetContent>
     </Sheet>
   );

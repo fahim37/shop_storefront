@@ -8,33 +8,52 @@ import {
   FilterSidebar,
 } from "@/components/product/filters";
 import {
+  SortSelect,
+  LISTING_SORT_OPTIONS,
+} from "@/components/product/sort-select";
+import {
   ProductGrid,
   ProductGridSkeleton,
 } from "@/components/product/product-grid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { fromProductRow } from "@/lib/api/card";
-import { flattenProducts, useProductsInfinite } from "@/lib/api/catalog";
+import {
+  flattenProducts,
+  useListingFacets,
+  useProductsInfinite,
+} from "@/lib/api/catalog";
 import { takaToPaisa, useFilterParams } from "@/lib/use-filters";
-import type { Brand, CategoryNode } from "@/lib/api/types";
+import type { CategoryNode } from "@/lib/api/types";
+import type { ProductListParams } from "@/lib/api/query-keys";
 
 export interface CategoryListingProps {
   categoryId: string;
-  brands: Brand[];
   subcategories: CategoryNode[];
 }
 
 /**
- * Client island for the category browse page: reads brand/price filters from
- * the URL and renders a cursor-paginated product grid with a desktop filter
- * rail + mobile filter sheet. NOTE: the /products endpoint has no `sort`, so
- * there is intentionally no SortSelect here.
+ * Client island for the category browse page: reads every filter from the URL,
+ * renders a cursor-paginated product grid with a facet-driven desktop filter
+ * rail + mobile filter sheet, plus a sort dropdown (listing variant).
  */
 export function CategoryListing({
   categoryId,
-  brands,
   subcategories,
 }: CategoryListingProps) {
-  const { get } = useFilterParams();
+  const { get, getList, getOptions } = useFilterParams();
+
+  const params: ProductListParams = {
+    categoryId,
+    brandIds: getList("brand"),
+    minPricePaisa: takaToPaisa(get("minPrice")),
+    maxPricePaisa: takaToPaisa(get("maxPrice")),
+    rating: get("rating") ? Number(get("rating")) : undefined,
+    inStock: get("instock") === "1" || undefined,
+    onSale: get("sale") === "1" || undefined,
+    options: getOptions(),
+    sort: get("sort") || undefined,
+    limit: 20,
+  };
 
   const {
     data,
@@ -44,23 +63,19 @@ export function CategoryListing({
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useProductsInfinite({
-    categoryId,
-    brandId: get("brand") || undefined,
-    minPricePaisa: takaToPaisa(get("minPrice")),
-    maxPricePaisa: takaToPaisa(get("maxPrice")),
-    limit: 20,
-  });
+  } = useProductsInfinite(params);
+
+  const { data: facets } = useListingFacets({ categoryId });
 
   const rows = flattenProducts(data?.pages);
   const products = rows.map(fromProductRow);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-      <FilterSidebar brands={brands} subcategories={subcategories} />
+      <FilterSidebar facets={facets} subcategories={subcategories} />
 
       <div className="flex min-w-0 flex-col gap-4">
-        {/* Toolbar: result hint + mobile filters */}
+        {/* Toolbar: result hint + sort + mobile filters */}
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] font-semibold text-sub">
             {isLoading
@@ -71,10 +86,13 @@ export function CategoryListing({
                   }`
                 : "No products"}
           </p>
-          <FilterSheet brands={brands} subcategories={subcategories} />
+          <div className="flex items-center gap-3">
+            <SortSelect options={LISTING_SORT_OPTIONS} defaultValue="newest" />
+            <FilterSheet facets={facets} subcategories={subcategories} />
+          </div>
         </div>
 
-        <ActiveFilterChips brands={brands} />
+        <ActiveFilterChips facets={facets} />
 
         {isLoading ? (
           <ProductGridSkeleton count={10} cols={5} />
