@@ -13,6 +13,7 @@ import {
   cartSessionHeaders,
   clearCartSessionToken,
   getCartSessionToken,
+  subscribeCartSessionToken,
 } from "@/lib/cart/cart-session";
 import { hasAccessToken } from "@/lib/auth/tokens";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -51,10 +52,13 @@ const EMPTY_CART: CartSnapshot = {
  */
 export function useCart() {
   const { status } = useAuth();
-  const [hasToken, setHasToken] = React.useState(false);
-  React.useEffect(() => {
-    setHasToken(!!getCartSessionToken());
-  }, [status]);
+  // Subscribe to the guest token (external source); `false` on the server so
+  // hydration matches, then re-syncs once the token is read on the client.
+  const hasToken = React.useSyncExternalStore(
+    subscribeCartSessionToken,
+    () => !!getCartSessionToken(),
+    () => false,
+  );
 
   const enabled = status === "authenticated" || hasToken;
   const query = useQuery({

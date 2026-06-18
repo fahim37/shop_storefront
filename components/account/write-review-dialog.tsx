@@ -71,17 +71,21 @@ export function WriteReviewDialog({
   const [recommend, setRecommend] = React.useState(true);
   const [ratingError, setRatingError] = React.useState<string | undefined>();
 
-  // Reset the form whenever the dialog is (re)opened.
-  React.useEffect(() => {
-    if (open) {
-      setRating(0);
-      setHovered(0);
-      setTitle("");
-      setBody("");
-      setRecommend(true);
-      setRatingError(undefined);
-    }
-  }, [open]);
+  // Reset the form whenever the dialog transitions to open. Done during render
+  // (tracking the previous `open`) rather than in an effect so the cleared
+  // fields are visible on the very first open frame.
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open && !wasOpen) {
+    setWasOpen(true);
+    setRating(0);
+    setHovered(0);
+    setTitle("");
+    setBody("");
+    setRecommend(true);
+    setRatingError(undefined);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const displayRating = hovered || rating;
 

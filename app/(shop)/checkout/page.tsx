@@ -5,9 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
-  Check,
   Home,
-  MapPin,
   Plus,
   RotateCcw,
   ShieldCheck,
@@ -70,16 +68,18 @@ export default function CheckoutPage() {
   const { data: addresses, isLoading: addrLoading } = useAddresses();
   const checkout = useCheckout();
 
-  const [addressId, setAddressId] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [payment, setPayment] = React.useState<PaymentMethod>("cod");
   const [agreed, setAgreed] = React.useState(false);
 
-  // Default to the user's default address.
-  React.useEffect(() => {
-    if (!addressId && addresses && addresses.length > 0) {
-      setAddressId((addresses.find((a) => a.isDefault) ?? addresses[0]).id);
-    }
-  }, [addresses, addressId]);
+  // Derive the active address: the user's explicit pick, otherwise their
+  // default (falling back to the first). Computed during render so it stays in
+  // sync with `addresses` without an effect.
+  const addressId =
+    selectedId ??
+    (addresses && addresses.length > 0
+      ? (addresses.find((a) => a.isDefault) ?? addresses[0]).id
+      : null);
 
   if (status === "loading" || cartLoading) {
     return (
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
                       <button
                         key={a.id}
                         type="button"
-                        onClick={() => setAddressId(a.id)}
+                        onClick={() => setSelectedId(a.id)}
                         className={cn(
                           "rounded-xl border p-4 text-left transition-colors",
                           on

@@ -93,7 +93,7 @@ function AddressCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="flex size-9 items-center justify-center rounded-full bg-blue-soft text-primary">
-            <Icon className="size-[18px]" />
+            {React.createElement(Icon, { className: "size-[18px]" })}
           </span>
           <Badge variant="muted" size="sm">
             {address.label ?? "Address"}

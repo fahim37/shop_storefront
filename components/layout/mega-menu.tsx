@@ -46,7 +46,10 @@ function CategoryCircleIcon({
         className,
       )}
     >
-      <Icon className={cn("size-1/2", iconClassName)} strokeWidth={1.8} />
+      {React.createElement(Icon, {
+        className: cn("size-1/2", iconClassName),
+        strokeWidth: 1.8,
+      })}
     </span>
   );
 }

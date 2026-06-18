@@ -101,13 +101,20 @@ export function AddressFormDialog({
     {},
   );
 
-  // Reset the form whenever the dialog (re)opens, seeding edit values.
-  React.useEffect(() => {
-    if (open) {
-      setForm(initial ? fromAddress(initial) : EMPTY);
-      setErrors({});
-    }
-  }, [open, initial]);
+  // Reset the form whenever the dialog opens (or `initial` changes while open),
+  // seeding edit values. Done during render by tracking the previous open state
+  // and `initial` reference, so the seeded values are present on first paint.
+  const [seededFor, setSeededFor] = React.useState<{
+    open: boolean;
+    initial: Address | undefined;
+  }>({ open, initial });
+  if (open && (!seededFor.open || seededFor.initial !== initial)) {
+    setSeededFor({ open, initial });
+    setForm(initial ? fromAddress(initial) : EMPTY);
+    setErrors({});
+  } else if (!open && seededFor.open) {
+    setSeededFor({ open, initial });
+  }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));

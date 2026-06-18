@@ -7,6 +7,34 @@
 
 const STORAGE_KEY = "gcl.cart.session";
 
+/** Subscribers notified when the token is minted or cleared in this tab. */
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const fn of listeners) fn();
+}
+
+/**
+ * Subscribe to guest-token changes (mint/clear in this tab, plus cross-tab
+ * `storage` events). Pairs with {@link getCartSessionToken} for
+ * `useSyncExternalStore`.
+ */
+export function subscribeCartSessionToken(onChange: () => void): () => void {
+  listeners.add(onChange);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY || e.key === null) onChange();
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", onStorage);
+  }
+  return () => {
+    listeners.delete(onChange);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", onStorage);
+    }
+  };
+}
+
 /** Generate a UUID (crypto.randomUUID with a tiny fallback). */
 export function uuid(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -42,6 +70,7 @@ export function ensureCartSessionToken(): string {
   } catch {
     /* storage unavailable — token still returned for this session */
   }
+  notify();
   return token;
 }
 
@@ -53,6 +82,7 @@ export function clearCartSessionToken(): void {
   } catch {
     /* ignore */
   }
+  notify();
 }
 
 /**
