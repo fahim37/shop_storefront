@@ -34,9 +34,9 @@ export default function ProductLoading() {
             <Skeleton className="h-12 w-24 rounded-lg" />
           </div>
           <div className="flex gap-2.5">
-            <Skeleton className="h-11 flex-1 rounded-[10px]" />
-            <Skeleton className="h-11 flex-1 rounded-[10px]" />
-            <Skeleton className="size-12 rounded-[10px]" />
+            <Skeleton className="h-11 flex-1 rounded-md" />
+            <Skeleton className="h-11 flex-1 rounded-md" />
+            <Skeleton className="size-12 rounded-md" />
           </div>
         </div>
       </div>

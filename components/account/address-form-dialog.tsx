@@ -18,7 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api/http";
+import { isMapsEnabled } from "@/lib/config";
 import { useCreateAddress, useUpdateAddress } from "@/lib/api/account";
+import { LocationPicker } from "@/components/account/location-picker";
+import type { ParsedAddress } from "@/lib/maps/address";
 import type { Address, AddressInput } from "@/lib/api/types";
 
 interface AddressFormDialogProps {
@@ -46,6 +49,8 @@ interface FormState {
   unionName: string;
   postcode: string;
   streetAddress: string;
+  latitude: number | null;
+  longitude: number | null;
   isDefault: boolean;
 }
 
@@ -67,6 +72,8 @@ const EMPTY: FormState = {
   unionName: "",
   postcode: "",
   streetAddress: "",
+  latitude: null,
+  longitude: null,
   isDefault: false,
 };
 
@@ -83,6 +90,8 @@ function fromAddress(a: Address): FormState {
     unionName: a.unionName ?? "",
     postcode: a.postcode ?? "",
     streetAddress: a.streetAddress ?? "",
+    latitude: a.latitude != null ? Number(a.latitude) : null,
+    longitude: a.longitude != null ? Number(a.longitude) : null,
     isDefault: a.isDefault,
   };
 }
@@ -119,6 +128,23 @@ export function AddressFormDialog({
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  // Map picker resolved a location → prefill the editable fields + coords.
+  // Only overwrite a field when the map gave us a confident value.
+  const applyPicked = React.useCallback((p: ParsedAddress) => {
+    setForm((prev) => ({
+      ...prev,
+      division: p.division || prev.division,
+      district: p.district || prev.district,
+      upazila: p.upazila || prev.upazila,
+      unionName: p.unionName || prev.unionName,
+      postcode: /^\d{4}$/.test(p.postcode) ? p.postcode : prev.postcode,
+      streetAddress: p.streetAddress || prev.streetAddress,
+      latitude: p.latitude,
+      longitude: p.longitude,
+    }));
+    setErrors({});
+  }, []);
+
   function validate(): boolean {
     const next: Partial<Record<FieldKey, string>> = {};
     if (!form.recipientName.trim()) next.recipientName = "Recipient name is required.";
@@ -151,6 +177,8 @@ export function AddressFormDialog({
       unionName: form.unionName.trim() || undefined,
       postcode: form.postcode.trim(),
       streetAddress: form.streetAddress.trim(),
+      latitude: form.latitude ?? undefined,
+      longitude: form.longitude ?? undefined,
       isDefault: form.isDefault,
     };
 
@@ -183,6 +211,20 @@ export function AddressFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+          {isMapsEnabled && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Find your location</Label>
+              <LocationPicker
+                value={
+                  form.latitude != null && form.longitude != null
+                    ? { lat: form.latitude, lng: form.longitude }
+                    : null
+                }
+                onPick={applyPicked}
+              />
+            </div>
+          )}
+
           {/* Label chips */}
           <div className="flex flex-col gap-1.5">
             <Label>Label</Label>

@@ -136,14 +136,14 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border px-5 py-4">
-              {cart.discountPaisa !== "0" && (
+              {cart.appliedCoupon && (
                 <div className="mb-1.5 flex justify-between text-[13px] font-semibold text-green">
-                  <span>Voucher</span>
+                  <span>Voucher · {cart.appliedCoupon.code}</span>
                   <span>−{formatPaisa(cart.discountPaisa)}</span>
                 </div>
               )}
               <div className="mb-3 flex items-baseline justify-between">
-                <span className="text-sm font-bold">Subtotal</span>
+                <span className="text-sm font-bold">Total</span>
                 <span className="font-display text-xl font-extrabold text-primary">
                   {formatPaisa(cart.grandTotalPaisa)}
                 </span>

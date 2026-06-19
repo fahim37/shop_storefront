@@ -137,7 +137,7 @@ export function CategoryMegaMenu() {
                     onFocus={() => setActiveId(cat.id)}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors duration-150",
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors duration-150",
                       on
                         ? "bg-card text-primary shadow-sm"
                         : "text-sub hover:bg-card/60",

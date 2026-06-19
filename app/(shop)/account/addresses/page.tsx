@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "@/components/ui/sonner";
 import { ApiError } from "@/lib/api/http";
@@ -156,6 +156,27 @@ function AddressCard({
   );
 }
 
+function AddressCardSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-center gap-2">
+        <Skeleton className="size-9 rounded-full" />
+        <Skeleton className="h-5 w-16 rounded-md" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-2/3" />
+      </div>
+      <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+        <Skeleton className="h-10 w-16 rounded-md" />
+        <Skeleton className="h-10 w-24 rounded-md" />
+        <Skeleton className="ml-auto h-10 w-20 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
 export default function AddressesPage() {
   const { data: addresses, isLoading, isError, refetch } = useAddresses();
 
@@ -199,8 +220,10 @@ export default function AddressesPage() {
 
       <div className="mt-4">
         {isLoading ? (
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <Spinner className="size-7" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <AddressCardSkeleton key={i} />
+            ))}
           </div>
         ) : isError ? (
           <EmptyState

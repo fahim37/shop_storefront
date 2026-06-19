@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaImage } from "@/components/ui/media-image";
+import { ProductLightbox } from "@/components/product/product-lightbox";
 import { mediaUrl } from "@/lib/media";
 import type { ProductImage } from "@/lib/api/types";
 
@@ -50,6 +52,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
   const active =
     ordered.find((img) => img.id === activeId) ?? ordered[0] ?? null;
+
+  const activeIndex = Math.max(
+    0,
+    ordered.findIndex((img) => img.id === active?.id),
+  );
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
   const hasThumbs = ordered.length > 1;
 
@@ -101,7 +109,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
       {/* Thumbnail rail */}
       {hasThumbs && (
-        <div className="no-scrollbar flex shrink-0 gap-2.5 overflow-x-auto sm:max-h-[560px] sm:flex-col sm:overflow-y-auto">
+        <div className="no-scrollbar flex shrink-0 gap-2.5 overflow-x-auto sm:max-h-[640px] sm:flex-col sm:overflow-y-auto">
           {ordered.map((img) => {
             const on = active?.id === img.id;
             return (
@@ -113,7 +121,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                 aria-label={img.altText ?? title}
                 aria-pressed={on}
                 className={cn(
-                  "relative size-16 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-colors sm:size-[68px]",
+                  "relative size-16 shrink-0 overflow-hidden rounded border-2 bg-muted transition-colors sm:size-[76px]",
                   on
                     ? "border-primary ring-1 ring-primary/30"
                     : "border-border hover:border-primary/40",
@@ -136,10 +144,26 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       <div className="relative min-w-0 flex-1">
         <div
           ref={heroRef}
+          role={active ? "button" : undefined}
+          tabIndex={active ? 0 : undefined}
+          aria-label={active ? "Open image viewer" : undefined}
+          onClick={active ? () => setLightboxOpen(true) : undefined}
+          onKeyDown={
+            active
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLightboxOpen(true);
+                  }
+                }
+              : undefined
+          }
           onMouseMove={canZoom && zoomSrc ? moveLens : undefined}
           onMouseLeave={() => setLens(null)}
           className={cn(
-            "relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted shadow-[var(--shadow-card)]",
+            "group/hero relative aspect-square overflow-hidden rounded-xl border border-border bg-muted",
+            active &&
+              "cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary",
             zooming && "cursor-crosshair",
           )}
         >
@@ -149,8 +173,16 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             variant="hero"
             alt={active?.altText ?? title}
             className="object-contain animate-in fade-in-0"
-            sizes="(min-width: 1024px) 520px, 100vw"
+            sizes="(min-width: 1024px) 620px, 100vw"
           />
+
+          {/* Tap/expand hint — fades out on desktop hover, where the
+              inline magnifier takes over; the primary zoom path on touch. */}
+          {active && (
+            <span className="pointer-events-none absolute bottom-2.5 right-2.5 grid size-8 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition-opacity duration-200 group-hover/hero:opacity-0">
+              <ZoomIn className="size-4" strokeWidth={2.2} />
+            </span>
+          )}
 
           {/* Lens */}
           {zooming && lens && (
@@ -170,7 +202,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         {zooming && lens && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-[calc(100%+16px)] z-30 hidden w-full overflow-hidden rounded-2xl border border-border bg-white shadow-[var(--shadow-pop)] animate-in fade-in-0 zoom-in-95 duration-150 lg:block"
+            className="pointer-events-none absolute inset-y-0 left-[calc(100%+16px)] z-30 hidden w-full overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-pop)] animate-in fade-in-0 zoom-in-95 duration-150 lg:block"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -187,6 +219,16 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           </div>
         )}
       </div>
+
+      {lightboxOpen && active && (
+        <ProductLightbox
+          images={ordered}
+          index={activeIndex}
+          onIndex={(i) => setActiveId(ordered[i]?.id ?? null)}
+          onClose={() => setLightboxOpen(false)}
+          title={title}
+        />
+      )}
     </div>
   );
 }

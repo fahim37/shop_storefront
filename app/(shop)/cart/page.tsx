@@ -165,13 +165,36 @@ function CartSummary() {
   const [code, setCode] = React.useState("");
 
   const submitCoupon = async () => {
-    if (!code.trim()) return;
+    const trimmed = code.trim();
+    if (!/^[A-Za-z0-9_-]{2,40}$/.test(trimmed)) {
+      toast.error("Enter a valid voucher code");
+      return;
+    }
     try {
-      await applyCoupon.mutateAsync(code.trim());
+      await applyCoupon.mutateAsync(trimmed);
       toast.success("Voucher applied");
       setCode("");
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Invalid voucher code");
+      if (err instanceof ApiError) {
+        switch (err.code) {
+          case "COUPON_EXPIRED":
+            toast.error("This voucher has expired");
+            break;
+          case "COUPON_USAGE_LIMIT":
+            toast.error("This voucher has reached its usage limit");
+            break;
+          case "COUPON_INVALID":
+            toast.error("That voucher code isn't valid");
+            break;
+          case "VALIDATION_FAILED":
+            toast.error("Enter a valid voucher code");
+            break;
+          default:
+            toast.error(err.message);
+        }
+      } else {
+        toast.error("Invalid voucher code");
+      }
     }
   };
 

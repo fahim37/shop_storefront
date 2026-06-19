@@ -18,7 +18,7 @@ import {
 import { hasAccessToken } from "@/lib/auth/tokens";
 import { useAuth } from "@/lib/auth/auth-context";
 import { sumPaisa } from "@/lib/format";
-import type { CartMergeResult, CartSnapshot } from "@/lib/api/types";
+import type { CartLine, CartMergeResult, CartSnapshot } from "@/lib/api/types";
 
 /** Headers for a cart request. Logged-in users rely on the Bearer token; guests
  *  send `X-Cart-Session` (minted on writes). */
@@ -84,15 +84,55 @@ export function useCartCount(): number {
 /* Mutations                                                               */
 /* ----------------------------------------------------------------------- */
 
+/**
+ * Everything needed to render a cart line instantly (optimistically) before
+ * the server responds. Supplied by callers that already hold the product +
+ * variant (e.g. the PDP buy panel) so "Add to cart" feels instant.
+ */
+export interface OptimisticCartLineInput {
+  variantId: string;
+  productId: string;
+  productTitle: string;
+  productSlug: string;
+  vendorId: string;
+  sku: string;
+  optionValues: Record<string, string>;
+  unitPricePaisa: string;
+  imageMediaId: string | null;
+}
+
 export function useAddToCart() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { variantId: string; quantity?: number }) =>
+    mutationFn: (vars: {
+      variantId: string;
+      quantity?: number;
+      optimistic?: OptimisticCartLineInput;
+    }) =>
       http.post<CartSnapshot>(
         "/cart/items",
         { variantId: vars.variantId, quantity: vars.quantity ?? 1 },
         { headers: cartHeaders(true) },
       ),
+    // When the caller passes `optimistic`, drop the line into the cache
+    // synchronously so the drawer + header badge update the instant the user
+    // clicks — no spinner, no wait. Rolls back on failure; the server snapshot
+    // is authoritative on success.
+    onMutate: async (vars) => {
+      if (!vars.optimistic) return undefined;
+      await qc.cancelQueries({ queryKey: qk.cart() });
+      const prev = qc.getQueryData<CartSnapshot>(qk.cart());
+      qc.setQueryData(
+        qk.cart(),
+        optimisticAdd(prev ?? EMPTY_CART, vars.optimistic, vars.quantity ?? 1),
+      );
+      return { prev, optimistic: true as const };
+    },
+    onError: (_e, _v, ctx) => {
+      // Only roll back when we actually applied an optimistic patch; `prev`
+      // may be undefined (first add), which correctly clears the stray line.
+      if (ctx?.optimistic) qc.setQueryData(qk.cart(), ctx.prev);
+    },
     onSuccess: (snapshot) => qc.setQueryData(qk.cart(), snapshot),
   });
 }
@@ -247,6 +287,65 @@ function recompute(cart: CartSnapshot): CartSnapshot {
     grandTotalPaisa: grand,
     vendorGroups,
   };
+}
+
+function optimisticAdd(
+  cart: CartSnapshot,
+  input: OptimisticCartLineInput,
+  quantity: number,
+): CartSnapshot {
+  const existing = cart.items.find(
+    (l) => l.variantId === input.variantId && !l.savedForLater,
+  );
+
+  let items: CartLine[];
+  if (existing) {
+    const qtyNext = existing.quantity + quantity;
+    items = cart.items.map((l) =>
+      l.itemId === existing.itemId
+        ? {
+            ...l,
+            quantity: qtyNext,
+            lineTotalPaisa: (
+              BigInt(l.unitPricePaisa) * BigInt(qtyNext)
+            ).toString(),
+          }
+        : l,
+    );
+  } else {
+    const line: CartLine = {
+      // Temp id; replaced by the real one when the server snapshot lands.
+      itemId: `optimistic-${input.variantId}`,
+      variantId: input.variantId,
+      productId: input.productId,
+      productTitle: input.productTitle,
+      productSlug: input.productSlug,
+      vendorId: input.vendorId,
+      sku: input.sku,
+      optionValues: input.optionValues,
+      quantity,
+      unitPricePaisa: input.unitPricePaisa,
+      lineTotalPaisa: (BigInt(input.unitPricePaisa) * BigInt(quantity)).toString(),
+      livePricePaisa: input.unitPricePaisa,
+      priceChanged: false,
+      imageMediaId: input.imageMediaId,
+      reservationId: null,
+      savedForLater: false,
+    };
+    items = [...cart.items, line];
+  }
+
+  // Ensure a vendor group exists for this vendor; recompute fills its items.
+  const vendorGroups = cart.vendorGroups.some(
+    (g) => g.vendorId === input.vendorId,
+  )
+    ? cart.vendorGroups
+    : [
+        ...cart.vendorGroups,
+        { vendorId: input.vendorId, subtotalPaisa: "0", items: [] },
+      ];
+
+  return recompute({ ...cart, items, vendorGroups });
 }
 
 function optimisticQuantity(

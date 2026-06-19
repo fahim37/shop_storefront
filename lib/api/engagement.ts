@@ -27,12 +27,48 @@ export function useWishlistIds(): Set<string> {
   return new Set((data ?? []).map((w) => w.productId));
 }
 
+/** Number of distinct products saved — drives the header badge. */
+export function useWishlistCount(): number {
+  return useWishlistIds().size;
+}
+
 export function useAddWishlist() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (productId: string) =>
       http.post(`/wishlist/${productId}`, undefined),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.wishlist() }),
+    // Optimistic insert so the heart fills + the header count bumps instantly;
+    // mirrors useRemoveWishlist's optimistic filter. The placeholder only needs
+    // a productId for useWishlistIds()/useWishlistCount(); onSettled refetches
+    // the authoritative row (title, thumbnail, price …).
+    onMutate: async (productId) => {
+      await qc.cancelQueries({ queryKey: qk.wishlist() });
+      const prev = qc.getQueryData<WishlistItem[]>(qk.wishlist());
+      const optimistic: WishlistItem = {
+        userId: "",
+        productId,
+        addedAt: new Date().toISOString(),
+        productTitle: "",
+        productSlug: "",
+        productStatus: "published",
+        vendorId: "",
+        thumbnailMediaId: null,
+        minPricePaisa: null,
+        brandName: null,
+        vendorName: null,
+      };
+      qc.setQueryData<WishlistItem[]>(qk.wishlist(), (old) => {
+        const list = old ?? [];
+        return list.some((w) => w.productId === productId)
+          ? list
+          : [optimistic, ...list];
+      });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.wishlist(), ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.wishlist() }),
   });
 }
 

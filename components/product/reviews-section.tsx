@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   HelpCircle,
   MessageSquare,
+  MessageSquareQuote,
+  MessagesSquare,
   PencilLine,
   Star,
   ThumbsUp,
@@ -41,61 +43,59 @@ export interface ReviewsSectionProps {
   product: ProductCardRow;
 }
 
-/** Tabbed PDP detail block: Description / Specifications / Reviews / Questions. */
-export function ReviewsSection({ product }: ReviewsSectionProps) {
-  const [tab, setTab] = React.useState<
-    "description" | "specifications" | "reviews" | "questions"
-  >("description");
-
+/**
+ * Stacked PDP detail sections — Description / Specifications / Reviews /
+ * Questions, all visible on the page (no tabs) so everything is scannable and
+ * deep-linkable (`#reviews`, `#questions`).
+ */
+export function ProductDetailSections({ product }: ReviewsSectionProps) {
   const attributeEntries = React.useMemo(
     () => specEntries(product.attributes),
     [product.attributes],
   );
 
-  const tabs: Array<{ key: typeof tab; label: string }> = [
-    { key: "description", label: "Description" },
-    ...(attributeEntries.length
-      ? [{ key: "specifications" as const, label: "Specifications" }]
-      : []),
-    { key: "reviews", label: "Reviews" },
-    { key: "questions", label: "Questions" },
-  ];
-
-  // Keep the active tab valid if specs are absent.
-  const active = tabs.some((t) => t.key === tab) ? tab : "description";
-
   return (
-    <section className="mt-10">
-      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto border-b-2 border-border">
-        {tabs.map((t) => {
-          const on = active === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              aria-pressed={on}
-              className={cn(
-                "relative -mb-0.5 whitespace-nowrap px-4 py-3 text-sm font-extrabold transition-colors outline-none",
-                on
-                  ? "text-primary shadow-[inset_0_-3px_0_var(--primary)]"
-                  : "text-faint hover:text-sub",
-              )}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex flex-col gap-12">
+      <DetailSection id="description" title="Description">
+        <DescriptionTab product={product} />
+      </DetailSection>
 
-      <div className="mt-5">
-        {active === "description" && <DescriptionTab product={product} />}
-        {active === "specifications" && (
+      {attributeEntries.length > 0 && (
+        <DetailSection id="specifications" title="Specifications">
           <SpecificationsTab entries={attributeEntries} />
-        )}
-        {active === "reviews" && <ReviewsTab product={product} />}
-        {active === "questions" && <QuestionsTab productId={product.id} />}
+        </DetailSection>
+      )}
+
+      <DetailSection id="reviews" title="Ratings & reviews">
+        <ReviewsTab product={product} />
+      </DetailSection>
+
+      <DetailSection id="questions" title="Questions & answers">
+        <QuestionsTab productId={product.id} />
+      </DetailSection>
+    </div>
+  );
+}
+
+/** Section heading with a hairline rule — a clear divider between blocks. */
+function DetailSection({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <div className="mb-5 flex items-center gap-3">
+        <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-[22px]">
+          {title}
+        </h2>
+        <span className="h-px flex-1 bg-border" />
       </div>
+      {children}
     </section>
   );
 }
@@ -221,7 +221,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
           />
         ) : reviews.length === 0 ? (
           <EmptyState
-            icon={<Star className="size-6" />}
+            icon={<MessageSquareQuote />}
             title="No reviews yet"
             description="Be the first to review this product after your order is delivered."
             action={
@@ -393,7 +393,7 @@ function QuestionsTab({ productId }: { productId: string }) {
           />
         ) : questions.length === 0 ? (
           <EmptyState
-            icon={<HelpCircle className="size-6" />}
+            icon={<MessagesSquare />}
             title="No questions yet"
             description="Ask the seller anything about this product — they usually reply within a day."
           />

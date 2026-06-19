@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 
 const PLACEHOLDER_PHOTO = "https://gcl.com.bd/avatar.png";
@@ -265,8 +265,9 @@ function AddressBookCard() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Spinner className="size-5 text-primary" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
           </div>
         ) : isError ? (
           <p className="py-4 text-sm text-sub">
@@ -303,6 +304,55 @@ function AddressBookCard() {
 }
 
 /* --------------------------------------------------------------------- */
+/* Loading skeleton                                                      */
+/* --------------------------------------------------------------------- */
+
+function InfoRowSkeleton() {
+  return (
+    <div className="flex items-start gap-3">
+      <Skeleton className="mt-0.5 size-9 shrink-0 rounded-lg" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+    </div>
+  );
+}
+
+function PersonalInfoSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Card className="shadow-[var(--shadow-card)]">
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-10 w-28 rounded-md" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <InfoRowSkeleton key={i} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-[var(--shadow-card)]">
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-10 w-36 rounded-md" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------- */
 /* Page                                                                  */
 /* --------------------------------------------------------------------- */
 
@@ -310,11 +360,7 @@ export default function AccountPersonalInfoPage() {
   const { data: me, isLoading, isError } = useMe();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Spinner className="size-6 text-primary" />
-      </div>
-    );
+    return <PersonalInfoSkeleton />;
   }
 
   if (isError || !me) {

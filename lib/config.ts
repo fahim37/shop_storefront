@@ -36,3 +36,24 @@ export const GOOGLE_CLIENT_ID: string =
 
 /** Whether social Google sign-in is configured/enabled. */
 export const isGoogleAuthEnabled: boolean = GOOGLE_CLIENT_ID.length > 0;
+
+/**
+ * Google Maps Platform key (Maps JavaScript API + Places API New + Geocoding
+ * API). Client-side key — restrict it by HTTP referrer + API in the Cloud
+ * console. When empty, address forms fall back to manual entry (no map).
+ */
+export const GOOGLE_MAPS_API_KEY: string =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
+/** Vector Map ID required by AdvancedMarkerElement. `DEMO_MAP_ID` is fine for dev. */
+export const GOOGLE_MAPS_MAP_ID: string =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
+
+/** Whether the map-backed location picker is available. */
+export const isMapsEnabled: boolean = GOOGLE_MAPS_API_KEY.length > 0;
+
+/** Default map center when no pin yet — Dhaka, Bangladesh. */
+export const MAP_DEFAULT_CENTER = { lat: 23.8103, lng: 90.4125 } as const;
+
+/** Bias/restrict Places + geocoding to Bangladesh. */
+export const MAP_REGION_CODE = "bd";

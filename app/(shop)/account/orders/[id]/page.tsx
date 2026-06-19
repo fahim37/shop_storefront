@@ -22,7 +22,7 @@ import { formatDate, formatDateTime, formatPaisa } from "@/lib/format";
 import { ApiError } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MediaImage } from "@/components/ui/media-image";
 import { Separator } from "@/components/ui/separator";
@@ -57,12 +57,7 @@ export default function OrderDetailPage() {
     orderError && error instanceof ApiError && error.status === 404;
 
   if (orderLoading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-24 text-sub">
-        <Spinner className="size-5 text-primary" />
-        <span className="text-sm">Loading order…</span>
-      </div>
-    );
+    return <OrderDetailSkeleton />;
   }
 
   if (notFound || (orderError && !order)) {
@@ -83,6 +78,33 @@ export default function OrderDetailPage() {
   if (!order) return null;
 
   return <OrderDetail order={order} tracking={tracking} />;
+}
+
+function OrderDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Back + header */}
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-28" />
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-11 w-32 rounded-md" />
+        </div>
+      </div>
+
+      {/* Tracking banner */}
+      <Skeleton className="h-24 rounded-2xl" />
+
+      {/* Items / sub-orders */}
+      <Skeleton className="h-72 rounded-2xl" />
+
+      {/* Totals */}
+      <Skeleton className="h-44 rounded-2xl" />
+    </div>
+  );
 }
 
 function OrderDetail({
@@ -416,8 +438,8 @@ function OrderSummary({ order }: { order: OrderView }) {
         />
         {hasDiscount && (
           <Row
-            label="Discount"
-            value={`- ${formatPaisa(order.discountPaisa)}`}
+            label="Voucher"
+            value={`−${formatPaisa(order.discountPaisa)}`}
             valueClassName="text-green"
           />
         )}

@@ -58,6 +58,8 @@ export interface ProductVariant {
   weightGrams: number | null;
   dimensions: { l: number; w: number; h: number } | null;
   isActive: boolean;
+  /** Units available to add = on_hand - reserved (server-computed). */
+  availableStock: number;
   createdAt: string;
   updatedAt: string;
 }

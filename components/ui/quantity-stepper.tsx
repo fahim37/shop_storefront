@@ -34,7 +34,7 @@ export function QuantityStepper({
   return (
     <div
       className={cn(
-        "inline-flex items-center overflow-hidden rounded-[10px] border border-border",
+        "inline-flex items-center overflow-hidden rounded-md border border-border",
         disabled && "opacity-60",
         className,
       )}

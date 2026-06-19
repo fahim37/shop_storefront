@@ -17,7 +17,7 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { ProductGrid } from "@/components/product/product-grid";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { ProductGallery } from "@/components/product/product-gallery";
-import { ReviewsSection } from "@/components/product/reviews-section";
+import { ProductDetailSections } from "@/components/product/reviews-section";
 import { RecentlyViewedTracker } from "@/components/product/recently-viewed-tracker";
 import { fromRecHit, type CardProduct } from "@/lib/api/card";
 import { formatCompact, formatRating } from "@/lib/format";
@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: PageParams) {
       <Breadcrumbs items={crumbs} className="mb-4" />
 
       {/* Top: gallery + info */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,560px)_1fr] lg:gap-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-10">
         {/* Left — gallery */}
         <div className="min-w-0">
           <ProductGallery images={detail.images} title={product.title} />
@@ -200,9 +200,14 @@ export default async function ProductPage({ params }: PageParams) {
         )}
       </div>
 
+      {/* Description / Specs / Reviews / Questions — full, stacked (no tabs) */}
+      <section className="mt-12">
+        <ProductDetailSections product={product} />
+      </section>
+
       {/* You may also like */}
       {relatedCards.length > 0 && (
-        <section className="mt-12">
+        <section className="mt-14">
           <SectionHeader
             title="You may also like"
             subtitle="Frequently bought together"
@@ -210,9 +215,6 @@ export default async function ProductPage({ params }: PageParams) {
           <ProductGrid products={relatedCards} />
         </section>
       )}
-
-      {/* Description / Specs / Reviews / Questions */}
-      <ReviewsSection product={product} />
 
       {/* Side-effect: record this view */}
       <RecentlyViewedTracker productId={product.id} />

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useAuth } from "@/lib/auth/auth-context";
 import { initials } from "@/lib/format";
@@ -43,11 +43,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   if (status === "loading") {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner className="size-7" />
-      </div>
-    );
+    return <AccountShellSkeleton />;
   }
 
   if (status !== "authenticated" || !user) {
@@ -90,7 +86,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13px] font-bold transition-colors",
+                    "flex items-center gap-3 rounded-md px-3.5 py-2.5 text-[13px] font-bold transition-colors",
                     active
                       ? "bg-primary text-white"
                       : "text-sub hover:bg-muted",
@@ -106,7 +102,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => void logout()}
-              className="mt-1 flex items-center gap-3 rounded-[10px] px-3.5 py-2.5 text-[13px] font-bold text-red hover:bg-red/10"
+              className="mt-1 flex items-center gap-3 rounded-md px-3.5 py-2.5 text-[13px] font-bold text-red hover:bg-red/10"
             >
               <LogOut className="size-4 text-red" />
               Log out
@@ -114,6 +110,33 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
           </nav>
         </aside>
         <div className="flex min-w-0 flex-col gap-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Mirrors the shell layout while auth status resolves. */
+function AccountShellSkeleton() {
+  return (
+    <div className="wrap py-4">
+      <Skeleton className="mb-4 h-4 w-40" />
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <aside className="h-max rounded-2xl border border-border bg-card p-4 pt-6">
+          <div className="mb-3 flex flex-col items-center gap-2 border-b border-border pb-5">
+            <Skeleton className="size-[76px] rounded-full" />
+            <Skeleton className="mt-1 h-4 w-28" />
+            <Skeleton className="h-3 w-36" />
+          </div>
+          <nav className="flex flex-col gap-0.5">
+            {Array.from({ length: NAV.length + 1 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 rounded-md" />
+            ))}
+          </nav>
+        </aside>
+        <div className="flex min-w-0 flex-col gap-4">
+          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+        </div>
       </div>
     </div>
   );

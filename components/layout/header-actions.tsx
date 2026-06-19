@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useCartCount } from "@/lib/api/cart";
+import { useWishlistCount } from "@/lib/api/engagement";
 import { useUIStore } from "@/lib/store/ui";
 import { formatPaisa } from "@/lib/format";
 import { useCart } from "@/lib/api/cart";
 import { initials } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { CountBadge } from "@/components/ui/count-badge";
 
 /** Account dropdown (or Sign in) for the desktop nav. */
 export function AccountMenu() {
@@ -102,14 +105,27 @@ export function AccountMenu() {
   );
 }
 
-/** Wishlist link with no count (kept simple). */
+/** Wishlist link: icon + saved-count badge; heart fills once you've saved items. */
 export function WishlistLink() {
+  const count = useWishlistCount();
+  const active = count > 0;
+
   return (
     <Link
       href="/account/wishlist"
-      className="flex items-center gap-2 text-xs font-bold text-ink"
+      aria-label={`Wishlist, ${count} saved item${count === 1 ? "" : "s"}`}
+      className="group flex items-center gap-2 text-xs font-bold text-ink"
     >
-      <Heart className="size-6" strokeWidth={1.6} />
+      <span className="relative">
+        <Heart
+          className={cn(
+            "size-6 transition-colors duration-200",
+            active && "fill-red text-red",
+          )}
+          strokeWidth={1.6}
+        />
+        <CountBadge count={count} className="bg-amber text-blue-deep" />
+      </span>
       <span className="hidden text-left leading-tight lg:block">
         <small className="block text-[10.5px] font-semibold text-faint">Saved</small>
         Wishlist
@@ -131,13 +147,9 @@ export function CartButton() {
       aria-label={`Open cart, ${count} item${count === 1 ? "" : "s"}`}
       className="group flex items-center gap-2 text-xs font-bold text-ink"
     >
-      <span className="relative transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-90">
+      <span className="relative">
         <ShoppingCart className="size-6" strokeWidth={1.6} />
-        {count > 0 && (
-          <span className="absolute -right-2 -top-2 flex min-w-[18px] items-center justify-center rounded-full bg-amber px-1 text-[10px] font-extrabold text-blue-deep">
-            {count}
-          </span>
-        )}
+        <CountBadge count={count} className="bg-amber text-blue-deep" />
       </span>
       <span className="hidden text-left leading-tight lg:block">
         <small className="block text-[10.5px] font-semibold text-faint">Total</small>
