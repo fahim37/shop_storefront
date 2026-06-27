@@ -15,7 +15,7 @@ import {
 import { cartSessionHeaders } from "@/lib/cart/cart-session";
 import { hasAccessToken } from "@/lib/auth/tokens";
 import type {
-  AutocompleteItem,
+  AutocompleteResponse,
   Facets,
   RecResponse,
   SearchResponse,
@@ -79,17 +79,27 @@ export function useSearchFacets(params: SearchParams, enabled = true) {
   });
 }
 
-/** Lightweight autocomplete (min 2 chars). */
+/** Typo-tolerant autocomplete (min 2 chars); also returns a "did you mean". */
 export function useAutocomplete(query: string) {
   const q = query.trim();
   return useQuery({
     queryKey: qk.autocomplete(q),
     queryFn: () =>
-      http.get<{ items: AutocompleteItem[] }>("/search/autocomplete", {
+      http.get<AutocompleteResponse>("/search/autocomplete", {
         params: { q },
       }),
     enabled: q.length >= 2,
     staleTime: 30_000,
+  });
+}
+
+/** Top recent searches — powers the empty-state search dropdown. */
+export function useTrending(enabled = true) {
+  return useQuery({
+    queryKey: qk.trending(),
+    queryFn: () => http.get<{ items: string[] }>("/search/trending"),
+    enabled,
+    staleTime: 5 * 60_000,
   });
 }
 

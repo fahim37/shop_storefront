@@ -56,6 +56,7 @@ export const qk = {
   // search
   search: (params: SearchParams) => ["search", params] as const,
   autocomplete: (q: string) => ["autocomplete", q] as const,
+  trending: () => ["search", "trending"] as const,
   recommendationsHome: () => ["recommendations", "home"] as const,
   cartRecommendations: () => ["recommendations", "cart"] as const,
 

@@ -197,6 +197,12 @@ export interface AutocompleteItem {
   thumbnailMediaId: string | null;
 }
 
+export interface AutocompleteResponse {
+  items: AutocompleteItem[];
+  /** "Did you mean" — closest product title when the prefix matched nothing. */
+  suggestion: string | null;
+}
+
 /* ----------------------------------------------------------------------- */
 /* Facets (faceted filtering — /v1/products/facets & /v1/search/facets)    */
 /* ----------------------------------------------------------------------- */

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Search as SearchIcon, SearchX, Sparkles } from "lucide-react";
+import { Search as SearchIcon, SearchX, Sparkles, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -116,6 +116,25 @@ function SearchResults() {
             : `${totalLabel} ${hits.length === 1 ? "result" : "results"} found`}
         </p>
       </div>
+
+      {/* "Did you mean" hint — shown when the exact term didn't match but we
+          found close (typo/semantic) results anyway, so the smart matching is
+          visible instead of silent. The zero-results case is handled below. */}
+      {!isLoading && products.length > 0 && pages[0]?.suggestion && (
+        <Link
+          href={`/search?q=${encodeURIComponent(pages[0].suggestion)}`}
+          className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-blue-soft"
+        >
+          <Lightbulb className="size-4 shrink-0 text-amber-500" strokeWidth={2.2} />
+          <span>
+            Did you mean{" "}
+            <span className="font-extrabold text-primary">
+              {pages[0].suggestion}
+            </span>
+            ?
+          </span>
+        </Link>
+      )}
 
       {/* Toolbar: filters (mobile) + sort */}
       <div className="flex items-center justify-between gap-3">
