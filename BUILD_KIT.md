@@ -79,7 +79,8 @@ Radii `rounded-xl/2xl`; shadows `shadow-[var(--shadow-card)]`, `shadow-[var(--sh
 - Search `@/lib/api/search`: `useSearchInfinite(params, enabled)` (pages: `SearchResponse`; flatten `pages.flatMap(p=>p.items)`),
   `useAutocomplete(q)`, `recordSearchClick(searchQueryId, productId, position)`, `useHomeRecommendations()`, `useCartRecommendations(enabled)`.
   SearchParams: `{ q, sort?, categoryId?, brandId?, priceMinPaisa?, priceMaxPaisa?, rating?, limit? }`.
-- Cart `@/lib/api/cart`: `useCart()`→`{cart, isLoading, …}`, `useCartCount()`, `useAddToCart()`, `useUpdateCartItem()`,
+- Cart `@/lib/api/cart`: `useCart()`→`{cart, isLoading, …}`, `useCartCount()`, `useAddToCart()`, `useCartItemQuantity()`
+  (→`setQuantity(itemId, qty, onError?)`; optimistic + debounced/coalesced stepper writes),
   `useRemoveCartItem()`, `useSaveForLater()`, `useApplyCoupon()`, `useRemoveCoupon()`. Mutations take/return per API.
 - Orders `@/lib/api/orders`: `useOrders({limit?,placedAfter?})`→OrderListItem[], `useOrder(id)`→OrderView,
   `useOrderTracking(id)`→OrderTracking, `useCheckout()`, `useCancelOrder()`.

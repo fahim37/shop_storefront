@@ -13,20 +13,22 @@ import { MediaImage } from "@/components/ui/media-image";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "@/components/ui/sonner";
 import { formatPaisa } from "@/lib/format";
 import { visibleOptionEntries } from "@/lib/options";
 import { useUIStore } from "@/lib/store/ui";
 import {
+  cartErrorMessage,
   useCart,
+  useCartItemQuantity,
   useRemoveCartItem,
-  useUpdateCartItem,
 } from "@/lib/api/cart";
 
 export function CartDrawer() {
   const open = useUIStore((s) => s.cartDrawerOpen);
   const setOpen = useUIStore((s) => s.setCartDrawer);
   const { cart, isLoading } = useCart();
-  const update = useUpdateCartItem();
+  const setQuantity = useCartItemQuantity();
   const remove = useRemoveCartItem();
 
   const count = cart.items.reduce((n, l) => n + l.quantity, 0);
@@ -108,12 +110,11 @@ export function CartDrawer() {
                           <QuantityStepper
                             size="sm"
                             value={line.quantity}
-                            loading={
-                              update.isPending &&
-                              update.variables?.itemId === line.itemId
-                            }
+                            max={line.maxQuantity}
                             onChange={(q) =>
-                              update.mutate({ itemId: line.itemId, quantity: q })
+                              setQuantity(line.itemId, q, (err) =>
+                                toast.error(cartErrorMessage(err)),
+                              )
                             }
                           />
                           <span className="font-display text-sm font-extrabold text-primary">

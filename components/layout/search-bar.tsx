@@ -104,7 +104,7 @@ export function SearchBar({
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
                   >
                     <span className="size-9 shrink-0 overflow-hidden rounded-md">
-                      <MediaImage mediaId={null} alt="" />
+                      <MediaImage mediaId={s.thumbnailMediaId} variant="thumbnail" alt="" />
                     </span>
                     <span className="line-clamp-1 font-semibold">{s.title}</span>
                   </button>

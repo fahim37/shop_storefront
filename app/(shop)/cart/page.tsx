@@ -26,17 +26,18 @@ import { formatPaisa } from "@/lib/format";
 import { visibleOptionEntries } from "@/lib/options";
 import { fromRecHit } from "@/lib/api/card";
 import {
+  cartErrorMessage,
   useApplyCoupon,
   useCart,
+  useCartItemQuantity,
   useRemoveCartItem,
   useRemoveCoupon,
-  useUpdateCartItem,
 } from "@/lib/api/cart";
 import { useCartRecommendations } from "@/lib/api/search";
 
 export default function CartPage() {
   const { cart, isLoading } = useCart();
-  const update = useUpdateCartItem();
+  const setQuantity = useCartItemQuantity();
   const remove = useRemoveCartItem();
   const recs = useCartRecommendations(cart.items.length > 0);
 
@@ -120,8 +121,12 @@ export default function CartPage() {
                       </div>
                       <QuantityStepper
                         value={line.quantity}
-                        loading={update.isPending && update.variables?.itemId === line.itemId}
-                        onChange={(q) => update.mutate({ itemId: line.itemId, quantity: q })}
+                        max={line.maxQuantity}
+                        onChange={(q) =>
+                          setQuantity(line.itemId, q, (err) =>
+                            toast.error(cartErrorMessage(err)),
+                          )
+                        }
                       />
                       <div className="w-24 shrink-0 text-right">
                         <b className="font-display text-[15px] font-extrabold text-primary">

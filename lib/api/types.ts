@@ -194,6 +194,7 @@ export interface AutocompleteItem {
   id: string;
   title: string;
   slug: string;
+  thumbnailMediaId: string | null;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -257,6 +258,9 @@ export interface CartLine {
   imageMediaId: string | null;
   reservationId: string | null;
   savedForLater: boolean;
+  /** Largest quantity this line can be raised to given current stock
+   *  (current quantity + still-available units). The stepper clamps to it. */
+  maxQuantity: number;
 }
 
 export interface CartVendorGroup {

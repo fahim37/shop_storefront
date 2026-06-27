@@ -39,7 +39,7 @@ notifications + wallet/transactions are truly cursor-paginated.
   → `{ items:[{ productId,title,slug,thumbnailMediaId,pricePaisa,ratingAverage(number),vendorId,categoryId,brandId,score }],
   nextCursor, hasMore, searchQueryId, semanticEnabled }`. sort ∈ `relevance|price_asc|price_desc|rating_desc|newest`.
   NO facets — build filter UI from catalog endpoints.
-- `GET /search/autocomplete?q` (min 2) → `{ items:[{ id,title,slug }] }` (max 8).
+- `GET /search/autocomplete?q` (min 2) → `{ items:[{ id,title,slug,thumbnailMediaId }] }` (max 8).
 - `POST /search/click { searchQueryId, productId, position }` → 201. Skip if searchQueryId === "".
 - `GET /me/recommendations/home` → `{ items: RecHit[], placement:"home", modelVersion }` (popular feed).
   RecHit = `{ productId, title, slug, thumbnailMediaId, pricePaisa, ratingAverage(number) }`.
@@ -55,7 +55,8 @@ notifications + wallet/transactions are truly cursor-paginated.
   subtotalPaisa, discountPaisa, shippingTotalPaisa, vatPaisa, grandTotalPaisa, expiresAt }
 ```
 CartLine = `{ itemId, variantId, productId, productTitle, productSlug, vendorId, sku, optionValues,
-quantity, unitPricePaisa, lineTotalPaisa, livePricePaisa, priceChanged, imageMediaId, savedForLater }`.
+quantity, maxQuantity, unitPricePaisa, lineTotalPaisa, livePricePaisa, priceChanged, imageMediaId, savedForLater }`.
+`maxQuantity` = highest quantity this line can be raised to given live stock (current qty + available units); clamp the stepper to it.
 - `POST /cart/items { variantId, quantity?(=1) }` →201 snapshot. `PATCH /cart/items/:itemId { quantity }` (absolute).
 - `DELETE /cart/items/:itemId`. `POST /cart/coupon { couponCode }`. `DELETE /cart/coupon`.
 - `POST /cart/save-for-later/:itemId` → snapshot + `{ moved:"wishlist"|"soft_flag" }`.

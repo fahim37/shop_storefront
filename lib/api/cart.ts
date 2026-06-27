@@ -99,6 +99,27 @@ export interface OptimisticCartLineInput {
   optionValues: Record<string, string>;
   unitPricePaisa: string;
   imageMediaId: string | null;
+  /** Units available to buy (on_hand - reserved) — caps the new line's stepper
+   *  until the authoritative server snapshot lands. */
+  availableStock: number;
+}
+
+/** Friendly, user-facing reason a cart write failed — stock-aware. */
+export function cartErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === "STOCK_INSUFFICIENT") {
+      const avail = Number(
+        (err.details as { available?: number } | undefined)?.available ?? 0,
+      );
+      return avail > 0
+        ? `Only ${avail} left in stock — we kept the most we could.`
+        : "Sorry, this item just sold out.";
+    }
+    if (err.code === "PRODUCT_INACTIVE") {
+      return "This item is no longer available.";
+    }
+  }
+  return "Couldn't update your cart — please try again.";
 }
 
 export function useAddToCart() {
@@ -137,26 +158,98 @@ export function useAddToCart() {
   });
 }
 
-export function useUpdateCartItem() {
+/**
+ * Quantity-stepper writes, done the way production carts do it.
+ *
+ * The problem with a plain mutation-per-click: each tap fires its own PATCH
+ * with an *absolute* quantity, mutations run in parallel, and the backend
+ * serializes them behind an inventory row-lock — so spamming `+` sends N
+ * requests that each return an INTERMEDIATE snapshot. The optimistic value
+ * jumps to the target, then crawls back up one-per-second as the queued
+ * responses land. Classic.
+ *
+ * The fix (returns a `setQuantity(itemId, qty, onError?)` function):
+ *   1. Patch the cart cache SYNCHRONOUSLY on every call → the number, line
+ *      total, grand total and header badge all move instantly (like the
+ *      wishlist heart). The cache stays the single source of truth.
+ *   2. DEBOUNCE + COALESCE the network write per line: ten quick taps send ONE
+ *      PATCH with the final quantity, not ten. No request storm, no row-lock
+ *      queue, no crawl-back.
+ *   3. Out-of-order safety: a server snapshot is applied only if it's still the
+ *      latest intent for that line; otherwise the pending flush reconciles.
+ *   4. On failure, re-pull the authoritative cart (so the line + maxQuantity
+ *      reflect real stock) and hand the error to the caller to toast.
+ */
+const QTY_DEBOUNCE_MS = 350;
+
+export function useCartItemQuantity() {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (vars: { itemId: string; quantity: number }) =>
-      http.patch<CartSnapshot>(
-        `/cart/items/${vars.itemId}`,
-        { quantity: vars.quantity },
-        { headers: cartHeaders(true) },
-      ),
-    onMutate: async (vars) => {
-      await qc.cancelQueries({ queryKey: qk.cart() });
+  // Per-line pending write: the latest target quantity + its debounce timer.
+  const pending = React.useRef(
+    new Map<string, { target: number; timer: ReturnType<typeof setTimeout> }>(),
+  );
+
+  const sync = React.useCallback(
+    (itemId: string, target: number, onError?: (err: unknown) => void) => {
+      void http
+        .patch<CartSnapshot>(
+          `/cart/items/${itemId}`,
+          { quantity: target },
+          { headers: cartHeaders(true) },
+        )
+        .then((snapshot) => {
+          const cur = pending.current.get(itemId);
+          // Apply only if this is still the latest intent; if the shopper has
+          // since clicked again, that newer flush owns the final word.
+          if (!cur || cur.target === target) {
+            pending.current.delete(itemId);
+            qc.setQueryData(qk.cart(), snapshot);
+          }
+        })
+        .catch((err) => {
+          const cur = pending.current.get(itemId);
+          if (!cur || cur.target === target) {
+            pending.current.delete(itemId);
+            // Roll the optimistic value back to server truth.
+            void qc.invalidateQueries({ queryKey: qk.cart() });
+            onError?.(err);
+          }
+        });
+    },
+    [qc],
+  );
+
+  const setQuantity = React.useCallback(
+    (itemId: string, quantity: number, onError?: (err: unknown) => void) => {
+      if (quantity < 1) return;
+      // 1) Instant optimistic UI — cancel any in-flight refetch first so it
+      //    can't clobber the patch we're about to write.
+      void qc.cancelQueries({ queryKey: qk.cart() });
       const prev = qc.getQueryData<CartSnapshot>(qk.cart());
-      if (prev) qc.setQueryData(qk.cart(), optimisticQuantity(prev, vars.itemId, vars.quantity));
-      return { prev };
+      if (prev) qc.setQueryData(qk.cart(), optimisticQuantity(prev, itemId, quantity));
+      // 2) Debounced, coalesced network write.
+      const existing = pending.current.get(itemId);
+      if (existing) clearTimeout(existing.timer);
+      const timer = setTimeout(() => sync(itemId, quantity, onError), QTY_DEBOUNCE_MS);
+      pending.current.set(itemId, { target: quantity, timer });
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.cart(), ctx.prev);
-    },
-    onSuccess: (snapshot) => qc.setQueryData(qk.cart(), snapshot),
-  });
+    [qc, sync],
+  );
+
+  // Don't drop an in-flight edit when the view unmounts mid-debounce: fire the
+  // final value immediately so the server still records what the shopper chose.
+  React.useEffect(() => {
+    const map = pending.current;
+    return () => {
+      for (const [itemId, entry] of map) {
+        clearTimeout(entry.timer);
+        sync(itemId, entry.target);
+      }
+      map.clear();
+    };
+  }, [sync]);
+
+  return setQuantity;
 }
 
 export function useRemoveCartItem() {
@@ -331,6 +424,9 @@ function optimisticAdd(
       imageMediaId: input.imageMediaId,
       reservationId: null,
       savedForLater: false,
+      // The new line can later grow up to whatever's available; the server
+      // snapshot replaces this with the authoritative figure on success.
+      maxQuantity: Math.max(quantity, input.availableStock),
     };
     items = [...cart.items, line];
   }
