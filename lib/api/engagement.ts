@@ -154,7 +154,16 @@ export function useRecentlyViewed(limit = 12) {
   });
 }
 
-/** Best-effort "I viewed this product" ping (no error surfacing). */
+/**
+ * Best-effort "I viewed this product" ping (no error surfacing).
+ *
+ * `skipRefresh: true` is essential: this is a fire-and-forget background ping,
+ * so a 401 must NOT run the http client's refresh+onUnauthorized path (which
+ * pops the login modal). Without it, a logged-out — or expired — visitor gets
+ * the auth modal thrown in their face just for opening a product page.
+ */
 export function trackProductView(productId: string): void {
-  void http.post(`/me/recently-viewed/${productId}`, undefined).catch(() => {});
+  void http
+    .post(`/me/recently-viewed/${productId}`, undefined, { skipRefresh: true })
+    .catch(() => {});
 }
