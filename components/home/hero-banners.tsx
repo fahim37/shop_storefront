@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { HomepageCarouselSlide } from "@/lib/api/types";
 import { mediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -64,11 +63,22 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
   const slides = carousel?.slides ?? [];
   const tiles = banners.slice(0, 4);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 28 });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
   const [selected, setSelected] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
+  const [reducedMotion, setReducedMotion] = React.useState(false);
 
-  // Track the active slide for the dots.
+  // Respect the OS "reduce motion" setting: no Ken Burns, no auto-advance.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Track the active slide for the progress bar.
   React.useEffect(() => {
     if (!emblaApi) return;
     const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
@@ -78,18 +88,17 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
     };
   }, [emblaApi]);
 
-  // Autoplay — paused on hover/focus and disabled for reduced-motion users.
-  React.useEffect(() => {
-    if (!emblaApi || paused || slides.length < 2) return;
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return;
-    }
-    const id = window.setInterval(() => emblaApi.scrollNext(), AUTOPLAY_MS);
-    return () => window.clearInterval(id);
-  }, [emblaApi, paused, selected, slides.length]);
+  // Autoplay is DRIVEN BY the progress bar: when the active fill finishes its
+  // run it calls scrollNext (see onAnimationEnd below), so the bar and the
+  // slide change can never drift apart. Hover/focus freezes the fill (and thus
+  // the advance) via animation-play-state; reduced-motion skips it entirely.
+  const autoplays = !reducedMotion && slides.length > 1;
+  const handleFillEnd = React.useCallback(
+    (e: React.AnimationEvent<HTMLSpanElement>) => {
+      if (e.animationName === "hero-progress") emblaApi?.scrollNext();
+    },
+    [emblaApi],
+  );
 
   if (slides.length === 0 && tiles.length === 0) return null;
 
@@ -123,16 +132,26 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
                   <TileLink
                     href={s.linkUrl}
                     label={s.caption}
-                    className="block aspect-[21/9] w-full lg:aspect-[2/1]"
+                    className="block aspect-[21/9] w-full overflow-hidden lg:aspect-[2/1]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
+                      // Re-key the active image so its Ken Burns drift restarts
+                      // from the top on every slide change.
+                      key={i === selected ? `kb-${selected}` : undefined}
                       src={mediaUrl(s.imageMediaId, "hero")!}
                       alt={s.caption ?? `Promotion ${i + 1}`}
                       loading={i === 0 ? "eager" : "lazy"}
                       decoding="async"
                       draggable={false}
-                      className="size-full object-cover bg-gradient-to-br from-blue-soft to-surface"
+                      className="size-full object-cover bg-gradient-to-br from-blue-soft to-surface will-change-transform"
+                      style={
+                        i === selected && !reducedMotion
+                          ? {
+                              animation: `ken-burns ${AUTOPLAY_MS + 1400}ms var(--ease-out-soft) both`,
+                            }
+                          : undefined
+                      }
                     />
                   </TileLink>
                 </div>
@@ -140,43 +159,59 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
             </div>
           </div>
 
-          {/* Arrows — fade in on hover (hidden on small screens; swipe instead) */}
+          {/* Modern chrome — only when there's more than one slide. */}
           {slides.length > 1 && (
             <>
-              <button
-                type="button"
-                aria-label="Previous slide"
-                onClick={() => emblaApi?.scrollPrev()}
-                className="absolute left-3 top-1/2 z-20 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-white/35 focus-visible:opacity-100 group-hover:opacity-100 md:flex"
-              >
-                <ChevronLeft className="size-5" strokeWidth={2.4} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next slide"
-                onClick={() => emblaApi?.scrollNext()}
-                className="absolute right-3 top-1/2 z-20 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-white/35 focus-visible:opacity-100 group-hover:opacity-100 md:flex"
-              >
-                <ChevronRight className="size-5" strokeWidth={2.4} />
-              </button>
+              {/* Legibility scrim: a soft vignette at the bottom so the
+                  progress bar stays readable over bright artwork. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/35 via-black/10 to-transparent"
+              />
 
-              {/* Dots — active dot stretches into a pill */}
-              <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
-                {slides.map((s, i) => (
-                  <button
-                    key={`${s.imageMediaId}-${i}`}
-                    type="button"
-                    aria-label={`Go to slide ${i + 1}`}
-                    aria-current={selected === i}
-                    onClick={() => emblaApi?.scrollTo(i)}
-                    className={cn(
-                      "h-2 rounded-full transition-all duration-300",
-                      selected === i
-                        ? "w-6 bg-white shadow-sm"
-                        : "w-2 bg-white/45 hover:bg-white/70",
-                    )}
-                  />
-                ))}
+              {/* Progress bars — story-style segments. The active segment's
+                  fill animates over the autoplay window and, on completion,
+                  advances the carousel (handleFillEnd) so bar and slide stay
+                  in lockstep. Hover freezes it; reduced-motion shows a static
+                  fill and disables auto-advance. */}
+              <div className="absolute bottom-3.5 left-1/2 z-20 flex max-w-[70%] -translate-x-1/2 items-center gap-1.5">
+                {slides.map((s, i) => {
+                  const isActive = selected === i;
+                  return (
+                    <button
+                      key={`${s.imageMediaId}-${i}`}
+                      type="button"
+                      aria-label={`Go to slide ${i + 1}`}
+                      aria-current={isActive}
+                      onClick={() => emblaApi?.scrollTo(i)}
+                      className={cn(
+                        "group/seg relative h-1.5 overflow-hidden rounded-full transition-all duration-300",
+                        isActive ? "w-8 sm:w-10" : "w-4 hover:w-6",
+                      )}
+                    >
+                      {/* track */}
+                      <span className="absolute inset-0 rounded-full bg-white/30 transition-colors group-hover/seg:bg-white/45" />
+                      {/* fill */}
+                      <span
+                        aria-hidden
+                        onAnimationEnd={isActive ? handleFillEnd : undefined}
+                        className="absolute inset-0 origin-left rounded-full bg-white"
+                        style={
+                          isActive
+                            ? autoplays
+                              ? {
+                                  animation: `hero-progress ${AUTOPLAY_MS}ms linear forwards`,
+                                  animationPlayState: paused
+                                    ? "paused"
+                                    : "running",
+                                }
+                              : { transform: "scaleX(1)" }
+                            : { transform: "scaleX(0)" }
+                        }
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}

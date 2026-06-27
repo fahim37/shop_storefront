@@ -220,6 +220,26 @@
   }
 }
 
+/* Hero carousel: story-style progress fill (drives auto-advance) + a gentle
+ * Ken Burns drift on the active slide. Both honor the reduced-motion rule
+ * below, which collapses their duration so nothing moves. */
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes ken-burns {
+  from {
+    transform: scale(1.005);
+  }
+  to {
+    transform: scale(1.055);
+  }
+}
+
 /* -----------------------------------------------------------------------------
  * Base
  * -------------------------------------------------------------------------- */
