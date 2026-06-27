@@ -88,7 +88,7 @@ export default async function HomePage() {
     .filter((b) => Boolean(b.imageMediaId));
 
   return (
-    <div className="flex flex-col gap-8 pb-12 pt-4">
+    <div className="flex flex-col gap-8 pb-12">
       {/* Hero — admin-managed banners when published, designed fallback otherwise */}
       <section className="wrap">
         <h1 className="sr-only">GCL — Bangladesh&apos;s online marketplace</h1>

@@ -94,12 +94,12 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
   if (slides.length === 0 && tiles.length === 0) return null;
 
   return (
-    <div className={cn("grid gap-3", tiles.length > 0 && "lg:grid-cols-4")}>
+    <div className={cn("grid gap-2", tiles.length > 0 && "lg:grid-cols-4")}>
       {/* Slider */}
       {slides.length > 0 && (
         <div
           className={cn(
-            "group relative overflow-hidden rounded-2xl",
+            "group relative overflow-hidden rounded-b-lg rounded-t-none",
             tiles.length > 0 && "lg:col-span-3",
           )}
           onMouseEnter={() => setPaused(true)}
@@ -199,7 +199,7 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
       {tiles.length > 0 && (
         <div
           className={cn(
-            "hidden gap-3 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-2",
+            "hidden gap-2 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-2",
             tiles.length === 1 && "lg:grid-rows-1",
             tiles.length === 2 && "lg:grid-rows-2",
             tiles.length === 3 && "lg:grid-rows-2",
@@ -215,7 +215,8 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
                 href={b.linkUrl}
                 label={b.altText ?? b.title}
                 className={cn(
-                  "group/tile relative block h-full min-h-0 overflow-hidden rounded-xl",
+                  "group/tile relative block h-full min-h-0 overflow-hidden",
+                  i === 0 ? "rounded-b-md rounded-t-none" : "rounded-md",
                   half ? "col-span-1" : "col-span-2",
                 )}
               >
