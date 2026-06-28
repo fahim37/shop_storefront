@@ -14,7 +14,7 @@ export interface AuthCardProps {
 
 /**
  * Centered auth card: bold heading, optional muted subtitle, content, and an
- * optional footer. Used standalone (full-page) and inside the auth modal.
+ * optional footer. Used standalone (full-page) and inside the auth modal. test
  */
 export function AuthCard({
   title,
