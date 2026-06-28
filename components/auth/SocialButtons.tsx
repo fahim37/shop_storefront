@@ -22,9 +22,19 @@ interface GoogleIdConfig {
   cancel_on_tap_outside?: boolean;
 }
 
+interface GoogleButtonConfig {
+  type?: "standard" | "icon";
+  theme?: "outline" | "filled_blue" | "filled_black";
+  size?: "large" | "medium" | "small";
+  text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+  shape?: "rectangular" | "pill" | "circle" | "square";
+  logo_alignment?: "left" | "center";
+  width?: number;
+}
+
 interface GoogleIdApi {
   initialize: (config: GoogleIdConfig) => void;
-  prompt: () => void;
+  renderButton: (parent: HTMLElement, options: GoogleButtonConfig) => void;
 }
 
 interface GoogleAccountsApi {
@@ -83,6 +93,7 @@ export function SocialButtons({ onSuccess }: SocialButtonsProps) {
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const initializedRef = React.useRef(false);
+  const buttonRef = React.useRef<HTMLDivElement | null>(null);
 
   // Keep the latest success/login callbacks for the GIS callback closure.
   const onSuccessRef = React.useRef(onSuccess);
@@ -100,6 +111,7 @@ export function SocialButtons({ onSuccess }: SocialButtonsProps) {
         return;
       }
       try {
+        setPending(true);
         await loginRef.current(response.credential);
         onSuccessRef.current?.();
       } catch (err) {
@@ -111,9 +123,12 @@ export function SocialButtons({ onSuccess }: SocialButtonsProps) {
     [],
   );
 
-  const ensureInitialized = React.useCallback((): GoogleIdApi | null => {
+  React.useEffect(() => {
+    if (!scriptReady || !isGoogleAuthEnabled) return;
     const api = window.google?.accounts.id;
-    if (!api) return null;
+    const parent = buttonRef.current;
+    if (!api || !parent) return;
+
     if (!initializedRef.current) {
       api.initialize({
         client_id: GOOGLE_CLIENT_ID,
@@ -122,21 +137,18 @@ export function SocialButtons({ onSuccess }: SocialButtonsProps) {
       });
       initializedRef.current = true;
     }
-    return api;
-  }, [handleCredential]);
 
-  const handleClick = React.useCallback(() => {
-    setError(null);
-    const api = ensureInitialized();
-    if (!api) {
-      setError("Google sign-in is still loading. Please try again.");
-      return;
-    }
-    setPending(true);
-    // The credential arrives asynchronously via the callback. If the user
-    // dismisses the One Tap prompt, clear the pending state after a moment.
-    api.prompt();
-  }, [ensureInitialized]);
+    parent.innerHTML = "";
+    api.renderButton(parent, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "rectangular",
+      logo_alignment: "center",
+      width: parent.clientWidth || 400,
+    });
+  }, [handleCredential, scriptReady]);
 
   if (!isGoogleAuthEnabled) {
     return (
@@ -158,19 +170,17 @@ export function SocialButtons({ onSuccess }: SocialButtonsProps) {
       <Script
         src={GIS_SRC}
         strategy="afterInteractive"
-        onLoad={() => setScriptReady(true)}
+        onReady={() => setScriptReady(true)}
       />
-      <Button
-        type="button"
-        variant="soft"
-        fullWidth
-        loading={pending}
-        disabled={!scriptReady || pending}
-        onClick={handleClick}
-      >
-        {!pending && <GoogleIcon />}
-        Continue with Google
-      </Button>
+      <div
+        ref={buttonRef}
+        className={scriptReady && !pending ? "flex min-h-10 w-full justify-center" : "hidden"}
+      />
+      {pending ? (
+        <Button type="button" variant="soft" fullWidth loading disabled>
+          Continue with Google
+        </Button>
+      ) : null}
       {!scriptReady ? (
         <p className="text-center text-xs text-muted-foreground">
           Loading Google sign-in…

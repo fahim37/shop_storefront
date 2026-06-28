@@ -80,6 +80,20 @@ export function useListingFacets(
   });
 }
 
+/**
+ * Global facets across ALL published products (no category scope) — powers the
+ * /shop browse page's filter rail. The backend's /products/facets computes over
+ * the base set, so omitting categoryId yields catalog-wide facets.
+ */
+export function useShopFacets(enabled = true) {
+  return useQuery({
+    queryKey: qk.listingFacets({ categoryId: "__all__" }),
+    queryFn: () => http.get<Facets>("/products/facets"),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 /** Flatten an infinite-products result into a single product array. */
 export function flattenProducts(
   pages: Array<{ data: ProductCardRow[] }> | undefined,

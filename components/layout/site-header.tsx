@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 import { SearchBar } from "@/components/layout/search-bar";
 import {
@@ -12,47 +11,15 @@ import {
 } from "@/components/layout/mega-menu";
 import { MobileMenuButton } from "@/components/layout/mobile-nav";
 
-/** Topbar utility links (desktop only). */
-function Topbar() {
-  return (
-    <div className="hidden bg-navy text-[oklch(1_0_0/0.75)] md:block">
-      <div className="wrap flex h-[34px] items-center justify-between text-xs font-semibold">
-        <span>
-          Free delivery in Dhaka on orders over{" "}
-          <b className="font-bold text-amber">
-            <span className="bn">৳</span>1,500
-          </b>
-        </span>
-        <div className="flex gap-5">
-          <Link href="/pages/about" className="hover:text-white">
-            Become a seller
-          </Link>
-          <Link href="/account/orders" className="hover:text-white">
-            Track order
-          </Link>
-          <Link href="/pages/faq" className="hover:text-white">
-            Help
-          </Link>
-          <button type="button" className="bn hover:text-white">
-            বাংলা
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 bg-card">
-      <Topbar />
-
-      {/* main nav */}
-      <div className="border-b border-border bg-card">
+    <header className="sticky top-0 z-50 bg-primary md:bg-card">
+      {/* main nav — solid brand-blue bar on mobile, white on desktop */}
+      <div className="bg-primary md:border-b md:border-border md:bg-card">
         <div className="wrap flex h-[68px] items-center gap-3 md:h-[76px] md:gap-7">
           <MobileMenuButton />
           <Logo className="hidden md:flex" />
-          <Logo className="md:hidden" size="sm" />
+          <Logo className="md:hidden" size="sm" light />
           <div className="hidden flex-1 md:block">
             <SearchBar />
           </div>
@@ -63,7 +30,7 @@ export function SiteHeader() {
             <span className="hidden md:flex">
               <WishlistLink />
             </span>
-            <CartButton />
+            <CartButton className="text-white md:text-ink" />
           </div>
         </div>
         {/* mobile search row */}

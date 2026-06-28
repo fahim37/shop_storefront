@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Search as SearchIcon, SearchX, Sparkles, Lightbulb } from "lucide-react";
+import { Search as SearchIcon, SearchX, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -103,12 +103,6 @@ function SearchResults() {
           <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
             Results for &ldquo;{q}&rdquo;
           </h1>
-          {pages[0]?.semanticEnabled && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-soft px-2.5 py-1 text-[11px] font-extrabold text-primary">
-              <Sparkles className="size-3" strokeWidth={2.6} />
-              AI
-            </span>
-          )}
         </div>
         <p className="text-[13px] font-semibold text-sub">
           {isLoading

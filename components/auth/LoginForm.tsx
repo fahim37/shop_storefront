@@ -55,16 +55,6 @@ export function LoginForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <SocialButtons onSuccess={onSuccess} />
-
-      <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">
-          or
-        </span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <FormError message={formError} />
 
@@ -119,6 +109,16 @@ export function LoginForm({
           Log in
         </Button>
       </form>
+
+      <div className="flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+          or
+        </span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <SocialButtons onSuccess={onSuccess} />
 
       {onSwitchToSignup ? (
         <p className="text-center text-sm text-muted-foreground">

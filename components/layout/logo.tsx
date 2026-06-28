@@ -4,7 +4,11 @@ import { LOGO_MEDIA_PATH } from "@/lib/config";
 import { resolveMediaPath } from "@/lib/media";
 
 export interface LogoProps {
-  /** Rendered on a dark surface (footer, mobile header). */
+  /**
+   * Rendered on a dark surface (footer, mobile header). Swaps to the
+   * color-inverted mark (white letters + gold swoosh, transparent background)
+   * so it reads on dark/blue instead of the blue-on-white original.
+   */
   light?: boolean;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -18,8 +22,13 @@ const IMG = {
   lg: "h-12",
 } as const;
 
-/** GCL logo — blue + gold lettermark served from media storage (R2). */
+/**
+ * GCL logo — blue + gold lettermark served from media storage (R2). On dark
+ * surfaces (`light`), a color-inverted variant (white + gold on transparent,
+ * `public/logo-on-dark.png`) is used instead so the mark stays legible.
+ */
 export function Logo({ light, className, size = "md", href = "/" }: LogoProps) {
+  const src = light ? "/logo-on-dark.png" : resolveMediaPath(LOGO_MEDIA_PATH)!;
   return (
     <Link
       href={href}
@@ -27,18 +36,7 @@ export function Logo({ light, className, size = "md", href = "/" }: LogoProps) {
       aria-label="GCL home"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={resolveMediaPath(LOGO_MEDIA_PATH)!}
-        alt="GCL"
-        decoding="async"
-        className={cn(
-          "w-auto",
-          // The art ships on a white field; round it softly on dark surfaces
-          // so the white plate reads as a badge rather than a stray box.
-          light && "rounded-lg",
-          IMG[size],
-        )}
-      />
+      <img src={src} alt="GCL" decoding="async" className={cn("w-auto", IMG[size])} />
     </Link>
   );
 }

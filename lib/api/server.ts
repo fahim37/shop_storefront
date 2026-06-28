@@ -101,11 +101,29 @@ export function getProductsPage(params: {
   brandId?: string;
   minPricePaisa?: string;
   maxPricePaisa?: string;
+  /** newest | price_asc | price_desc | rating_desc | best_selling */
+  sort?: string;
   limit?: number;
   cursor?: string;
 }) {
   return serverGetList<ProductCardRow>("/products", {
     params,
+    revalidate: 60,
+    tags: ["products"],
+  });
+}
+
+/**
+ * Fetch published product cards for an explicit id list (admin-pinned
+ * homepage rails / curated collections). The backend returns them in its own
+ * listing order, so callers re-order to match `ids`. Returns [] for an empty
+ * list without hitting the network.
+ */
+export async function getProductsByIds(ids: string[]) {
+  const clean = ids.filter(Boolean);
+  if (clean.length === 0) return { data: [] as ProductCardRow[] };
+  return serverGetList<ProductCardRow>("/products", {
+    params: { ids: clean.join(","), limit: Math.min(clean.length, 100) },
     revalidate: 60,
     tags: ["products"],
   });

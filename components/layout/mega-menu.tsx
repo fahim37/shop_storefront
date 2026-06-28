@@ -242,10 +242,10 @@ function Subcategories({
 /** Quick-link tabs shown in the blue catbar next to "All categories". */
 export function CatbarLinks() {
   const links = [
-    { label: "Flash sale", href: "/search?q=flash", hot: true },
-    { label: "New arrivals", href: "/search?q=new&sort=newest" },
-    { label: "Best sellers", href: "/search?q=best" },
-    { label: "Top stores", href: "/search?q=" },
+    { label: "Flash sale", href: "/shop?sale=1", hot: true },
+    { label: "New arrivals", href: "/shop?sort=newest" },
+    { label: "Best sellers", href: "/shop?sort=best_selling" },
+    { label: "Top stores", href: "/shop?sort=best_selling" },
     { label: "Vouchers", href: "/pages/faq" },
   ];
   return (
@@ -262,9 +262,12 @@ export function CatbarLinks() {
           {l.label}
         </Link>
       ))}
-      <span className="ml-auto hidden items-center gap-1.5 rounded-lg bg-amber px-3.5 py-1.5 text-[12.5px] font-extrabold text-blue-deep lg:flex">
-        <span className="bn">ঈদ</span> Mega Sale
-      </span>
+      <Link
+        href="/#mega-sale"
+        className="ml-auto hidden items-center gap-1.5 rounded-lg bg-amber px-3.5 py-1.5 text-[12.5px] font-extrabold text-blue-deep transition-colors hover:bg-amber-hover lg:flex"
+      >
+        Mega Sale
+      </Link>
     </>
   );
 }

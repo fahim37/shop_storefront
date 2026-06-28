@@ -136,7 +136,7 @@ export function HeroSlider() {
 
   return (
     <div
-      className="group relative overflow-hidden rounded-b-lg rounded-t-none"
+      className="group relative overflow-hidden rounded-none md:rounded-b-lg md:rounded-t-none"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}

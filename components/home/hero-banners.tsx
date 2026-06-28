@@ -108,7 +108,7 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
       {slides.length > 0 && (
         <div
           className={cn(
-            "group relative overflow-hidden rounded-b-lg rounded-t-none",
+            "group relative overflow-hidden rounded-none md:rounded-b-lg md:rounded-t-none",
             tiles.length > 0 && "lg:col-span-3",
           )}
           onMouseEnter={() => setPaused(true)}

@@ -687,7 +687,19 @@ export type HomepageBlockKind =
   | "carousel"
   | "curated_collection"
   | "category_grid"
-  | "vendor_spotlight";
+  | "vendor_spotlight"
+  | "product_rail"
+  | "campaign_panel"
+  | "usp_strip"
+  | "promo_grid"
+  | "category_circles";
+
+/** How a dynamic product section picks its products. */
+export type ProductSource =
+  | "bestsellers"
+  | "newest"
+  | "recommendations"
+  | "manual";
 
 export interface HomepageBlock {
   id: string;
@@ -722,6 +734,68 @@ export interface HomepageCarouselSlide {
 /** `config` shape for `kind: "carousel"` blocks (1–10 slides). */
 export interface HomepageCarouselConfig {
   slides: HomepageCarouselSlide[];
+}
+
+/** `config` for `kind: "product_rail"` — a titled row of product cards. */
+export interface HomepageProductRailConfig {
+  source?: ProductSource;
+  /** Pinned, ordered ids when `source === "manual"`. */
+  productIds?: string[];
+  limit?: number;
+  subtitle?: string;
+  linkLabel?: string;
+  linkUrl?: string;
+}
+
+/** `config` for `kind: "campaign_panel"` — the branded "bazar" board. */
+export interface HomepageCampaignPanelConfig {
+  source?: ProductSource;
+  productIds?: string[];
+  limit?: number;
+  subtitle?: string;
+  couponCode?: string;
+  ctaHref?: string;
+}
+
+/** `config` for `kind: "curated_collection"` (productIds + optional subtitle). */
+export interface HomepageCuratedCollectionConfig {
+  productIds: string[];
+  subtitle?: string;
+  ctaUrl?: string;
+}
+
+export interface HomepageUspItem {
+  /** Icon key mapped to a lucide icon on the storefront. */
+  icon?: string;
+  title: string;
+  subtitle?: string;
+}
+
+/** `config` for `kind: "usp_strip"` — a trust/benefits row (1–8 cells). */
+export interface HomepageUspStripConfig {
+  items: HomepageUspItem[];
+}
+
+export interface HomepagePromoCard {
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  tone?: "navy" | "amber" | "primary";
+  icon?: string;
+}
+
+/** `config` for `kind: "promo_grid"` — 1–4 promo cards. */
+export interface HomepagePromoGridConfig {
+  cards: HomepagePromoCard[];
+}
+
+/** `config` for `kind: "category_circles"` — the round category shortcuts. */
+export interface HomepageCategoryCirclesConfig {
+  subtitle?: string;
+  /** Pinned, ordered category ids; empty = auto-fill from the tree. */
+  categoryIds?: string[];
+  limit?: number;
 }
 
 export interface CmsPage {

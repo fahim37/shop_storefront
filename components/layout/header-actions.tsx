@@ -135,7 +135,7 @@ export function WishlistLink() {
 }
 
 /** Cart button: icon + amber count badge + running total; opens the drawer. */
-export function CartButton() {
+export function CartButton({ className }: { className?: string }) {
   const openCart = useUIStore((s) => s.openCartDrawer);
   const count = useCartCount();
   const { cart } = useCart();
@@ -145,7 +145,7 @@ export function CartButton() {
       type="button"
       onClick={openCart}
       aria-label={`Open cart, ${count} item${count === 1 ? "" : "s"}`}
-      className="group flex items-center gap-2 text-xs font-bold text-ink"
+      className={cn("group flex items-center gap-2 text-xs font-bold text-ink", className)}
     >
       <span className="relative">
         <ShoppingCart className="size-6" strokeWidth={1.6} />

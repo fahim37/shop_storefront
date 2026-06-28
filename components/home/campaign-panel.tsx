@@ -13,6 +13,7 @@ import type { CardProduct } from "@/lib/api/card";
 
 export interface CampaignPanelProps {
   products: CardProduct[];
+  id?: string;
   /** Campaign heading, e.g. "Mega Bazar". */
   title?: string;
   subtitle?: string;
@@ -22,15 +23,16 @@ export interface CampaignPanelProps {
 
 export function CampaignPanel({
   products,
+  id,
   title = "Mega Bazar",
   subtitle = "Deals of the month",
   couponCode = "WELCOME100",
-  ctaHref = "/search?q=",
+  ctaHref = "/shop?sort=best_selling",
 }: CampaignPanelProps) {
   if (products.length === 0) return null;
 
   return (
-    <section className="wrap">
+    <section id={id} className="wrap scroll-mt-[170px] md:scroll-mt-[190px]">
       <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-blue-deep p-4 shadow-[var(--shadow-card)] sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[230px_1fr] lg:gap-5">
           {/* Branded rail */}

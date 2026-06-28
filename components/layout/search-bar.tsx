@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search, Sparkles, TrendingUp, Grid3x3, Lightbulb } from "lucide-react";
+import { Search, TrendingUp, Grid3x3, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutocomplete, useTrending } from "@/lib/api/search";
 import { useCategoryTree } from "@/lib/api/catalog";
@@ -106,12 +106,6 @@ export function SearchBar({
             <Search className="size-4" strokeWidth={2.2} />
             <span className="hidden lg:inline">Search</span>
           </button>
-        )}
-        {compact && (
-          <span className="flex items-center gap-1 rounded-full bg-[oklch(0.95_0.03_300/0.6)] px-2 py-1 text-[10px] font-extrabold text-[oklch(0.45_0.16_300)]">
-            <Sparkles className="size-3" strokeWidth={2.2} />
-            AI
-          </span>
         )}
       </form>
 
