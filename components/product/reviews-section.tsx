@@ -13,6 +13,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { looksLikeHtml, sanitizeRichText } from "@/lib/sanitize";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,6 +114,17 @@ function DescriptionTab({ product }: { product: ProductCardRow }) {
         <span className="font-bold text-ink">{product.title}</span> yet. Check
         the specifications tab or ask a question below.
       </p>
+    );
+  }
+  // Rich-text descriptions are stored as HTML — sanitize before rendering.
+  // Legacy plain-text descriptions keep their pre-wrapped rendering.
+  if (looksLikeHtml(text)) {
+    return (
+      <div
+        className="rte-content max-w-3xl text-[14.5px] leading-relaxed text-sub"
+        // Sanitized above with a strict allowlist (see lib/sanitize).
+        dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }}
+      />
     );
   }
   return (
