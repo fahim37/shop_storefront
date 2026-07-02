@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Store, Trash2 } from "lucide-react";
+import { ShoppingBag, Store, Trash2, X } from "lucide-react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -35,10 +36,20 @@ export function CartDrawer() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" className="w-full max-w-none sm:max-w-md">
+      <SheetContent
+        side="right"
+        hideClose
+        className="w-[85%] max-w-sm sm:w-full sm:max-w-md"
+      >
         <SheetHeader>
           <ShoppingBag className="size-5 text-primary" />
           <SheetTitle>Your cart{count ? ` (${count})` : ""}</SheetTitle>
+          <SheetClose
+            aria-label="Close cart"
+            className="ml-auto grid size-9 place-items-center rounded-full text-faint transition-[transform,background-color,color] duration-200 ease-out hover:rotate-90 hover:bg-muted hover:text-ink active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <X className="size-5" />
+          </SheetClose>
         </SheetHeader>
 
         {isLoading ? (
