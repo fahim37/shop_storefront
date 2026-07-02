@@ -106,7 +106,18 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   const zooming = canZoom && lens !== null && Boolean(zoomSrc);
 
   return (
-    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
+    <>
+      {/* ── Mobile (<sm): swipe-through carousel ────────────────────────── */}
+      <MobileGallery
+        images={ordered}
+        title={title}
+        activeIndex={activeIndex}
+        onActiveIndexChange={(i) => setActiveId(ordered[i]?.id ?? null)}
+        onOpen={() => setLightboxOpen(true)}
+      />
+
+      {/* ── Desktop (sm+): thumbnail rail + hero image with hover zoom ───── */}
+      <div className="hidden flex-col-reverse gap-3 sm:flex sm:flex-row sm:gap-4">
       {/* Thumbnail rail */}
       {hasThumbs && (
         <div className="no-scrollbar flex shrink-0 gap-2.5 overflow-x-auto sm:max-h-[640px] sm:flex-col sm:overflow-y-auto">
@@ -220,6 +231,8 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         )}
       </div>
 
+      </div>
+
       {lightboxOpen && active && (
         <ProductLightbox
           images={ordered}
@@ -228,6 +241,94 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           onClose={() => setLightboxOpen(false)}
           title={title}
         />
+      )}
+    </>
+  );
+}
+
+/**
+ * Mobile-only image gallery: a full-width horizontal scroll-snap carousel the
+ * user swipes through, with a position counter and dot indicators. Tapping a
+ * slide opens the fullscreen lightbox. Scroll position drives {@link activeIndex}
+ * so the counter/dots and lightbox start on the visible image.
+ */
+function MobileGallery({
+  images,
+  title,
+  activeIndex,
+  onActiveIndexChange,
+  onOpen,
+}: {
+  images: ProductImage[];
+  title: string;
+  activeIndex: number;
+  onActiveIndexChange: (index: number) => void;
+  onOpen: () => void;
+}) {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+
+  const onScroll = () => {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    if (index !== activeIndex) onActiveIndexChange(index);
+  };
+
+  return (
+    <div className="sm:hidden">
+      <div className="relative">
+        <div
+          ref={scrollerRef}
+          onScroll={onScroll}
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-xl border border-border bg-muted"
+        >
+          {images.length > 0 ? (
+            images.map((img) => (
+              <button
+                key={img.id}
+                type="button"
+                onClick={onOpen}
+                aria-label="Open image viewer"
+                className="relative aspect-square w-full shrink-0 snap-center"
+              >
+                <MediaImage
+                  mediaId={img.mediaId}
+                  variant="hero"
+                  alt={img.altText ?? title}
+                  className="object-contain"
+                  sizes="100vw"
+                />
+              </button>
+            ))
+          ) : (
+            <div className="relative aspect-square w-full shrink-0">
+              <MediaImage variant="hero" alt={title} className="object-contain" />
+            </div>
+          )}
+        </div>
+
+        {/* Position counter */}
+        {images.length > 1 && (
+          <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/45 px-2 py-0.5 text-xs font-medium text-white backdrop-blur">
+            {activeIndex + 1}/{images.length}
+          </span>
+        )}
+      </div>
+
+      {/* Dot indicators (skipped for image-heavy products — counter still shown) */}
+      {images.length > 1 && images.length <= 8 && (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          {images.map((img, i) => (
+            <span
+              key={img.id}
+              aria-hidden
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border",
+              )}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
