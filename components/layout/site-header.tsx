@@ -16,7 +16,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 bg-primary md:bg-card">
       {/* main nav — solid brand-blue bar on mobile, white on desktop */}
       <div className="bg-primary md:border-b md:border-border md:bg-card">
-        <div className="wrap flex h-[68px] items-center gap-3 md:h-[76px] md:gap-7">
+        <div className="wrap flex h-[52px] items-center gap-3 md:h-[76px] md:gap-7">
           <MobileMenuButton />
           <Logo className="hidden md:flex" />
           <Logo className="md:hidden" size="sm" light />

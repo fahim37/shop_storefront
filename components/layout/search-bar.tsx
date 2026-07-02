@@ -83,7 +83,7 @@ export function SearchBar({
         className={cn(
           "flex items-center overflow-hidden rounded-xl bg-white",
           compact
-            ? "h-11 border border-border px-3"
+            ? "h-9 border border-border px-3"
             : "h-12 border-2 border-blue-deep",
         )}
       >
