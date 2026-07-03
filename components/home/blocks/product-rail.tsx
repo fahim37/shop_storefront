@@ -1,4 +1,5 @@
 import { SectionHeader } from "@/components/layout/section-header";
+import { ProductCarousel } from "@/components/home/blocks/product-carousel";
 import { ProductGrid } from "@/components/product/product-grid";
 import type { CardProduct } from "@/lib/api/card";
 
@@ -15,6 +16,11 @@ export interface ProductRailProps {
   subtitle?: string;
   linkLabel?: string;
   linkHref?: string;
+  /**
+   * Desktop renders a slow auto-sliding one-row carousel instead of a grid;
+   * mobile/tablet keep the grid (capped at 6 so the section stays short).
+   */
+  carousel?: boolean;
 }
 
 export function ProductRail({
@@ -23,6 +29,7 @@ export function ProductRail({
   subtitle,
   linkLabel,
   linkHref,
+  carousel = false,
 }: ProductRailProps) {
   if (products.length === 0) return null;
   return (
@@ -33,7 +40,18 @@ export function ProductRail({
         linkLabel={linkLabel}
         linkHref={linkHref}
       />
-      <ProductGrid products={products} />
+      {carousel ? (
+        <>
+          <ProductGrid
+            products={products.slice(0, 6)}
+            flushRows
+            className="lg:hidden"
+          />
+          <ProductCarousel products={products} className="hidden lg:block" />
+        </>
+      ) : (
+        <ProductGrid products={products} flushRows />
+      )}
     </section>
   );
 }

@@ -46,11 +46,18 @@ export function MobileMenuButton() {
 export function MobileNav() {
   const open = useUIStore((s) => s.mobileNavOpen);
   const setOpen = useUIStore((s) => s.setMobileNav);
+  const pathname = usePathname();
   const { data: tree } = useCategoryTree();
   const { status, user, openAuth, logout } = useAuth();
   const roots = tree ?? [];
 
   const close = () => setOpen(false);
+  // Same-route navigations are a no-op in the App Router, so "Home" while
+  // already on the homepage scrolls back to the top instead.
+  const closeAndScroll = (href: string) => {
+    close();
+    if (pathname === href) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -103,7 +110,7 @@ export function MobileNav() {
               <Link
                 key={l.label}
                 href={l.href}
-                onClick={close}
+                onClick={() => closeAndScroll(l.href)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-ink hover:bg-muted"
               >
                 <l.icon className="size-5 text-faint" />
@@ -193,7 +200,15 @@ export function MobileBottomNav() {
             {content}
           </button>
         ) : (
-          <Link key={t.label} href={t.href} className={cls}>
+          <Link
+            key={t.label}
+            href={t.href}
+            onClick={() => {
+              if (pathname === t.href)
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={cls}
+          >
             {content}
           </Link>
         );

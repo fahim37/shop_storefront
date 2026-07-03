@@ -192,6 +192,7 @@ export async function HomepageRenderer({
       limit: number;
       linkLabel: string;
       linkHref: string;
+      carousel?: boolean;
     },
   ) => {
     const block = bySlot.get(slot);
@@ -210,6 +211,7 @@ export async function HomepageRenderer({
         subtitle={cfg.subtitle ?? defaults.subtitle}
         linkLabel={linkLabel}
         linkHref={linkHref}
+        carousel={defaults.carousel}
         products={resolveProducts(
           cfg.source ?? defaults.source,
           cfg.productIds,
@@ -261,7 +263,10 @@ export async function HomepageRenderer({
         title: "Best sellers this week",
         subtitle: "Most ordered across Bangladesh",
         source: "bestsellers",
-        limit: 5,
+        // Desktop shows a 5-visible auto carousel over the whole list; the
+        // mobile grid caps itself at 6 (2×3) inside ProductRail.
+        limit: 15,
+        carousel: true,
         linkLabel: "View all",
         linkHref: "/shop?sort=best_selling",
       })}
@@ -269,7 +274,8 @@ export async function HomepageRenderer({
         title: "New arrivals",
         subtitle: "Fresh from local stores",
         source: "newest",
-        limit: 5,
+        limit: 15,
+        carousel: true,
         linkLabel: "View all",
         linkHref: "/shop?sort=newest",
       })}

@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
+  ChevronLeft,
+  Heart,
   KeyRound,
   LogOut,
   type LucideIcon,
   MapPin,
   Package,
-  Heart,
   Star,
   User,
 } from "lucide-react";
@@ -30,8 +31,8 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { label: "Personal information", href: "/account", icon: User, exact: true },
-  { label: "My wishlist", href: "/account/wishlist", icon: Heart },
   { label: "Order history", href: "/account/orders", icon: Package },
+  { label: "My wishlist", href: "/account/wishlist", icon: Heart },
   { label: "Addresses", href: "/account/addresses", icon: MapPin },
   { label: "My reviews", href: "/account/reviews", icon: Star },
   { label: "Notifications", href: "/account/notifications", icon: Bell },
@@ -63,14 +64,47 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // /account/profile is the mobile-only detail route for personal information;
+  // on desktop it shows the same content as /account, so highlight that item.
   const isActive = (item: NavItem) =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+    item.exact
+      ? pathname === item.href ||
+        (item.href === "/account" && pathname.startsWith("/account/profile"))
+      : pathname.startsWith(item.href);
+
+  const isHub = pathname === "/account";
+  const section = NAV.find((item) => !item.exact && pathname.startsWith(item.href));
+
+  // Mobile back target: nested pages (e.g. an order detail) step back to their
+  // section; section roots step back to the account hub.
+  const back =
+    section && pathname !== section.href
+      ? { href: section.href, label: section.label }
+      : { href: "/account", label: "My account" };
+
+  const crumbs = section
+    ? [{ label: "My account", href: "/account" }, { label: section.label }]
+    : [{ label: "My account" }];
 
   return (
     <div className="wrap py-4">
-      <Breadcrumbs items={[{ label: "My account" }]} className="mb-4" />
+      <Breadcrumbs items={crumbs} className="mb-4 hidden lg:flex" />
+
+      {!isHub && (
+        <div className="mb-3 flex items-center gap-1 lg:hidden">
+          <Link
+            href={back.href}
+            className="-ml-2 flex size-9 items-center justify-center rounded-full text-ink transition-colors hover:bg-muted active:bg-muted"
+          >
+            <ChevronLeft className="size-5" />
+            <span className="sr-only">Back to {back.label}</span>
+          </Link>
+          <span className="text-sm font-bold text-sub">{back.label}</span>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="h-max rounded-2xl border border-border bg-card p-4 pt-6">
+        <aside className="hidden h-max rounded-2xl border border-border bg-card p-4 pt-6 lg:block">
           <div className="mb-3 flex flex-col items-center border-b border-border pb-5 text-center">
             <span className="flex size-[76px] items-center justify-center rounded-full bg-blue-deep font-display text-2xl font-extrabold text-amber">
               {initials(user.fullName)}
@@ -119,9 +153,9 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
 function AccountShellSkeleton() {
   return (
     <div className="wrap py-4">
-      <Skeleton className="mb-4 h-4 w-40" />
+      <Skeleton className="mb-4 hidden h-4 w-40 lg:block" />
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="h-max rounded-2xl border border-border bg-card p-4 pt-6">
+        <aside className="hidden h-max rounded-2xl border border-border bg-card p-4 pt-6 lg:block">
           <div className="mb-3 flex flex-col items-center gap-2 border-b border-border pb-5">
             <Skeleton className="size-[76px] rounded-full" />
             <Skeleton className="mt-1 h-4 w-28" />
@@ -134,8 +168,8 @@ function AccountShellSkeleton() {
           </nav>
         </aside>
         <div className="flex min-w-0 flex-col gap-4">
+          <Skeleton className="h-[104px] rounded-2xl" />
           <Skeleton className="h-64 rounded-2xl" />
-          <Skeleton className="h-40 rounded-2xl" />
         </div>
       </div>
     </div>

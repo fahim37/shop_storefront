@@ -10,10 +10,16 @@ import type { ProductImage } from "@/lib/api/types";
 
 const ZOOM = 2.5;
 
+/** Horizontal drag (px) past which a release navigates to the next image. */
+const SWIPE_NAV_PX = 56;
+/** Downward drag (px) past which a release closes the viewer. */
+const SWIPE_CLOSE_PX = 90;
+
 /**
  * Fullscreen image viewer — the touch-first zoom path (the inline hero only
  * magnifies on a fine pointer + hover, i.e. desktop mice). Here, on any device:
  *   • tap / click the image to toggle zoom (1× ↔ {@link ZOOM}×)
+ *   • at 1×, swipe left/right to change image, swipe down to close
  *   • drag (touch or mouse) to pan while zoomed
  *   • arrows / thumbnails / ←→ keys to change image, Esc / ✕ to close
  * Native pinch-to-zoom also still works since the page sets no viewport lock.
@@ -34,13 +40,18 @@ export function ProductLightbox({
   const [mounted, setMounted] = React.useState(false);
   const [scale, setScale] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  // Unzoomed finger-follow displacement while swiping between images.
+  const [swipe, setSwipe] = React.useState({ x: 0, y: 0 });
   const [dragging, setDragging] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const stripRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef<{
     x: number;
     y: number;
     bx: number;
     by: number;
+    dx: number;
+    dy: number;
     moved: boolean;
   } | null>(null);
 
@@ -55,10 +66,22 @@ export function ProductLightbox({
     };
   }, []);
 
-  // Reset zoom whenever the active image changes.
+  // Reset zoom/swipe whenever the active image changes.
   React.useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
+    setSwipe({ x: 0, y: 0 });
+  }, [index]);
+
+  // Keep the active thumbnail centered in its strip.
+  React.useEffect(() => {
+    const strip = stripRef.current;
+    const el = strip?.querySelector<HTMLElement>(`[data-thumb="${index}"]`);
+    if (!strip || !el) return;
+    strip.scrollTo({
+      left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
+      behavior: "smooth",
+    });
   }, [index]);
 
   const count = images.length;
@@ -102,6 +125,8 @@ export function ProductLightbox({
       y: e.clientY,
       bx: offset.x,
       by: offset.y,
+      dx: 0,
+      dy: 0,
       moved: false,
     };
     setDragging(true);
@@ -112,9 +137,14 @@ export function ProductLightbox({
     if (!drag.current) return;
     const dx = e.clientX - drag.current.x;
     const dy = e.clientY - drag.current.y;
+    drag.current.dx = dx;
+    drag.current.dy = dy;
     if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
     if (scale > 1) {
       setOffset(clampOffset(drag.current.bx + dx, drag.current.by + dy, scale));
+    } else {
+      // Unzoomed: the image follows the finger, so a swipe reads as a slide.
+      setSwipe({ x: dx, y: dy });
     }
   };
 
@@ -122,8 +152,24 @@ export function ProductLightbox({
     const d = drag.current;
     drag.current = null;
     setDragging(false);
-    // A tap (no real movement) toggles zoom; a drag just ends the pan.
-    if (d && !d.moved) toggleZoom();
+    if (!d) return;
+    // A tap (no real movement) toggles zoom; a drag ends a pan or a swipe.
+    if (!d.moved) {
+      toggleZoom();
+      return;
+    }
+    if (scale === 1) {
+      const horizontal = Math.abs(d.dx) > Math.abs(d.dy);
+      if (horizontal && count > 1 && Math.abs(d.dx) > SWIPE_NAV_PX) {
+        go(index + (d.dx < 0 ? 1 : -1));
+        return; // index effect resets the swipe state
+      }
+      if (!horizontal && d.dy > SWIPE_CLOSE_PX) {
+        onClose();
+        return;
+      }
+      setSwipe({ x: 0, y: 0 }); // below threshold — spring back
+    }
   };
 
   const src = mediaUrl(images[index]?.mediaId, "original");
@@ -166,15 +212,16 @@ export function ProductLightbox({
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
+              key={images[index]?.id ?? index}
               src={src}
               alt={images[index]?.altText ?? title}
               draggable={false}
               className={cn(
-                "max-h-full max-w-full object-contain",
+                "max-h-full max-w-full object-contain animate-in fade-in-0 duration-200",
                 !dragging && "transition-transform duration-200",
               )}
               style={{
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                transform: `translate(${offset.x + swipe.x}px, ${offset.y + swipe.y}px) scale(${scale})`,
               }}
             />
           ) : null}
@@ -186,7 +233,7 @@ export function ProductLightbox({
               type="button"
               onClick={() => go(index - 1)}
               aria-label="Previous image"
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white backdrop-blur transition-colors hover:bg-white/20 sm:left-4"
+              className="absolute left-2.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/40 backdrop-blur transition-colors hover:bg-black/75 sm:left-4 sm:size-11"
             >
               <ChevronLeft className="size-6" />
             </button>
@@ -194,7 +241,7 @@ export function ProductLightbox({
               type="button"
               onClick={() => go(index + 1)}
               aria-label="Next image"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white backdrop-blur transition-colors hover:bg-white/20 sm:right-4"
+              className="absolute right-2.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/40 backdrop-blur transition-colors hover:bg-black/75 sm:right-4 sm:size-11"
             >
               <ChevronRight className="size-6" />
             </button>
@@ -220,30 +267,36 @@ export function ProductLightbox({
 
       {/* thumbnail strip */}
       {count > 1 && (
-        <div className="no-scrollbar flex justify-center gap-2 overflow-x-auto px-4 py-3">
-          {images.map((img, i) => (
-            <button
-              key={img.id}
-              type="button"
-              onClick={() => onIndex(i)}
-              aria-label={`View image ${i + 1}`}
-              aria-pressed={i === index}
-              className={cn(
-                "relative size-12 shrink-0 overflow-hidden rounded border-2 transition-colors",
-                i === index
-                  ? "border-white"
-                  : "border-white/25 hover:border-white/60",
-              )}
-            >
-              <MediaImage
-                mediaId={img.mediaId}
-                variant="thumbnail"
-                alt=""
-                className="object-cover"
-                sizes="48px"
-              />
-            </button>
-          ))}
+        <div
+          ref={stripRef}
+          className="no-scrollbar relative overflow-x-auto px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        >
+          <div className="mx-auto flex w-max gap-2">
+            {images.map((img, i) => (
+              <button
+                key={img.id}
+                data-thumb={i}
+                type="button"
+                onClick={() => onIndex(i)}
+                aria-label={`View image ${i + 1}`}
+                aria-pressed={i === index}
+                className={cn(
+                  "relative size-12 shrink-0 overflow-hidden rounded border-2 transition-colors sm:size-14",
+                  i === index
+                    ? "border-white"
+                    : "border-white/25 opacity-70 hover:border-white/60 hover:opacity-100",
+                )}
+              >
+                <MediaImage
+                  mediaId={img.mediaId}
+                  variant="thumbnail"
+                  alt=""
+                  className="object-cover"
+                  sizes="56px"
+                />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>,

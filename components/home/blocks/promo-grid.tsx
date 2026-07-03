@@ -31,7 +31,7 @@ export function PromoGrid({ cards }: { cards: HomepagePromoCard[] }) {
   return (
     <section
       className={cn(
-        "wrap grid gap-4 sm:grid-cols-2",
+        "wrap grid gap-3 sm:grid-cols-2 sm:gap-4",
         COLS[Math.min(cards.length, 4)] ?? "lg:grid-cols-2",
       )}
     >
@@ -42,17 +42,17 @@ export function PromoGrid({ cards }: { cards: HomepagePromoCard[] }) {
           <div
             key={`${card.title}-${i}`}
             className={cn(
-              "flex flex-wrap items-center gap-4 rounded-2xl px-5 py-5 sm:gap-5 sm:px-7 sm:py-7",
+              "flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3.5 sm:gap-5 sm:px-7 sm:py-7",
               tone.panel,
             )}
           >
-            <Icon className="size-8 shrink-0 sm:size-9" strokeWidth={1.4} />
+            <Icon className="size-6 shrink-0 sm:size-9" strokeWidth={1.4} />
             <div className="min-w-0 flex-1 basis-40">
-              <h3 className="font-display text-base font-extrabold sm:text-lg">
+              <h3 className="font-display text-sm font-extrabold sm:text-lg">
                 {card.title}
               </h3>
               {card.subtitle && (
-                <p className="mt-0.5 text-[12.5px] font-semibold opacity-75">
+                <p className="mt-0.5 text-[12px] font-semibold opacity-75 sm:text-[12.5px]">
                   {card.subtitle}
                 </p>
               )}

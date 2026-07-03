@@ -27,13 +27,13 @@ export function SectionHeader({
     <div className={cn("mb-4 flex items-end justify-between gap-4", className)}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">
+          <h2 className="font-display text-lg font-extrabold tracking-tight sm:text-2xl">
             {title}
           </h2>
           {extra}
         </div>
         {subtitle && (
-          <p className="mt-0.5 text-[13px] text-sub">{subtitle}</p>
+          <p className="mt-0.5 text-[12.5px] text-sub sm:text-[13px]">{subtitle}</p>
         )}
       </div>
       {linkLabel && linkHref && (

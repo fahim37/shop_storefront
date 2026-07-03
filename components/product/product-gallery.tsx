@@ -248,9 +248,10 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
 /**
  * Mobile-only image gallery: a full-width horizontal scroll-snap carousel the
- * user swipes through, with a position counter and dot indicators. Tapping a
+ * user swipes through (one slide per fling, Daraz-style), with a position
+ * counter and a tappable thumbnail rail like the desktop gallery. Tapping a
  * slide opens the fullscreen lightbox. Scroll position drives {@link activeIndex}
- * so the counter/dots and lightbox start on the visible image.
+ * so the counter/thumbs and lightbox start on the visible image.
  */
 function MobileGallery({
   images,
@@ -266,6 +267,7 @@ function MobileGallery({
   onOpen: () => void;
 }) {
   const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const stripRef = React.useRef<HTMLDivElement>(null);
 
   const onScroll = () => {
     const el = scrollerRef.current;
@@ -274,22 +276,39 @@ function MobileGallery({
     if (index !== activeIndex) onActiveIndexChange(index);
   };
 
+  /** Thumb tap → glide the carousel to that slide (onScroll syncs the index). */
+  const goTo = (i: number) => {
+    const el = scrollerRef.current;
+    el?.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+
+  // Keep the active thumbnail centered in its rail while swiping.
+  React.useEffect(() => {
+    const strip = stripRef.current;
+    const el = strip?.querySelector<HTMLElement>(`[data-thumb="${activeIndex}"]`);
+    if (!strip || !el) return;
+    strip.scrollTo({
+      left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
+      behavior: "smooth",
+    });
+  }, [activeIndex]);
+
   return (
     <div className="sm:hidden">
       <div className="relative">
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-xl border border-border bg-muted"
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-muted"
         >
           {images.length > 0 ? (
-            images.map((img) => (
+            images.map((img, i) => (
               <button
                 key={img.id}
                 type="button"
                 onClick={onOpen}
                 aria-label="Open image viewer"
-                className="relative aspect-square w-full shrink-0 snap-center"
+                className="relative aspect-square w-full shrink-0 snap-center snap-always"
               >
                 <MediaImage
                   mediaId={img.mediaId}
@@ -297,6 +316,9 @@ function MobileGallery({
                   alt={img.altText ?? title}
                   className="object-contain"
                   sizes="100vw"
+                  // Pre-warm the visible slide and its neighbours so swiping
+                  // never lands on a gray placeholder mid-gesture.
+                  loading={Math.abs(i - activeIndex) <= 1 ? "eager" : "lazy"}
                 />
               </button>
             ))
@@ -315,19 +337,38 @@ function MobileGallery({
         )}
       </div>
 
-      {/* Dot indicators (skipped for image-heavy products — counter still shown) */}
-      {images.length > 1 && images.length <= 8 && (
-        <div className="mt-2.5 flex items-center justify-center gap-1.5">
-          {images.map((img, i) => (
-            <span
-              key={img.id}
-              aria-hidden
-              className={cn(
-                "h-1.5 rounded-full transition-all",
-                i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border",
-              )}
-            />
-          ))}
+      {/* Thumbnail rail — same affordance as the desktop gallery */}
+      {images.length > 1 && (
+        <div ref={stripRef} className="no-scrollbar relative mt-2.5 overflow-x-auto">
+          <div className="mx-auto flex w-max gap-2">
+            {images.map((img, i) => {
+              const on = i === activeIndex;
+              return (
+                <button
+                  key={img.id}
+                  data-thumb={i}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-label={`View image ${i + 1}`}
+                  aria-pressed={on}
+                  className={cn(
+                    "relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-colors",
+                    on
+                      ? "border-primary ring-1 ring-primary/30"
+                      : "border-border",
+                  )}
+                >
+                  <MediaImage
+                    mediaId={img.mediaId}
+                    variant="thumbnail"
+                    alt={img.altText ?? title}
+                    className="object-cover"
+                    sizes="56px"
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -107,18 +107,18 @@ export default async function ProductPage({ params }: PageParams) {
   const relatedCards: CardProduct[] = related.items.map(fromRecHit);
 
   return (
-    <div className="wrap py-4 pb-16">
-      <Breadcrumbs items={crumbs} className="mb-4" />
+    <div className="wrap py-3 pb-10 sm:py-4 sm:pb-16">
+      <Breadcrumbs items={crumbs} className="mb-3 sm:mb-4" />
 
       {/* Top: gallery + info */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-10">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-10">
         {/* Left — gallery */}
         <div className="min-w-0">
           <ProductGallery images={detail.images} title={product.title} />
         </div>
 
         {/* Right — info + buy panel */}
-        <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
           <div className="flex flex-wrap items-center gap-2">
             {product.brandName && (
               <Badge variant="primary" size="md">
@@ -131,12 +131,12 @@ export default async function ProductPage({ params }: PageParams) {
             </Badge>
           </div>
 
-          <h1 className="font-display text-2xl font-extrabold leading-tight tracking-tight sm:text-[28px]">
+          <h1 className="font-display text-xl font-extrabold leading-snug tracking-tight sm:text-[28px] sm:leading-tight">
             {product.title}
           </h1>
 
           {/* meta row */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] font-bold text-sub">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-bold text-sub sm:gap-x-3 sm:gap-y-1.5 sm:text-[13px]">
             <span className="flex items-center gap-1.5">
               <RatingStars value={product.ratingAverage} size={15} precise />
               <span className="text-ink">
@@ -158,19 +158,19 @@ export default async function ProductPage({ params }: PageParams) {
       </div>
 
       {/* Delivery + vendor strip */}
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-5 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {DELIVERY_ITEMS.map((u) => (
             <div
               key={u.title}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
+              className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3"
             >
-              <u.icon className="size-5 shrink-0 text-primary" strokeWidth={1.6} />
+              <u.icon className="size-[18px] shrink-0 text-primary sm:size-5" strokeWidth={1.6} />
               <span className="min-w-0">
-                <b className="block truncate text-[12.5px] font-extrabold">
+                <b className="block truncate text-[12px] font-extrabold sm:text-[12.5px]">
                   {u.title}
                 </b>
-                <span className="block truncate text-[11px] font-semibold text-faint">
+                <span className="block truncate text-[10.5px] font-semibold text-faint sm:text-[11px]">
                   {u.sub}
                 </span>
               </span>
@@ -179,7 +179,7 @@ export default async function ProductPage({ params }: PageParams) {
         </div>
 
         {product.vendorName && (
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 sm:px-4 sm:py-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-navy text-white">
               <Store className="size-5" strokeWidth={1.6} />
             </span>
@@ -201,13 +201,13 @@ export default async function ProductPage({ params }: PageParams) {
       </div>
 
       {/* Description / Specs / Reviews / Questions — full, stacked (no tabs) */}
-      <section className="mt-12">
+      <section className="mt-8 sm:mt-12">
         <ProductDetailSections product={product} />
       </section>
 
       {/* You may also like */}
       {relatedCards.length > 0 && (
-        <section className="mt-14">
+        <section className="mt-10 sm:mt-14">
           <SectionHeader
             title="You may also like"
             subtitle="Frequently bought together"

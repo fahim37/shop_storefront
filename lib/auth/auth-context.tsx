@@ -13,11 +13,13 @@ import {
 import {
   confirmPasswordReset as confirmPasswordResetApi,
   getMe,
+  linkPhone as linkPhoneApi,
   login as loginApi,
   logout as logoutApi,
   refresh as refreshApi,
   requestOtp as requestOtpApi,
   requestPasswordReset as requestPasswordResetApi,
+  requestPhoneOtp as requestPhoneOtpApi,
   signup as signupApi,
   socialGoogle,
   verifyOtp as verifyOtpApi,
@@ -26,6 +28,7 @@ import {
   type LoginResponse,
   type MeResponse,
   type OtpPurpose,
+  type PhoneOtpResult,
   type SignupPayload,
   type TokenPair,
 } from "@/lib/auth/auth.api";
@@ -79,6 +82,17 @@ export interface AuthContextValue {
 
   requestOtp: (identifier: string, purpose: OtpPurpose) => Promise<void>;
   verifyOtp: (identifier: string, code: string) => Promise<void>;
+
+  /* --- phone verification (link a verified phone to this account) --- */
+
+  /** Send an SMS OTP to `phone` for linking it to the current account. */
+  requestPhoneOtp: (phone: string) => Promise<PhoneOtpResult>;
+  /**
+   * Verify the code and attach the phone to the current account (promotes a
+   * social 'lite' account to 'active'), then reload the profile so
+   * `isPhoneVerified` / `verifiedPhone` reflect it.
+   */
+  linkPhone: (phone: string, code: string) => Promise<void>;
 
   /* --- storefront modal controls --- */
 
@@ -264,6 +278,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  /* --- phone verification --- */
+
+  const requestPhoneOtp = React.useCallback(
+    (phone: string) => requestPhoneOtpApi(phone, "phone_link"),
+    [],
+  );
+
+  const linkPhone = React.useCallback(
+    async (phone: string, code: string) => {
+      await linkPhoneApi(phone, code);
+      // The link promotes the account + verifies the phone server-side; reload
+      // the profile so gates keyed on verifiedPhone/isPhoneVerified update.
+      await loadProfile();
+    },
+    [loadProfile],
+  );
+
   /* --- requireAuth --- */
 
   const requireAuth = React.useCallback(
@@ -341,6 +372,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       confirmPasswordReset,
       requestOtp,
       verifyOtp,
+      requestPhoneOtp,
+      linkPhone,
       isAuthOpen,
       authView,
       openAuth,
@@ -361,6 +394,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       confirmPasswordReset,
       requestOtp,
       verifyOtp,
+      requestPhoneOtp,
+      linkPhone,
       isAuthOpen,
       authView,
       openAuth,

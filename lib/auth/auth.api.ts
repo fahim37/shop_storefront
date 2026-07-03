@@ -6,6 +6,9 @@ import { http } from "@/lib/api/http";
 
 export type OtpPurpose = "signup" | "login" | "password_reset" | "2fa";
 
+/** 'lite' = social/guest account with no verified phone yet; 'active' = full. */
+export type AccountStatus = "lite" | "active" | "disabled";
+
 /** Authenticated user as returned by GET /me. */
 export interface MeResponse {
   id: string;
@@ -14,6 +17,12 @@ export interface MeResponse {
   phone: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
+  accountStatus: AccountStatus;
+  /**
+   * The account's phone in a display-safe form: null when it's still the
+   * social-signup placeholder (`+8809…`) rather than a real, verified number.
+   */
+  verifiedPhone: string | null;
 }
 
 /** Token bundle returned by login (success branch), 2FA verify, refresh, social. */
@@ -165,6 +174,50 @@ export function socialGoogle(idToken: string): Promise<TokenPair> {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Phone verification (link an OTP-verified phone to the current account)      */
+/* -------------------------------------------------------------------------- */
+
+export interface PhoneOtpResult {
+  sent: boolean;
+  channel: "sms" | "whatsapp";
+  /** Seconds to wait before requesting another code. */
+  resendInSeconds: number;
+  /** Echoed only outside production so dev flows are testable without SMS. */
+  devCode?: string;
+}
+
+/**
+ * POST /auth/phone/request-otp — send a 6-digit SMS code. `purpose` is
+ * `phone_link` when attaching a phone to an already-signed-in account.
+ * Accepts loose BD input (01…, 8801…, +8801…); the backend normalizes it.
+ */
+export function requestPhoneOtp(
+  phone: string,
+  purpose: "phone_link" | "login" | "signup" | "guest" = "phone_link",
+): Promise<PhoneOtpResult> {
+  return http.post<PhoneOtpResult>(
+    "/auth/phone/request-otp",
+    { phone, purpose, channel: "sms" },
+    { skipAuth: true },
+  );
+}
+
+/**
+ * POST /auth/phone/link — attach a verified phone to the current account
+ * (promotes a social 'lite' account to 'active'). Requires a Bearer token,
+ * which the http client attaches automatically.
+ */
+export function linkPhone(
+  phone: string,
+  code: string,
+): Promise<{ linked: true; accountStatus: AccountStatus }> {
+  return http.post<{ linked: true; accountStatus: AccountStatus }>(
+    "/auth/phone/link",
+    { phone, code },
+  );
+}
+
 /**
  * Raw `GET /me` envelope from store_backend (profile is nested under
  * `profile`). We flatten it to {@link MeResponse} at this boundary so the
@@ -177,6 +230,7 @@ interface RawMe {
   userType: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
+  accountStatus: AccountStatus;
   status: string;
   lastLoginAt: string | null;
   profile: {
@@ -188,6 +242,9 @@ interface RawMe {
 /** GET /me — authenticated user profile (flattened). */
 export async function getMe(): Promise<MeResponse> {
   const raw = await http.get<RawMe>("/me");
+  // Social sign-in seeds a sentinel phone (+8809…) that is never a real BD
+  // mobile; treat it as "no phone" until the user verifies a real number.
+  const isPlaceholderPhone = !raw.isPhoneVerified || /^\+8809/.test(raw.phone);
   return {
     id: raw.id,
     fullName: raw.profile?.fullName ?? raw.email,
@@ -195,5 +252,7 @@ export async function getMe(): Promise<MeResponse> {
     phone: raw.phone,
     isEmailVerified: raw.isEmailVerified,
     isPhoneVerified: raw.isPhoneVerified,
+    accountStatus: raw.accountStatus,
+    verifiedPhone: isPlaceholderPhone ? null : raw.phone,
   };
 }

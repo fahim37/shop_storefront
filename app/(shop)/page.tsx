@@ -29,8 +29,8 @@ export default async function HomePage() {
   const [tree, recs, bestPage, newPage, blocks] = await Promise.all([
     settle(getCategoryTree(), [] as CategoryNode[]),
     settle(getHomeRecommendations(), { items: [], placement: "home", modelVersion: "v1" }),
-    settle(getProductsPage({ limit: 12, sort: "best_selling" }), { data: [] }),
-    settle(getProductsPage({ limit: 12, sort: "newest" }), { data: [] }),
+    settle(getProductsPage({ limit: 20, sort: "best_selling" }), { data: [] }),
+    settle(getProductsPage({ limit: 20, sort: "newest" }), { data: [] }),
     settle(getHomepage(), [] as HomepageBlock[]),
   ]);
 

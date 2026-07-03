@@ -56,7 +56,7 @@ export function ProductDetailSections({ product }: ReviewsSectionProps) {
   );
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-8 sm:gap-12">
       <DetailSection id="description" title="Description">
         <DescriptionTab product={product} />
       </DetailSection>
@@ -90,8 +90,8 @@ function DetailSection({
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <div className="mb-5 flex items-center gap-3">
-        <h2 className="font-display text-xl font-extrabold tracking-tight sm:text-[22px]">
+      <div className="mb-4 flex items-center gap-3 sm:mb-5">
+        <h2 className="font-display text-lg font-extrabold tracking-tight sm:text-[22px]">
           {title}
         </h2>
         <span className="h-px flex-1 bg-border" />
@@ -197,11 +197,11 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
   const reviews = data?.reviews ?? [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:gap-6">
       {/* Rating summary */}
       <Card className="h-fit lg:sticky lg:top-24">
-        <CardContent className="flex flex-col items-center gap-2 py-7 text-center">
-          <span className="font-display text-5xl font-extrabold leading-none">
+        <CardContent className="flex flex-col items-center gap-2 py-5 text-center sm:py-7">
+          <span className="font-display text-4xl font-extrabold leading-none sm:text-5xl">
             {formatRating(product.ratingAverage)}
           </span>
           <RatingStars value={product.ratingAverage} size={18} precise />
@@ -243,7 +243,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
             }
           />
         ) : (
-          <ul className="flex flex-col gap-5">
+          <ul className="flex flex-col gap-4 sm:gap-5">
             {reviews.map((rv) => (
               <ReviewItem key={rv.id} review={rv} productId={product.id} />
             ))}
@@ -389,7 +389,7 @@ function QuestionsTab({ productId }: { productId: string }) {
   const questions = data ?? [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-4 lg:grid-cols-[1fr_320px] lg:gap-6">
       <div className="min-w-0">
         {isLoading ? (
           <div className="space-y-4">

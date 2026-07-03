@@ -193,9 +193,9 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* price */}
-      <div className="flex items-baseline gap-3 rounded-xl bg-muted px-4 py-3.5">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl bg-muted px-3 py-2.5 sm:px-4 sm:py-3.5">
         <Price
           pricePaisa={activeVariant?.pricePaisa ?? detail.product.minPricePaisa}
           comparePaisa={activeVariant?.compareAtPricePaisa}
@@ -259,7 +259,7 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
       })}
 
       {/* quantity + live stock state */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <QuantityStepper
           value={qty}
           onChange={setQty}
@@ -306,7 +306,7 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
         <WishlistButton
           productId={detail.product.id}
           heartClassName="size-5"
-          className="size-12 shrink-0 rounded-md border-2 border-border text-sub hover:border-red/40 hover:text-red"
+          className="size-11 shrink-0 rounded-md border-2 border-border text-sub hover:border-red/40 hover:text-red"
         />
       </div>
 

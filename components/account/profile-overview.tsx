@@ -353,10 +353,11 @@ function PersonalInfoSkeleton() {
 }
 
 /* --------------------------------------------------------------------- */
-/* Page                                                                  */
+/* Personal information + address book (rendered at /account/profile on  */
+/* mobile and directly at /account on desktop)                           */
 /* --------------------------------------------------------------------- */
 
-export default function AccountPersonalInfoPage() {
+export function ProfileOverview() {
   const { data: me, isLoading, isError } = useMe();
 
   if (isLoading) {

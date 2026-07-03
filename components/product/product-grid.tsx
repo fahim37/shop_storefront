@@ -10,16 +10,24 @@ export function ProductGrid({
   products,
   className,
   cols = 5,
+  flushRows = false,
 }: {
   products: CardProduct[];
   className?: string;
   cols?: 4 | 5;
+  /**
+   * Trim the incomplete final row at each breakpoint (see `.grid-flush-*` in
+   * globals.css) so the grid always ends flush. For decorative rails only —
+   * never for browse/search results, where every item must stay visible.
+   */
+  flushRows?: boolean;
 }) {
   return (
     <div
       className={cn(
         "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4",
         cols === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4",
+        flushRows && (cols === 5 ? "grid-flush-5" : "grid-flush-4"),
         className,
       )}
     >

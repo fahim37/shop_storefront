@@ -283,6 +283,38 @@ h3,
   }
 }
 
+/* Homepage product rails: hide the incomplete final row at each breakpoint so
+   sections always end flush (no orphan cells). Column counts must mirror the
+   grid classes in components/product/product-grid.tsx. Opt-in — never applied
+   to browse/search results where every item must stay visible. */
+@media (max-width: 639.98px) {
+  /* 2 columns */
+  .grid-flush-4 > :nth-child(2n + 1):nth-last-child(-n + 1),
+  .grid-flush-4 > :nth-child(2n + 1):nth-last-child(-n + 1) ~ *,
+  .grid-flush-5 > :nth-child(2n + 1):nth-last-child(-n + 1),
+  .grid-flush-5 > :nth-child(2n + 1):nth-last-child(-n + 1) ~ * {
+    display: none;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  /* 3 columns */
+  .grid-flush-4 > :nth-child(3n + 1):nth-last-child(-n + 2),
+  .grid-flush-4 > :nth-child(3n + 1):nth-last-child(-n + 2) ~ *,
+  .grid-flush-5 > :nth-child(3n + 1):nth-last-child(-n + 2),
+  .grid-flush-5 > :nth-child(3n + 1):nth-last-child(-n + 2) ~ * {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  /* 4 / 5 columns */
+  .grid-flush-4 > :nth-child(4n + 1):nth-last-child(-n + 3),
+  .grid-flush-4 > :nth-child(4n + 1):nth-last-child(-n + 3) ~ *,
+  .grid-flush-5 > :nth-child(5n + 1):nth-last-child(-n + 4),
+  .grid-flush-5 > :nth-child(5n + 1):nth-last-child(-n + 4) ~ * {
+    display: none;
+  }
+}
+
 /* Hide scrollbars on horizontal rails while keeping them scrollable. */
 .no-scrollbar {
   scrollbar-width: none;

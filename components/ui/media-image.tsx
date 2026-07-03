@@ -12,6 +12,8 @@ export interface MediaImageProps {
   /** Classes applied to the rendered <img>/placeholder (fills its parent). */
   className?: string;
   sizes?: string;
+  /** Native loading hint — pass "eager" for carousel slides / above the fold. */
+  loading?: "lazy" | "eager";
 }
 
 /**
@@ -26,6 +28,7 @@ export function MediaImage({
   alt,
   className,
   sizes,
+  loading = "lazy",
 }: MediaImageProps) {
   const url = src ? resolveMediaPath(src) : mediaUrl(mediaId, variant);
 
@@ -50,7 +53,7 @@ export function MediaImage({
       src={url}
       alt={alt}
       sizes={sizes}
-      loading="lazy"
+      loading={loading}
       decoding="async"
       className={cn(
         "size-full object-cover bg-gradient-to-br from-blue-soft to-surface",

@@ -601,13 +601,16 @@ export interface Address {
 
 export interface AddressInput {
   label?: string;
-  recipientName?: string;
-  recipientPhone?: string;
-  division: string;
+  recipientName: string;
+  recipientPhone: string;
+  // Simplified customer form: only district + street are required. Division,
+  // upazila, union and postcode are auto-filled from the map picker when used,
+  // and optional otherwise.
+  division?: string;
   district: string;
-  upazila: string;
+  upazila?: string;
   unionName?: string;
-  postcode: string;
+  postcode?: string;
   streetAddress: string;
   latitude?: number;
   longitude?: number;

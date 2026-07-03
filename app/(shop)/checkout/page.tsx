@@ -6,15 +6,19 @@ import { useRouter } from "next/navigation";
 import {
   Banknote,
   Home,
+  MapPin,
   Plus,
   RotateCcw,
   ShieldCheck,
+  Smartphone,
   Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AddressFormDialog } from "@/components/account/address-form-dialog";
+import { PhoneVerifyDialog } from "@/components/account/phone-verify-dialog";
 import { MediaImage } from "@/components/ui/media-image";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -62,15 +66,46 @@ const PAYMENTS: {
 ];
 
 export default function CheckoutPage() {
-  const { status, openAuth } = useAuth();
+  const { status, openAuth, user } = useAuth();
   const router = useRouter();
   const { cart, isLoading: cartLoading } = useCart();
   const { data: addresses, isLoading: addrLoading } = useAddresses();
   const checkout = useCheckout();
 
+  const verifiedPhone = user?.verifiedPhone ?? null;
+
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [payment, setPayment] = React.useState<PaymentMethod>("cod");
   const [agreed, setAgreed] = React.useState(false);
+  const [addressDialogOpen, setAddressDialogOpen] = React.useState(false);
+  const [verifyOpen, setVerifyOpen] = React.useState(false);
+
+  // "Place order" stays clickable even when requirements are missing; instead
+  // of a silently disabled button we scroll to and flash the incomplete step.
+  const [attention, setAttention] = React.useState<"phone" | "address" | "terms" | null>(
+    null,
+  );
+  const attentionTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phoneSectionRef = React.useRef<HTMLElement | null>(null);
+  const addressSectionRef = React.useRef<HTMLElement | null>(null);
+  const agreeRef = React.useRef<HTMLLabelElement | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (attentionTimer.current) clearTimeout(attentionTimer.current);
+    },
+    [],
+  );
+
+  const drawAttention = (
+    target: "phone" | "address" | "terms",
+    el: HTMLElement | null,
+  ) => {
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setAttention(target);
+    if (attentionTimer.current) clearTimeout(attentionTimer.current);
+    attentionTimer.current = setTimeout(() => setAttention(null), 2200);
+  };
 
   // Derive the active address: the user's explicit pick, otherwise their
   // default (falling back to the first). Computed during render so it stays in
@@ -119,13 +154,27 @@ export default function CheckoutPage() {
     );
   }
 
+  const hasAddresses = !!addresses && addresses.length > 0;
+
   const placeOrder = async () => {
+    if (!verifiedPhone) {
+      toast.error("Verify your mobile number to place your order");
+      drawAttention("phone", phoneSectionRef.current);
+      setVerifyOpen(true);
+      return;
+    }
     if (!addressId) {
-      toast.error("Please select a delivery address");
+      toast.error(
+        hasAddresses
+          ? "Please select a delivery address"
+          : "Add a delivery address to place your order",
+      );
+      drawAttention("address", addressSectionRef.current);
       return;
     }
     if (!agreed) {
-      toast.error("Please agree to the terms to continue");
+      toast.error("Please agree to the policies to place your order");
+      drawAttention("terms", agreeRef.current);
       return;
     }
     try {
@@ -151,27 +200,69 @@ export default function CheckoutPage() {
       <Breadcrumbs items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]} className="mb-4" />
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-4">
-          {/* 1. Address */}
-          <section className="overflow-hidden rounded-2xl border border-border bg-card">
-            <StepHead n={1} title="Delivery address">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/account/addresses">
-                  <Plus className="size-4" strokeWidth={2.6} /> Manage
-                </Link>
+          {/* Verify phone — required before an order can be placed */}
+          {!verifiedPhone && (
+            <section
+              ref={phoneSectionRef}
+              className={cn(
+                "flex flex-col gap-3 rounded-2xl border border-amber/40 bg-amber-soft p-5 transition-shadow duration-300 sm:flex-row sm:items-center",
+                attention === "phone" && "ring-2 ring-amber ring-offset-2",
+              )}
+            >
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber/20 text-amber-deep">
+                <Smartphone className="size-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-extrabold text-ink">
+                  Verify your mobile number
+                </p>
+                <p className="text-[13px] text-sub">
+                  We confirm and deliver every order by phone. Verify a number
+                  with a one-time SMS code to continue.
+                </p>
+              </div>
+              <Button
+                className="shrink-0"
+                onClick={() => setVerifyOpen(true)}
+              >
+                <Smartphone className="size-4" /> Verify now
               </Button>
+            </section>
+          )}
+
+          {/* 1. Address */}
+          <section
+            ref={addressSectionRef}
+            className={cn(
+              "overflow-hidden rounded-2xl border border-border bg-card transition-shadow duration-300",
+              attention === "address" && "ring-2 ring-amber ring-offset-2",
+            )}
+          >
+            <StepHead n={1} title="Delivery address">
+              {hasAddresses && (
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/account/addresses">Manage</Link>
+                </Button>
+              )}
             </StepHead>
             <div className="p-5">
               {addrLoading ? (
                 <Spinner />
-              ) : !addresses || addresses.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-6 text-center">
-                  <p className="mb-3 text-sm text-muted-foreground">
-                    You have no saved addresses yet.
-                  </p>
-                  <Button asChild>
-                    <Link href="/account/addresses">
-                      <Plus className="size-4" /> Add delivery address
-                    </Link>
+              ) : !hasAddresses ? (
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface px-4 py-8 text-center">
+                  <span className="flex size-11 items-center justify-center rounded-full bg-blue-soft text-primary">
+                    <MapPin className="size-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-ink">
+                      Where should we deliver your order?
+                    </p>
+                    <p className="mt-0.5 text-sm text-sub">
+                      Add a delivery address — it only takes a minute.
+                    </p>
+                  </div>
+                  <Button onClick={() => setAddressDialogOpen(true)}>
+                    <Plus className="size-4" /> Add delivery address
                   </Button>
                 </div>
               ) : (
@@ -214,14 +305,27 @@ export default function CheckoutPage() {
                           </span>
                         </div>
                         <b className="block text-[13px] font-extrabold">
-                          {a.recipientName} · {a.recipientPhone}
+                          {[a.recipientName, a.recipientPhone]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </b>
                         <p className="mt-0.5 text-[12px] font-semibold text-sub">
-                          {a.streetAddress}, {a.upazila}, {a.district} — {a.postcode}
+                          {[a.streetAddress, a.upazila, a.district]
+                            .filter((p) => !!p && p.trim().length > 0)
+                            .join(", ")}
+                          {a.postcode ? ` — ${a.postcode}` : ""}
                         </p>
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => setAddressDialogOpen(true)}
+                    className="flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-[13px] font-bold text-sub transition-colors hover:border-primary/50 hover:text-primary"
+                  >
+                    <Plus className="size-5" />
+                    Add new address
+                  </button>
                 </div>
               )}
             </div>
@@ -281,6 +385,11 @@ export default function CheckoutPage() {
                       <b className="block text-[13px] font-extrabold">{p.label}</b>
                       <span className="text-[11.5px] font-semibold text-faint">{p.hint}</span>
                     </span>
+                    {!p.enabled && (
+                      <span className="shrink-0 rounded-full bg-amber-soft px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-deep">
+                        Soon
+                      </span>
+                    )}
                     <span
                       className={cn(
                         "flex size-5 items-center justify-center rounded-full border-2",
@@ -317,7 +426,31 @@ export default function CheckoutPage() {
             </span>
           </div>
 
-          <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-[12px] font-semibold text-sub">
+          {!addrLoading && !hasAddresses && (
+            <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-amber-soft p-3">
+              <MapPin className="size-4 shrink-0 text-amber-deep" />
+              <p className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-amber-deep">
+                <b className="block font-extrabold">No delivery address yet</b>
+                Add one to place your order.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0"
+                onClick={() => setAddressDialogOpen(true)}
+              >
+                <Plus className="size-4" /> Add
+              </Button>
+            </div>
+          )}
+
+          <label
+            ref={agreeRef}
+            className={cn(
+              "mt-3 flex cursor-pointer items-start gap-2.5 rounded-lg p-2 text-[12px] font-semibold text-sub transition-colors duration-300",
+              attention === "terms" && "bg-amber-soft ring-2 ring-amber",
+            )}
+          >
             <Checkbox
               checked={agreed}
               onCheckedChange={(c) => setAgreed(c === true)}
@@ -340,9 +473,8 @@ export default function CheckoutPage() {
             variant="accent"
             fullWidth
             size="lg"
-            className="mt-4"
+            className="mt-3"
             loading={checkout.isPending}
-            disabled={!addressId || !agreed}
             onClick={placeOrder}
           >
             Place order · {formatPaisa(cart.grandTotalPaisa)}
@@ -361,6 +493,12 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      <AddressFormDialog
+        open={addressDialogOpen}
+        onOpenChange={setAddressDialogOpen}
+      />
+      <PhoneVerifyDialog open={verifyOpen} onOpenChange={setVerifyOpen} />
     </div>
   );
 }

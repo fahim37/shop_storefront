@@ -78,7 +78,7 @@ export default function MyReviewsPage() {
   return (
     <div className="space-y-8">
       <header className="space-y-1">
-        <h1 className="font-display text-2xl font-extrabold text-ink">My reviews</h1>
+        <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">My reviews</h1>
         <p className="text-sm text-sub">
           Share your experience on delivered items to help other shoppers.
         </p>

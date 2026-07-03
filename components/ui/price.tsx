@@ -16,7 +16,7 @@ const SIZES = {
   sm: "text-sm",
   md: "text-base",
   lg: "text-xl",
-  xl: "text-[28px] leading-none",
+  xl: "text-[22px] leading-none sm:text-[28px]",
 } as const;
 
 /** Brand price block: bold blue current price + strikethrough + optional save chip. */
