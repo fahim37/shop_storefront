@@ -3,20 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  Check,
-  CircleDot,
-  PackageX,
-  Truck,
-} from "lucide-react";
+import { PackageX, Truck } from "lucide-react";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/lib/api/orders";
 import {
   SUBORDER_STATUS,
   STATUS_TONE_CLASS,
-  TRACKING_STEPS,
-  currentStepIndex,
   canCustomerCancel,
 } from "@/lib/order-status";
+import { OrderTracker } from "@/components/account/order-tracker";
 import { formatDate, formatDateTime, formatPaisa } from "@/lib/format";
 import { ApiError } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
@@ -38,7 +32,6 @@ import type {
   HydratedSubOrder,
   OrderItem,
   OrderView,
-  SubOrderStatus,
   TrackingSubOrder,
 } from "@/lib/api/types";
 
@@ -143,8 +136,17 @@ function OrderDetail({
       </div>
 
       {/* Tracking stepper */}
-      {firstStatus && (
-        <TrackingStepper status={firstStatus} cancelledAt={order.cancelledAt} />
+      {firstSubOrder && firstStatus && (
+        <OrderTracker
+          status={firstStatus}
+          cancelledAt={order.cancelledAt}
+          placedAt={order.placedAt}
+          vendorName={firstSubOrder.vendorName}
+          itemsCount={firstSubOrder.items.reduce((n, it) => n + it.quantity, 0)}
+          tracking={tracking?.subOrders.find(
+            (t) => t.subOrderNumber === firstSubOrder.subOrderNumber,
+          )}
+        />
       )}
 
       {/* Per-subOrder sections */}
@@ -167,101 +169,6 @@ function OrderDetail({
       {firstSubOrder && !isCancelled && canCustomerCancel(firstSubOrder.status) && (
         <CancelOrderControl orderId={order.id} orderNumber={order.orderNumber} />
       )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Tracking stepper                                                    */
-/* ------------------------------------------------------------------ */
-
-function TrackingStepper({
-  status,
-  cancelledAt,
-}: {
-  status: SubOrderStatus;
-  cancelledAt: string | null;
-}) {
-  const exited = status === "cancelled" || status === "returned" || !!cancelledAt;
-
-  if (exited) {
-    const tone = status === "returned" ? "Returned" : "Cancelled";
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-red/30 bg-red/5 px-4 py-4 text-red sm:px-5">
-        <PackageX className="mt-0.5 size-5 shrink-0" />
-        <div>
-          <p className="font-display text-sm font-extrabold">Order {tone.toLowerCase()}</p>
-          <p className="mt-0.5 text-sm text-sub">
-            {cancelledAt
-              ? `This order was cancelled on ${formatDate(cancelledAt)}.`
-              : `This order has been ${tone.toLowerCase()} and is no longer in transit.`}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const current = currentStepIndex(status);
-
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-6">
-      <ol className="flex items-start">
-        {TRACKING_STEPS.map((step, i) => {
-          const done = i < current;
-          const now = i === current;
-          const last = i === TRACKING_STEPS.length - 1;
-          return (
-            <li key={step.key} className="flex flex-1 flex-col items-center">
-              <div className="flex w-full items-center">
-                {/* left connector */}
-                <div
-                  className={cn(
-                    "h-0.5 flex-1 rounded-full transition-colors",
-                    i === 0
-                      ? "opacity-0"
-                      : done || now
-                        ? "bg-primary"
-                        : "bg-border",
-                  )}
-                />
-                <div
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                    done
-                      ? "border-primary bg-primary text-white"
-                      : now
-                        ? "border-primary bg-blue-soft text-primary"
-                        : "border-border bg-card text-faint",
-                  )}
-                >
-                  {done ? (
-                    <Check className="size-4" strokeWidth={3} />
-                  ) : now ? (
-                    <CircleDot className="size-4" />
-                  ) : (
-                    <span className="size-2 rounded-full bg-current" />
-                  )}
-                </div>
-                {/* right connector */}
-                <div
-                  className={cn(
-                    "h-0.5 flex-1 rounded-full transition-colors",
-                    last ? "opacity-0" : done ? "bg-primary" : "bg-border",
-                  )}
-                />
-              </div>
-              <span
-                className={cn(
-                  "mt-2 px-1 text-center text-[11px] font-semibold leading-tight sm:text-xs",
-                  done || now ? "text-ink" : "text-faint",
-                )}
-              >
-                {step.label}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
     </div>
   );
 }

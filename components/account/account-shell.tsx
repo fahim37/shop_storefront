@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { useAuth } from "@/lib/auth/auth-context";
-import { initials } from "@/lib/format";
+import { AccountAvatar } from "@/components/account/account-avatar";
 
 interface NavItem {
   label: string;
@@ -106,9 +106,11 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="hidden h-max rounded-2xl border border-border bg-card p-4 pt-6 lg:block">
           <div className="mb-3 flex flex-col items-center border-b border-border pb-5 text-center">
-            <span className="flex size-[76px] items-center justify-center rounded-full bg-blue-deep font-display text-2xl font-extrabold text-amber">
-              {initials(user.fullName)}
-            </span>
+            <AccountAvatar
+              fullName={user.fullName}
+              photoUrl={user.photoUrl}
+              className="size-[76px] bg-blue-deep font-display text-2xl font-extrabold text-amber"
+            />
             <b className="mt-2.5 font-display text-base font-extrabold">{user.fullName}</b>
             <span className="text-xs text-faint">{user.email}</span>
           </div>

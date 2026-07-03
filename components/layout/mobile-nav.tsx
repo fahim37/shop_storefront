@@ -77,8 +77,13 @@ export function MobileNav() {
                 onClick={close}
                 className="flex items-center gap-3"
               >
-                <span className="flex size-11 items-center justify-center rounded-full bg-blue-deep font-display font-extrabold text-amber">
-                  {initials(user.fullName)}
+                <span className="flex size-11 items-center justify-center overflow-hidden rounded-full bg-blue-deep font-display font-extrabold text-amber">
+                  {user.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.photoUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    initials(user.fullName)
+                  )}
                 </span>
                 <span className="min-w-0">
                   <b className="block truncate text-sm font-extrabold">{user.fullName}</b>

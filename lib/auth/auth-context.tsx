@@ -72,6 +72,8 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   /** Silent refresh; returns true when a session was (re)established. */
   refreshSession: () => Promise<boolean>;
+  /** Reload /me in place (e.g. after updating the profile photo). */
+  refreshProfile: () => Promise<void>;
 
   /* --- password reset --- */
 
@@ -368,6 +370,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loginWithGoogle,
       logout,
       refreshSession,
+      refreshProfile: loadProfile,
       requestPasswordReset,
       confirmPasswordReset,
       requestOtp,
@@ -390,6 +393,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loginWithGoogle,
       logout,
       refreshSession,
+      loadProfile,
       requestPasswordReset,
       confirmPasswordReset,
       requestOtp,

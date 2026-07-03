@@ -313,7 +313,6 @@ export type SubOrderStatus =
   | "vendor_confirmed"
   | "packed"
   | "at_hub"
-  | "ready_to_dispatch"
   | "dispatched"
   | "out_for_delivery"
   | "delivered"

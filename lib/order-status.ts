@@ -9,7 +9,6 @@ export const SUBORDER_STATUS: Record<
   vendor_confirmed: { label: "Confirmed", tone: "proc" },
   packed: { label: "Packed", tone: "proc" },
   at_hub: { label: "At hub", tone: "transit" },
-  ready_to_dispatch: { label: "Ready to dispatch", tone: "transit" },
   dispatched: { label: "Dispatched", tone: "transit" },
   out_for_delivery: { label: "Out for delivery", tone: "transit" },
   delivered: { label: "Delivered", tone: "done" },
@@ -26,8 +25,10 @@ export const STATUS_TONE_CLASS: Record<string, string> = {
 };
 
 /**
- * The 7-step customer tracking timeline. Several backend states collapse onto
- * one visible step (e.g. ready_to_dispatch + dispatched → "Dispatched").
+ * The 5-step customer tracking timeline. Internal logistics states collapse onto
+ * one visible milestone so the stepper stays legible (esp. on mobile) — the exact
+ * status is still shown per-vendor via SUBORDER_STATUS and the shipment event log.
+ * "Shipped" covers at_hub → dispatched.
  */
 export const TRACKING_STEPS: {
   key: string;
@@ -35,13 +36,11 @@ export const TRACKING_STEPS: {
   states: SubOrderStatus[];
 }[] = [
   { key: "placed", label: "Placed", states: ["placed"] },
-  { key: "confirmed", label: "Confirmed", states: ["vendor_confirmed"] },
-  { key: "packed", label: "Packed", states: ["packed"] },
-  { key: "at_hub", label: "At hub", states: ["at_hub"] },
+  { key: "preparing", label: "Preparing", states: ["vendor_confirmed", "packed"] },
   {
-    key: "dispatched",
-    label: "Dispatched",
-    states: ["ready_to_dispatch", "dispatched"],
+    key: "shipped",
+    label: "Shipped",
+    states: ["at_hub", "dispatched"],
   },
   { key: "ofd", label: "Out for delivery", states: ["out_for_delivery"] },
   { key: "delivered", label: "Delivered", states: ["delivered"] },

@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useUnreadCount } from "@/lib/api/account";
-import { initials } from "@/lib/format";
 import { ProfileOverview } from "@/components/account/profile-overview";
+import { AccountAvatar } from "@/components/account/account-avatar";
 
 /* --------------------------------------------------------------------- */
 /* Menu data                                                             */
@@ -165,9 +165,11 @@ function MobileAccountHub() {
           className="pointer-events-none absolute -bottom-16 right-14 size-32 rounded-full bg-amber/15"
         />
         <div className="relative flex items-center gap-4 p-5 sm:p-6">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-amber font-display text-lg font-extrabold text-blue-deep ring-2 ring-white/20 sm:size-16 sm:text-xl">
-            {initials(user.fullName)}
-          </span>
+          <AccountAvatar
+            fullName={user.fullName}
+            photoUrl={user.photoUrl}
+            className="size-14 bg-amber font-display text-lg font-extrabold text-blue-deep ring-2 ring-white/20 sm:size-16 sm:text-xl"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-base font-extrabold sm:text-lg">
               {user.fullName}

@@ -52,6 +52,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${sora.variable} ${manrope.variable} ${notoBengali.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: browser extensions (password managers,

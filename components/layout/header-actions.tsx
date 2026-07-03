@@ -56,8 +56,13 @@ export function AccountMenu() {
           type="button"
           className="flex items-center gap-2 text-xs font-bold text-ink outline-none"
         >
-          <span className="flex size-9 items-center justify-center rounded-full bg-blue-deep font-display text-[13px] font-extrabold text-amber">
-            {initials(user.fullName)}
+          <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-blue-deep font-display text-[13px] font-extrabold text-amber">
+            {user.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.photoUrl} alt="" className="size-full object-cover" />
+            ) : (
+              initials(user.fullName)
+            )}
           </span>
           <span className="hidden text-left leading-tight sm:block">
             <small className="block text-[10.5px] font-semibold text-faint">Hello,</small>

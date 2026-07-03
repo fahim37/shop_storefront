@@ -15,6 +15,7 @@ export interface MeResponse {
   fullName: string;
   email: string;
   phone: string;
+  photoUrl: string | null;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   accountStatus: AccountStatus;
@@ -250,6 +251,7 @@ export async function getMe(): Promise<MeResponse> {
     fullName: raw.profile?.fullName ?? raw.email,
     email: raw.email,
     phone: raw.phone,
+    photoUrl: raw.profile?.photoUrl ?? null,
     isEmailVerified: raw.isEmailVerified,
     isPhoneVerified: raw.isPhoneVerified,
     accountStatus: raw.accountStatus,

@@ -220,6 +220,70 @@
   }
 }
 
+/* Order tracker (account → order detail): animated status stepper. The check
+ * draws in via stroke-dashoffset, the current step pulses, and the progress
+ * fill carries a sliding shine band (x on desktop, y on the mobile vertical
+ * rail). All collapse under the reduced-motion rule below. */
+@keyframes tracker-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  80%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+@keyframes tracker-check {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tracker-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tracker-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes tracker-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes tracker-shine-x {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(110%);
+  }
+}
+@keyframes tracker-shine-y {
+  0% {
+    transform: translateY(-110%);
+  }
+  100% {
+    transform: translateY(110%);
+  }
+}
+
 /* Hero carousel: story-style progress fill (drives auto-advance) + a gentle
  * Ken Burns drift on the active slide. Both honor the reduced-motion rule
  * below, which collapses their duration so nothing moves. */
