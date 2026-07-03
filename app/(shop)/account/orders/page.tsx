@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MediaImage } from "@/components/ui/media-image";
+import { deriveOrderListStatus, ORDER_LIST_STATUS_BADGE } from "@/lib/order-status";
 import type { OrderListItem } from "@/lib/api/types";
 
 export default function OrdersPage() {
@@ -100,9 +101,9 @@ function OrderGroupCardSkeleton() {
 }
 
 function OrderGroupCard({ order }: { order: OrderListItem }) {
-  const isCancelled = !!order.cancelledAt;
   const detailHref = `/account/orders/${order.id}`;
   const vendorNames = order.summary.vendorNames.filter(Boolean);
+  const statusBadge = ORDER_LIST_STATUS_BADGE[deriveOrderListStatus(order)];
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-colors hover:border-primary/30">
@@ -133,15 +134,9 @@ function OrderGroupCard({ order }: { order: OrderListItem }) {
           </p>
         </div>
         <div>
-          {isCancelled ? (
-            <Badge variant="sale" size="md">
-              Cancelled
-            </Badge>
-          ) : (
-            <Badge variant="muted" size="md">
-              Processing
-            </Badge>
-          )}
+          <Badge variant={statusBadge.variant} size="md">
+            {statusBadge.label}
+          </Badge>
         </div>
       </div>
 

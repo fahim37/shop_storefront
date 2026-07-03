@@ -91,16 +91,15 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
       <Breadcrumbs items={crumbs} className="mb-4 hidden lg:flex" />
 
       {!isHub && (
-        <div className="mb-3 flex items-center gap-1 lg:hidden">
-          <Link
-            href={back.href}
-            className="-ml-2 flex size-9 items-center justify-center rounded-full text-ink transition-colors hover:bg-muted active:bg-muted"
-          >
+        <Link
+          href={back.href}
+          className="-ml-2 mb-3 flex w-fit items-center gap-1 rounded-full py-1 pr-3 text-ink transition-colors hover:bg-muted active:bg-muted lg:hidden"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center">
             <ChevronLeft className="size-5" />
-            <span className="sr-only">Back to {back.label}</span>
-          </Link>
+          </span>
           <span className="text-sm font-bold text-sub">{back.label}</span>
-        </div>
+        </Link>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">

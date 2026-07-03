@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Bell, BellOff, CheckCheck } from "lucide-react";
+import Link from "next/link";
+import { Bell, BellOff, CheckCheck, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/format";
+import { notificationHref } from "@/lib/notification-link";
 import {
   useNotifications,
   useUnreadCount,
@@ -12,6 +14,7 @@ import {
   useNotificationPrefs,
   useUpdateNotificationPrefs,
 } from "@/lib/api/account";
+import { useOrders } from "@/lib/api/orders";
 import { ApiError } from "@/lib/api/http";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +40,17 @@ export default function NotificationsPage() {
   const unread = useUnreadCount();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllRead();
+
+  // Order/shipment alerts deep-link to a specific order, but the notification
+  // payload only carries the orderNumber — resolve it to the order's id so the
+  // row can point at /account/orders/[id]. Recent orders cover the realistic
+  // case; anything older falls back to the orders list.
+  const orders = useOrders({ limit: 50 });
+  const resolveOrderId = React.useMemo(() => {
+    const byNumber = new Map<string, string>();
+    for (const o of orders.data ?? []) byNumber.set(o.orderNumber, o.id);
+    return (orderNumber: string) => byNumber.get(orderNumber);
+  }, [orders.data]);
 
   const notifications = React.useMemo<Notification[]>(
     () => list.data?.pages.flatMap((p) => p.data) ?? [],
@@ -94,6 +108,7 @@ export default function NotificationsPage() {
         onRetry={() => void list.refetch()}
         onMarkRead={(id) => markRead.mutate(id)}
         markingId={markRead.isPending ? markRead.variables : undefined}
+        resolveOrderId={resolveOrderId}
         hasNextPage={Boolean(list.hasNextPage)}
         isFetchingNextPage={list.isFetchingNextPage}
         onLoadMore={() => void list.fetchNextPage()}
@@ -117,6 +132,7 @@ interface NotificationListProps {
   onRetry: () => void;
   onMarkRead: (id: string) => void;
   markingId?: string;
+  resolveOrderId: (orderNumber: string) => string | undefined;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
@@ -130,6 +146,7 @@ function NotificationList({
   onRetry,
   onMarkRead,
   markingId,
+  resolveOrderId,
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
@@ -185,6 +202,7 @@ function NotificationList({
           notification={n}
           onMarkRead={onMarkRead}
           isMarking={markingId === n.id}
+          resolveOrderId={resolveOrderId}
         />
       ))}
 
@@ -213,41 +231,32 @@ interface NotificationRowProps {
   notification: Notification;
   onMarkRead: (id: string) => void;
   isMarking: boolean;
+  resolveOrderId: (orderNumber: string) => string | undefined;
 }
 
 function NotificationRow({
   notification,
   onMarkRead,
   isMarking,
+  resolveOrderId,
 }: NotificationRowProps) {
   const isUnread = notification.readAt === null;
   const title = notification.payload?.subject ?? notification.templateKey;
   const body = notification.payload?.body;
-
-  const handleClick = () => {
-    if (isUnread && !isMarking) onMarkRead(notification.id);
-  };
+  const href = notificationHref(notification, resolveOrderId);
 
   return (
-    <div
-      role={isUnread ? "button" : undefined}
-      tabIndex={isUnread ? 0 : undefined}
-      onClick={isUnread ? handleClick : undefined}
-      onKeyDown={
-        isUnread
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleClick();
-              }
-            }
-          : undefined
-      }
+    <Link
+      href={href}
+      // Marking read is fire-and-forget; navigation happens regardless.
+      onClick={() => {
+        if (isUnread && !isMarking) onMarkRead(notification.id);
+      }}
       className={cn(
         "group flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors sm:p-4",
         isUnread
-          ? "border-primary/15 bg-blue-soft hover:bg-blue-soft/70 cursor-pointer"
-          : "border-border bg-card",
+          ? "border-primary/15 bg-blue-soft hover:bg-blue-soft/70"
+          : "border-border bg-card hover:bg-muted/50",
       )}
     >
       {/* unread dot / icon */}
@@ -290,7 +299,9 @@ function NotificationRow({
           </span>
         )}
       </div>
-    </div>
+
+      <ChevronRight className="size-4 shrink-0 self-center text-faint transition-transform group-hover:translate-x-0.5" />
+    </Link>
   );
 }
 

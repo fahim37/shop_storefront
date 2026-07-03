@@ -387,6 +387,8 @@ export interface OrderSummary {
   subOrderCount: number;
   vendorNames: string[];
   firstThumbnailMediaId: string | null;
+  /** Sub-order `status` values for this order (list rows only). */
+  subOrderStatuses: SubOrderStatus[];
 }
 
 export interface OrderListItem extends Order {

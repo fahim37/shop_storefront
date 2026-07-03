@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   ChevronRight,
   Grid3x3,
   Heart,
@@ -26,6 +27,7 @@ import { categoryIcon } from "@/lib/category-icons";
 import { useCategoryTree } from "@/lib/api/catalog";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useCartCount } from "@/lib/api/cart";
+import { useUnreadCount } from "@/lib/api/account";
 import { useUIStore } from "@/lib/store/ui";
 import { initials } from "@/lib/format";
 
@@ -170,7 +172,7 @@ const TABS = [
   { label: "Home", href: "/", icon: Home },
   { label: "Categories", href: "/category/electronics", icon: Grid3x3 },
   { label: "Cart", href: "#cart", icon: ShoppingCart, isCart: true },
-  { label: "Wishlist", href: "/account/wishlist", icon: Heart },
+  { label: "Alerts", href: "/account/notifications", icon: Bell, isAlerts: true },
   { label: "Account", href: "/account", icon: User },
 ];
 
@@ -178,6 +180,8 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const openCart = useUIStore((s) => s.openCartDrawer);
   const count = useCartCount();
+  const { data: unread } = useUnreadCount();
+  const unreadCount = unread?.count ?? 0;
 
   return (
     <nav className="sticky bottom-0 z-40 flex border-t border-border bg-card md:hidden">
@@ -190,6 +194,11 @@ export function MobileBottomNav() {
               {t.isCart && count > 0 && (
                 <span className="absolute -right-2.5 -top-1.5 flex min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-extrabold text-white">
                   {count}
+                </span>
+              )}
+              {t.isAlerts && unreadCount > 0 && (
+                <span className="absolute -right-2.5 -top-1.5 flex min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-extrabold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </span>

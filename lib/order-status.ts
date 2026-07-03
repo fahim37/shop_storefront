@@ -1,4 +1,4 @@
-import type { SubOrderStatus } from "@/lib/api/types";
+import type { OrderListItem, SubOrderStatus } from "@/lib/api/types";
 
 /** Human label + chip tone for a sub-order status. */
 export const SUBORDER_STATUS: Record<
@@ -56,3 +56,38 @@ export function currentStepIndex(status: SubOrderStatus): number {
 export function canCustomerCancel(status: SubOrderStatus): boolean {
   return status === "placed" || status === "vendor_confirmed";
 }
+
+/** A coarse, derived order-level state for the order-history list card. */
+export type OrderListStatus = "cancelled" | "delivered" | "processing" | "placed";
+
+/**
+ * Derive a single order-level status for the order-history card. List rows
+ * only carry `summary.subOrderStatuses` (no full sub-order objects), so this
+ * mirrors admin's per-order derivation but reads that rollup instead.
+ *
+ *  • cancelled  — the order was cancelled (`cancelledAt`).
+ *  • delivered  — every sub-order is delivered.
+ *  • processing — at least one sub-order has moved past `placed`.
+ *  • placed     — placed, no sub-order progress yet.
+ */
+export function deriveOrderListStatus(order: OrderListItem): OrderListStatus {
+  if (order.cancelledAt) return "cancelled";
+
+  const statuses = order.summary.subOrderStatuses ?? [];
+  if (statuses.length > 0) {
+    if (statuses.every((s) => s === "delivered")) return "delivered";
+    if (statuses.some((s) => s !== "placed" && s !== "cancelled")) return "processing";
+  }
+  return "placed";
+}
+
+/** Badge label + variant for a derived order-list status. */
+export const ORDER_LIST_STATUS_BADGE: Record<
+  OrderListStatus,
+  { label: string; variant: "sale" | "success" | "muted" | "primary" }
+> = {
+  cancelled: { label: "Cancelled", variant: "sale" },
+  delivered: { label: "Delivered", variant: "success" },
+  processing: { label: "Processing", variant: "primary" },
+  placed: { label: "Placed", variant: "muted" },
+};
