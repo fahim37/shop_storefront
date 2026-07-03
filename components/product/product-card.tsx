@@ -26,21 +26,21 @@ export function ProductCard({
   const href = `/product/${product.slug}`;
 
   return (
-    <div
+    <Link
+      href={href}
+      aria-label={product.title}
       className={cn(
         "group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-[var(--shadow-card)]",
         className,
       )}
     >
       <div className="relative aspect-square overflow-hidden">
-        <Link href={href} aria-label={product.title} tabIndex={-1}>
-          <MediaImage
-            mediaId={product.thumbnailMediaId}
-            variant="card"
-            alt={product.title}
-            className="transition-transform duration-300 group-hover:scale-[1.04]"
-          />
-        </Link>
+        <MediaImage
+          mediaId={product.thumbnailMediaId}
+          variant="card"
+          alt={product.title}
+          className="transition-transform duration-300 group-hover:scale-[1.04]"
+        />
         {pct ? (
           <span className="absolute left-2.5 top-2.5 rounded bg-amber px-1.5 py-0.5 text-[11px] font-extrabold text-blue-deep">
             -{pct}%
@@ -54,12 +54,9 @@ export function ProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        <Link
-          href={href}
-          className="line-clamp-1 text-[13.5px] font-semibold text-ink hover:text-primary"
-        >
+        <span className="line-clamp-1 text-[13.5px] font-semibold text-ink group-hover:text-primary">
           {product.title}
-        </Link>
+        </span>
 
         <div className="flex items-center gap-1.5 text-[11.5px] text-faint">
           {product.ratingAverage && Number(product.ratingAverage) > 0 ? (
@@ -94,7 +91,7 @@ export function ProductCard({
           />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
