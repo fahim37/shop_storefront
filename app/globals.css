@@ -70,10 +70,12 @@
   /* Layout */
   --wrap: 1280px;
 
-  /* Elevation (from the mockups' soft navy-tinted shadows) */
+  /* Elevation — neutral slate tint. The original rgb(20 30 80) indigo tint
+   * read pinkish/lavender on white cards, so cards use a desaturated
+   * blue-gray instead. */
   --shadow-panel: 0 32px 72px -18px rgb(5 15 60 / 0.5);
-  --shadow-card: 0 1px 3px rgb(20 30 80 / 0.06), 0 12px 28px -18px rgb(20 30 80 / 0.4);
-  --shadow-pop: 0 16px 40px -12px rgb(15 25 90 / 0.4);
+  --shadow-card: 0 1px 2px rgb(24 30 48 / 0.05), 0 10px 24px -16px rgb(24 30 48 / 0.22);
+  --shadow-pop: 0 16px 40px -12px rgb(24 30 48 / 0.28);
 }
 
 /* -----------------------------------------------------------------------------
@@ -281,6 +283,36 @@
   }
   100% {
     transform: translateY(110%);
+  }
+}
+
+/* Delivered celebration (order detail, first view per session): confetti
+ * pieces rain over the tracker card while the "Delivered" chip springs in.
+ * Per-piece drift/rotation come from --cx / --cr inline vars. */
+@keyframes tracker-confetti {
+  0% {
+    transform: translate3d(0, -16px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--cx, 0px), 340px, 0) rotate(var(--cr, 540deg));
+    opacity: 0;
+  }
+}
+@keyframes tracker-celebrate-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 

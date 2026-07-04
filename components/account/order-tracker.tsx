@@ -1,35 +1,82 @@
 "use client";
 
 import * as React from "react";
-import { PackageX } from "lucide-react";
+import {
+  Bike,
+  Check,
+  ClipboardCheck,
+  Package,
+  PackageX,
+  Truck,
+} from "lucide-react";
 import { TRACKING_STEPS, currentStepIndex } from "@/lib/order-status";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SubOrderStatus, TrackingSubOrder } from "@/lib/api/types";
 
 /**
- * Animated order tracker (from the "Order Tracker" design): a progress rail
- * that fills step-by-step with a shine band, draw-in checkmarks, a pulsing
- * current step, and a status banner with an arrival chip. Horizontal on
- * sm+ screens, a vertical rail on mobile.
+ * Animated order tracker: a progress rail that fills step-by-step with a
+ * shine band, draw-in checkmarks, a pulsing current step, and a status
+ * banner with an arrival chip. Completed steps keep the blue fill but wear
+ * an amber ring; the
+ * final "Delivered" step is rendered as completed (checked) rather than
+ * "in progress", and the first time a delivered order is opened in a
+ * session a confetti celebration plays. Horizontal on sm+ screens, a
+ * vertical rail on mobile.
  */
 
 const LAST_STEP = TRACKING_STEPS.length - 1;
 const STEP_REVEAL_MS = 460;
+const CELEBRATE_MS = 4200;
 
 interface OrderTrackerProps {
   status: SubOrderStatus;
   cancelledAt: string | null;
   placedAt: string;
+  /** Used to key the once-per-session delivered celebration. */
+  orderNumber?: string;
   vendorName?: string | null;
   itemsCount?: number;
   tracking?: TrackingSubOrder;
+}
+
+interface ConfettiPiece {
+  left: number;
+  delay: number;
+  duration: number;
+  drift: number;
+  rotate: number;
+  size: number;
+  color: string;
+  round: boolean;
+}
+
+const CONFETTI_COLORS = [
+  "var(--amber)",
+  "var(--blue)",
+  "var(--green)",
+  "var(--red)",
+  "var(--blue-deep)",
+];
+
+function makeConfetti(count: number): ConfettiPiece[] {
+  return Array.from({ length: count }, (_, i) => ({
+    left: Math.random() * 100,
+    delay: Math.random() * 0.7,
+    duration: 2.1 + Math.random() * 1.4,
+    drift: (Math.random() - 0.5) * 110,
+    rotate: 360 + Math.random() * 540,
+    size: 5 + Math.random() * 5,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    round: Math.random() > 0.6,
+  }));
 }
 
 export function OrderTracker({
   status,
   cancelledAt,
   placedAt,
+  orderNumber,
   vendorName,
   itemsCount,
   tracking,
@@ -67,6 +114,37 @@ export function OrderTracker({
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [target]);
 
+  // Delivered celebration — plays once per session per order, after the
+  // reveal sequence reaches the final step.
+  const delivered = reveal === LAST_STEP;
+  const [celebrate, setCelebrate] = React.useState(false);
+  const [confetti, setConfetti] = React.useState<ConfettiPiece[]>([]);
+
+  React.useEffect(() => {
+    if (!delivered) return;
+    const key = `gcl:order-celebrated:${orderNumber ?? "order"}`;
+    try {
+      if (window.sessionStorage.getItem(key)) return;
+      window.sessionStorage.setItem(key, "1");
+    } catch {
+      // Storage unavailable (private mode etc.) — still celebrate this once.
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Small delay so the final step's check draws in before confetti falls.
+    const start = window.setTimeout(() => {
+      setConfetti(makeConfetti(26));
+      setCelebrate(true);
+    }, 250);
+    const stop = window.setTimeout(
+      () => setCelebrate(false),
+      250 + CELEBRATE_MS,
+    );
+    return () => {
+      window.clearTimeout(start);
+      window.clearTimeout(stop);
+    };
+  }, [delivered, orderNumber]);
+
   if (exited) {
     const tone = status === "returned" ? "returned" : "cancelled";
     return (
@@ -86,11 +164,42 @@ export function OrderTracker({
 
   const times = stepTimes(placedAt, tracking);
   const pct = Math.max(reveal, 0) / LAST_STEP;
-  const banner = bannerCopy(Math.max(reveal, 0), vendorName, itemsCount);
-  const chip = etaChip(reveal, times[LAST_STEP]);
+  // The banner reflects the real status from the first frame (the animated
+  // `reveal` only drives the rail) so it doesn't flick through every state
+  // while the steps fill in.
+  const stage = Math.max(target, 0);
+  const atFinal = target === LAST_STEP;
+  const banner = bannerCopy(stage, vendorName, itemsCount);
+  const chip = etaChip(target, times[LAST_STEP]);
+  const StageIcon = BANNER_ICONS[stage] ?? Check;
 
   return (
-    <div className="animate-fade-up overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+    <div className="relative animate-fade-up overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+      {/* Confetti overlay (delivered, first view this session) */}
+      {celebrate && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+        >
+          {confetti.map((p, i) => (
+            <span
+              key={i}
+              className="absolute -top-2"
+              style={{
+                left: `${p.left}%`,
+                width: p.size,
+                height: p.round ? p.size : p.size * 1.7,
+                background: p.color,
+                borderRadius: p.round ? 9999 : 2,
+                ["--cx" as string]: `${p.drift}px`,
+                ["--cr" as string]: `${p.rotate}deg`,
+                animation: `tracker-confetti ${p.duration}s cubic-bezier(.2,.5,.4,1) ${p.delay}s both`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Horizontal rail (sm+) */}
       <div className="relative hidden px-4 pb-6 pt-8 sm:block sm:px-6">
         <div className="relative">
@@ -106,12 +215,16 @@ export function OrderTracker({
 
           <ol className="relative z-[2] flex">
             {TRACKING_STEPS.map((step, i) => {
-              const done = reveal > i;
-              const current = reveal === i;
+              // The final step never sits "in progress": reaching it means
+              // the package was handed over, so it renders checked.
+              const done = reveal > i || (reveal === i && i === LAST_STEP);
+              const current = reveal === i && i !== LAST_STEP;
               return (
                 <li
                   key={step.key}
-                  aria-current={current ? "step" : undefined}
+                  aria-current={
+                    reveal === i ? "step" : undefined
+                  }
                   className="flex flex-1 flex-col items-center gap-3"
                 >
                   <StepDot done={done} current={current} />
@@ -157,13 +270,13 @@ export function OrderTracker({
 
           <ol className="relative z-[2] space-y-6">
             {TRACKING_STEPS.map((step, i) => {
-              const done = reveal > i;
-              const current = reveal === i;
+              const done = reveal > i || (reveal === i && i === LAST_STEP);
+              const current = reveal === i && i !== LAST_STEP;
               const active = reveal >= i;
               return (
                 <li
                   key={step.key}
-                  aria-current={current ? "step" : undefined}
+                  aria-current={reveal === i ? "step" : undefined}
                   className="flex items-start gap-3"
                 >
                   {/* Date / time (left column) */}
@@ -217,19 +330,47 @@ export function OrderTracker({
         </div>
       </div>
 
-      {/* Status banner */}
-      <div className="flex flex-col gap-3 border-t border-line bg-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:px-7">
+      {/* Status banner — stage icon + stable copy; tinted green once delivered */}
+      <div
+        className={cn(
+          "flex flex-col gap-3 border-t border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:px-7",
+          atFinal ? "bg-green-soft/40" : "bg-surface",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3.5">
-          <span className="size-2.5 shrink-0 animate-[tracker-blink_1.6s_ease-in-out_infinite] rounded-full bg-green" />
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full",
+              atFinal ? "bg-green text-white" : "bg-blue-soft text-primary",
+              celebrate &&
+                "animate-[tracker-celebrate-pop_.55s_cubic-bezier(.34,1.56,.64,1)_.2s_both]",
+            )}
+          >
+            <StageIcon className="size-5" strokeWidth={2.4} />
+          </span>
           <div className="min-w-0">
-            <p className="font-display text-base font-bold text-ink">
-              {banner.title}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-display text-base font-bold text-ink">
+                {banner.title}
+              </p>
+              {!atFinal && (
+                <span
+                  aria-hidden
+                  className="size-1.5 shrink-0 animate-[tracker-blink_1.6s_ease-in-out_infinite] rounded-full bg-green"
+                />
+              )}
+            </div>
             <p className="text-[13px] font-medium text-sub">{banner.desc}</p>
           </div>
         </div>
         {chip && (
-          <span className="self-start whitespace-nowrap rounded-full bg-accent px-4.5 py-2 text-[13px] font-extrabold text-accent-foreground shadow-[0_4px_12px_rgb(245_179_30/0.35)] sm:self-auto">
+          <span
+            className={cn(
+              "self-start whitespace-nowrap rounded-full bg-accent px-4.5 py-2 text-[13px] font-extrabold text-accent-foreground shadow-[0_4px_12px_rgb(245_179_30/0.35)] sm:self-auto",
+              celebrate &&
+                "animate-[tracker-celebrate-pop_.55s_cubic-bezier(.34,1.56,.64,1)_.35s_both]",
+            )}
+          >
             {chip}
           </span>
         )}
@@ -264,7 +405,7 @@ function StepDot({
           "absolute inset-0 flex items-center justify-center rounded-full transition-colors duration-500",
           compact ? "border-2" : "border-[2.5px]",
           done
-            ? "border-primary bg-primary"
+            ? "border-accent bg-primary"
             : current
               ? "border-primary bg-card"
               : "border-border bg-card",
@@ -356,6 +497,9 @@ function stepClock(iso: string): string {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
+
+/** Stage icon for the status banner, indexed like TRACKING_STEPS. */
+const BANNER_ICONS = [ClipboardCheck, Package, Truck, Bike, Check] as const;
 
 /** One-line subtext shown under each step label on the mobile rail. */
 const STEP_DESC = [

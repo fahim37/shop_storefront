@@ -66,7 +66,8 @@ export function ProductCard({
               {product.ratingCount ? <span>({formatCompact(product.ratingCount)})</span> : null}
             </>
           ) : (
-            <span>No ratings yet</span>
+            // No reviews yet — show empty stars as a placeholder rather than text.
+            <RatingStars value={0} size={11} />
           )}
           {product.salesCount ? (
             <>

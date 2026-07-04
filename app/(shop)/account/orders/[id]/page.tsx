@@ -3,23 +3,33 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { PackageX, Truck } from "lucide-react";
+import { ArrowLeft, PackageX, Star, Truck } from "lucide-react";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/lib/api/orders";
 import {
   SUBORDER_STATUS,
   STATUS_TONE_CLASS,
   canCustomerCancel,
+  ORDER_LIST_STATUS_BADGE,
+  type OrderListStatus,
 } from "@/lib/order-status";
 import { OrderTracker } from "@/components/account/order-tracker";
+import { WriteReviewDialog } from "@/components/account/write-review-dialog";
 import { formatDate, formatDateTime, formatPaisa } from "@/lib/format";
 import { ApiError } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MediaImage } from "@/components/ui/media-image";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -99,6 +109,18 @@ function OrderDetailSkeleton() {
   );
 }
 
+/** Order-level status for the detail header, from the live sub-orders. */
+function deriveViewStatus(order: OrderView): OrderListStatus {
+  if (order.cancelledAt) return "cancelled";
+  const statuses = order.subOrders.map((s) => s.status);
+  if (statuses.length > 0) {
+    if (statuses.every((s) => s === "delivered")) return "delivered";
+    if (statuses.some((s) => s !== "placed" && s !== "cancelled"))
+      return "processing";
+  }
+  return "placed";
+}
+
 function OrderDetail({
   order,
   tracking,
@@ -110,16 +132,30 @@ function OrderDetail({
   const firstSubOrder = subOrders[0];
   const firstStatus = firstSubOrder?.status;
   const isCancelled = !!order.cancelledAt;
+  const statusBadge = ORDER_LIST_STATUS_BADGE[deriveViewStatus(order)];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Back + header */}
       <div className="space-y-4">
+        <Link
+          href="/account/orders"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-sub transition-colors hover:text-primary"
+        >
+          <ArrowLeft className="size-4" />
+          Back to orders
+        </Link>
+
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
-              {order.orderNumber}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+                {order.orderNumber}
+              </h1>
+              <Badge variant={statusBadge.variant} size="md">
+                {statusBadge.label}
+              </Badge>
+            </div>
             <p className="mt-1 text-sm text-sub">
               Placed on {formatDate(order.placedAt)}
             </p>
@@ -141,6 +177,7 @@ function OrderDetail({
           status={firstStatus}
           cancelledAt={order.cancelledAt}
           placedAt={order.placedAt}
+          orderNumber={order.orderNumber}
           vendorName={firstSubOrder.vendorName}
           itemsCount={firstSubOrder.items.reduce((n, it) => n + it.quantity, 0)}
           tracking={tracking?.subOrders.find(
@@ -186,10 +223,12 @@ function SubOrderSection({
 }) {
   const meta = SUBORDER_STATUS[sub.status];
   const toneClass = STATUS_TONE_CLASS[meta.tone];
+  const delivered = sub.status === "delivered";
+  const [reviewItem, setReviewItem] = React.useState<OrderItem | null>(null);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-surface/60 px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <p className="truncate font-display text-sm font-extrabold text-ink">
             {sub.vendorName ?? "Store"}
@@ -207,64 +246,137 @@ function SubOrderSection({
         </span>
       </header>
 
+      {/* Delivered nudge */}
+      {delivered && (
+        <div className="flex items-center gap-2.5 border-b border-line bg-amber-soft px-4 py-2.5 sm:px-5">
+          <Star className="size-4 shrink-0 fill-amber-deep text-amber-deep" />
+          <p className="text-[13px] font-semibold text-amber-deep">
+            Delivered — tell other shoppers what you think of your items.
+          </p>
+        </div>
+      )}
+
       {/* Items */}
       <ul className="divide-y divide-border">
         {sub.items.map((item) => (
           <li key={item.id}>
-            <OrderItemRow item={item} />
+            <OrderItemRow
+              item={item}
+              canReview={delivered}
+              onReview={() => setReviewItem(item)}
+            />
           </li>
         ))}
       </ul>
 
-      {/* Shipment tracking timeline */}
+      {/* Shipment tracking timeline (collapsed by default) */}
       {tracking?.shipment && tracking.shipment.events.length > 0 && (
         <ShipmentTimeline tracking={tracking} />
+      )}
+
+      {/* Verified-purchase review dialog */}
+      {reviewItem && (
+        <WriteReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReviewItem(null);
+          }}
+          productId={reviewItem.productId}
+          subOrderId={sub.id}
+          productTitle={reviewItem.titleSnapshot}
+        />
       )}
     </section>
   );
 }
 
-function OrderItemRow({ item }: { item: OrderItem }) {
+function OrderItemRow({
+  item,
+  canReview,
+  onReview,
+}: {
+  item: OrderItem;
+  canReview: boolean;
+  onReview: () => void;
+}) {
+  // Reserved "_<Option>Hex" keys carry swatch colors, not display values.
   const attrs = item.attributesSnapshot
-    ? Object.values(item.attributesSnapshot).filter(Boolean).join(" · ")
+    ? Object.entries(item.attributesSnapshot)
+        .filter(([key, value]) => value && !key.startsWith("_"))
+        .map(([, value]) => value)
+        .join(" · ")
     : "";
 
-  const body = (
-    <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
-      <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
-        <MediaImage
-          src={item.imageUrlSnapshot}
-          mediaId={item.thumbnailMediaId}
-          variant="thumbnail"
-          alt={item.titleSnapshot}
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-semibold text-ink">
-          {item.titleSnapshot}
-        </p>
-        {attrs && <p className="mt-0.5 truncate text-xs text-sub">{attrs}</p>}
-        <p className="mt-0.5 text-xs text-faint">Qty {item.quantity}</p>
-      </div>
-      <p className="shrink-0 text-sm font-extrabold text-ink">
-        {formatPaisa(item.lineTotalPaisa)}
-      </p>
+  const productHref = item.productSlug ? `/product/${item.productSlug}` : null;
+
+  const media = (
+    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+      <MediaImage
+        src={item.imageUrlSnapshot}
+        mediaId={item.thumbnailMediaId}
+        variant="thumbnail"
+        alt={item.titleSnapshot}
+      />
     </div>
   );
 
-  if (item.productSlug) {
-    return (
-      <Link
-        href={`/products/${item.productSlug}`}
-        className="block transition-colors hover:bg-muted/50"
+  const info = (
+    <div className="min-w-0 flex-1">
+      <p
+        className={cn(
+          "line-clamp-2 text-sm font-semibold text-ink",
+          productHref && "transition-colors group-hover/item:text-primary",
+        )}
       >
-        {body}
-      </Link>
-    );
-  }
-  return body;
+        {item.titleSnapshot}
+      </p>
+      {attrs && <p className="mt-0.5 truncate text-xs text-sub">{attrs}</p>}
+      <p className="mt-0.5 text-xs text-faint">Qty {item.quantity}</p>
+    </div>
+  );
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:px-5">
+      {productHref ? (
+        <Link
+          href={productHref}
+          className="group/item flex min-w-0 flex-1 items-center gap-3"
+        >
+          {media}
+          {info}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {media}
+          {info}
+        </div>
+      )}
+
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <p className="text-sm font-extrabold text-ink">
+          {formatPaisa(item.lineTotalPaisa)}
+        </p>
+        {canReview && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-3 text-xs"
+            onClick={onReview}
+          >
+            <Star className="size-3.5" />
+            Review
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
+/**
+ * Raw courier / hub event log for a shipment. The stepper above already
+ * summarizes the journey, so this is collapsed by default — it's there for
+ * shoppers who want the full audit trail (and for support conversations).
+ */
 function ShipmentTimeline({ tracking }: { tracking: TrackingSubOrder }) {
   const shipment = tracking.shipment;
   if (!shipment) return null;
@@ -272,44 +384,68 @@ function ShipmentTimeline({ tracking }: { tracking: TrackingSubOrder }) {
   const events = [...shipment.events].sort(
     (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
   );
+  const latest = events[0];
 
   return (
-    <div className="border-t border-border bg-muted/30 px-4 py-4 sm:px-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Truck className="size-4 text-primary" />
-        <p className="text-sm font-extrabold text-ink">Shipment updates</p>
-        {courier && (
-          <span className="text-xs text-sub">· {courier}</span>
-        )}
-      </div>
-      <ol className="space-y-3">
-        {events.map((ev, i) => (
-          <li key={`${ev.at}-${i}`} className="flex gap-3">
-            <div className="flex flex-col items-center">
-              <span
-                className={cn(
-                  "mt-1 size-2.5 rounded-full",
-                  i === 0 ? "bg-primary" : "bg-border",
-                )}
-              />
-              {i < events.length - 1 && (
-                <span className="w-px flex-1 bg-border" />
-              )}
-            </div>
-            <div className="-mt-0.5 pb-1">
-              <p className="text-sm font-semibold capitalize text-ink">
-                {ev.eventType.replace(/_/g, " ")}
-              </p>
-              {ev.notes && <p className="text-xs text-sub">{ev.notes}</p>}
-              <p className="mt-0.5 text-[11px] text-faint">
-                {formatDateTime(ev.at)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <Accordion
+      type="single"
+      collapsible
+      className="border-t border-line bg-muted/30"
+    >
+      <AccordionItem value="shipment" className="border-b-0">
+        <AccordionTrigger className="px-4 py-3.5 sm:px-5">
+          <span className="flex min-w-0 items-center gap-2">
+            <Truck className="size-4 shrink-0 text-primary" />
+            <span className="text-sm font-extrabold text-ink">
+              Shipment updates
+            </span>
+            {courier && (
+              <span className="text-xs font-medium text-sub">· {courier}</span>
+            )}
+            {latest && (
+              <span className="hidden truncate text-xs font-medium text-faint sm:inline">
+                · Latest: {formatEventType(latest.eventType)}
+              </span>
+            )}
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4 sm:px-5">
+          <ol className="space-y-3">
+            {events.map((ev, i) => (
+              <li key={`${ev.at}-${i}`} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span
+                    className={cn(
+                      "mt-1 size-2.5 rounded-full",
+                      i === 0 ? "bg-primary" : "bg-border",
+                    )}
+                  />
+                  {i < events.length - 1 && (
+                    <span className="w-px flex-1 bg-border" />
+                  )}
+                </div>
+                <div className="-mt-0.5 pb-1">
+                  <p className="text-sm font-semibold text-ink">
+                    {formatEventType(ev.eventType)}
+                  </p>
+                  {ev.notes && <p className="text-xs text-sub">{ev.notes}</p>}
+                  <p className="mt-0.5 text-[11px] text-faint">
+                    {formatDateTime(ev.at)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
+}
+
+/** "dispatched_from_hub" → "Dispatched from hub". */
+function formatEventType(eventType: string): string {
+  const words = eventType.replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /* ------------------------------------------------------------------ */
