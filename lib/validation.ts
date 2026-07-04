@@ -12,6 +12,28 @@ import { z } from "zod";
 /** Bangladesh mobile number: +8801 then a digit 3-9 then 8 more digits. */
 export const BD_PHONE_REGEX = /^\+8801[3-9]\d{8}$/;
 
+/**
+ * Reduce any BD phone input to its 10-digit national core (1XXXXXXXXX): keep
+ * digits, drop a leading 880 / 0 (so 01…, 8801…, +8801… all collapse to the
+ * same core), then cap at 10 digits so junk can't be typed.
+ */
+export function toBdNational(raw: string): string {
+  let d = raw.replace(/\D/g, "");
+  if (d.startsWith("880")) d = d.slice(3);
+  else if (d.startsWith("0")) d = d.slice(1);
+  return d.slice(0, 10);
+}
+
+/** A valid BD mobile core: 1, an operator digit 3–9, then 8 more digits. */
+export function isValidBdNational(national: string): boolean {
+  return /^1[3-9]\d{8}$/.test(national);
+}
+
+/** National core → E.164 (+8801XXXXXXXXX). Assumes a valid 10-digit core. */
+export function bdNationalToE164(national: string): string {
+  return `+880${national}`;
+}
+
 export const emailSchema = z
   .string()
   .trim()

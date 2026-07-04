@@ -17,23 +17,11 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api/http";
 import { useAuth } from "@/lib/auth/auth-context";
-
-/**
- * Reduce any BD phone input to its 10-digit national part (1XXXXXXXXX): keep
- * digits, drop a leading 880 / 0 (so pasted 01…, 8801…, +8801… all collapse to
- * the same core), then cap at 10 digits so junk can't be typed.
- */
-function toBdNational(raw: string): string {
-  let d = raw.replace(/\D/g, "");
-  if (d.startsWith("880")) d = d.slice(3);
-  else if (d.startsWith("0")) d = d.slice(1);
-  return d.slice(0, 10);
-}
-
-/** A valid BD mobile: 1, an operator digit 3–9, then 8 more digits. */
-function isValidBdNational(national: string): boolean {
-  return /^1[3-9]\d{8}$/.test(national);
-}
+import {
+  bdNationalToE164,
+  isValidBdNational,
+  toBdNational,
+} from "@/lib/validation";
 
 interface PhoneVerifyDialogProps {
   open: boolean;
@@ -120,7 +108,7 @@ export function PhoneVerifyDialog({
       setError("Enter a valid Bangladeshi mobile number.");
       return;
     }
-    void sendCode(`+880${national}`);
+    void sendCode(bdNationalToE164(national));
   }
 
   async function verify(value: string) {

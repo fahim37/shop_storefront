@@ -82,11 +82,10 @@ export default function CheckoutPage() {
 
   // "Place order" stays clickable even when requirements are missing; instead
   // of a silently disabled button we scroll to and flash the incomplete step.
-  const [attention, setAttention] = React.useState<"phone" | "address" | "terms" | null>(
+  const [attention, setAttention] = React.useState<"address" | "terms" | null>(
     null,
   );
   const attentionTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const phoneSectionRef = React.useRef<HTMLElement | null>(null);
   const addressSectionRef = React.useRef<HTMLElement | null>(null);
   const agreeRef = React.useRef<HTMLLabelElement | null>(null);
 
@@ -98,7 +97,7 @@ export default function CheckoutPage() {
   );
 
   const drawAttention = (
-    target: "phone" | "address" | "terms",
+    target: "address" | "terms",
     el: HTMLElement | null,
   ) => {
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -157,12 +156,9 @@ export default function CheckoutPage() {
   const hasAddresses = !!addresses && addresses.length > 0;
 
   const placeOrder = async () => {
-    if (!verifiedPhone) {
-      toast.error("Verify your mobile number to place your order");
-      drawAttention("phone", phoneSectionRef.current);
-      setVerifyOpen(true);
-      return;
-    }
+    // A verified phone is encouraged, not required — an unverified customer can
+    // still order and we confirm by a phone call. The only hard requirements
+    // are a delivery address (which carries the contact number) and consent.
     if (!addressId) {
       toast.error(
         hasAddresses
@@ -200,28 +196,28 @@ export default function CheckoutPage() {
       <Breadcrumbs items={[{ label: "Cart", href: "/cart" }, { label: "Checkout" }]} className="mb-4" />
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-4">
-          {/* Verify phone — required before an order can be placed */}
+          {/* Verify phone — encouraged, not required. An unverified customer
+              can still place the order; we simply confirm it by a phone call. */}
           {!verifiedPhone && (
-            <section
-              ref={phoneSectionRef}
-              className={cn(
-                "flex flex-col gap-3 rounded-2xl border border-amber/40 bg-amber-soft p-5 transition-shadow duration-300 sm:flex-row sm:items-center",
-                attention === "phone" && "ring-2 ring-amber ring-offset-2",
-              )}
-            >
+            <section className="flex flex-col gap-3 rounded-2xl border border-amber/40 bg-amber-soft p-5 sm:flex-row sm:items-center">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-amber/20 text-amber-deep">
                 <Smartphone className="size-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-extrabold text-ink">
-                  Verify your mobile number
+                <p className="flex items-center gap-2 text-sm font-extrabold text-ink">
+                  Verify your number for a smoother delivery
+                  <span className="rounded-full bg-amber/25 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-deep">
+                    Optional
+                  </span>
                 </p>
                 <p className="text-[13px] text-sub">
-                  We confirm and deliver every order by phone. Verify a number
-                  with a one-time SMS code to continue.
+                  A verified number lets us reach you instantly about your order.
+                  You can place your order without it — we&apos;ll just call to
+                  confirm before delivery.
                 </p>
               </div>
               <Button
+                variant="outline"
                 className="shrink-0"
                 onClick={() => setVerifyOpen(true)}
               >

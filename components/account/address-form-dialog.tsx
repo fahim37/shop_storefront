@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { BadgeCheck, Home, Store, MapPin, Smartphone } from "lucide-react";
+import { BadgeCheck, Home, Store, MapPin } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,11 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api/http";
 import { isMapsEnabled } from "@/lib/config";
+import {
+  bdNationalToE164,
+  isValidBdNational,
+  toBdNational,
+} from "@/lib/validation";
 import { useCreateAddress, useUpdateAddress } from "@/lib/api/account";
 import { useAuth } from "@/lib/auth/auth-context";
 import { LocationPicker } from "@/components/account/location-picker";
@@ -47,6 +52,8 @@ type LabelValue = (typeof LABEL_OPTIONS)[number]["value"];
 // but there are no visible inputs for them.
 interface FormState {
   recipientName: string;
+  /** BD national core (1XXXXXXXXX). The +880 prefix is fixed in the UI. */
+  recipientPhone: string;
   label: LabelValue;
   division: string;
   district: string;
@@ -59,10 +66,11 @@ interface FormState {
   isDefault: boolean;
 }
 
-type FieldKey = "recipientName" | "district" | "streetAddress";
+type FieldKey = "recipientName" | "recipientPhone" | "district" | "streetAddress";
 
 const EMPTY: FormState = {
   recipientName: "",
+  recipientPhone: "",
   label: "Home",
   division: "",
   district: "",
@@ -80,6 +88,7 @@ function fromAddress(a: Address): FormState {
     "Other") as LabelValue;
   return {
     recipientName: a.recipientName ?? "",
+    recipientPhone: toBdNational(a.recipientPhone ?? ""),
     label,
     division: a.division ?? "",
     district: a.district ?? "",
@@ -110,6 +119,13 @@ export function AddressFormDialog({
   );
   const [verifyOpen, setVerifyOpen] = React.useState(false);
 
+  // The typed contact number matches the account's verified phone → we can
+  // badge it as verified (and no confirmation call is needed for it).
+  const isVerifiedNumber =
+    !!verifiedPhone &&
+    form.recipientPhone.length > 0 &&
+    form.recipientPhone === toBdNational(verifiedPhone);
+
   // Reset the form whenever the dialog opens (or `initial` changes while open),
   // seeding edit values. Done during render by tracking the previous open state
   // and `initial` reference, so the seeded values are present on first paint.
@@ -119,7 +135,13 @@ export function AddressFormDialog({
   }>({ open, initial });
   if (open && (!seededFor.open || seededFor.initial !== initial)) {
     setSeededFor({ open, initial });
-    setForm(initial ? fromAddress(initial) : EMPTY);
+    // New address: prefill the contact number with the account's verified
+    // phone (if any) as a sensible default — the customer can change it.
+    setForm(
+      initial
+        ? fromAddress(initial)
+        : { ...EMPTY, recipientPhone: toBdNational(verifiedPhone ?? "") },
+    );
     setErrors({});
   } else if (!open && seededFor.open) {
     setSeededFor({ open, initial });
@@ -148,6 +170,10 @@ export function AddressFormDialog({
   function validate(): boolean {
     const next: Partial<Record<FieldKey, string>> = {};
     if (!form.recipientName.trim()) next.recipientName = "Recipient name is required.";
+    if (!form.recipientPhone.trim())
+      next.recipientPhone = "Mobile number is required.";
+    else if (!isValidBdNational(form.recipientPhone))
+      next.recipientPhone = "Enter a valid Bangladeshi mobile number.";
     if (!form.district.trim()) next.district = "District is required.";
     if (!form.streetAddress.trim())
       next.streetAddress = "Full address is required.";
@@ -158,13 +184,9 @@ export function AddressFormDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
-    // A verified account phone is the delivery contact + canonical identity —
-    // it's mandatory before an address can be saved.
-    if (!verifiedPhone) {
-      toast.error("Verify your mobile number to save an address.");
-      setVerifyOpen(true);
-      return;
-    }
+    // The contact number is required (we deliver + confirm by phone), but it
+    // does NOT have to be verified — an unverified number is accepted and the
+    // order is confirmed by a call. Verifying is offered as a convenience.
     if (!validate()) {
       toast.error("Please fix the highlighted fields.");
       return;
@@ -173,7 +195,7 @@ export function AddressFormDialog({
     const input: AddressInput = {
       label: form.label,
       recipientName: form.recipientName.trim(),
-      recipientPhone: verifiedPhone,
+      recipientPhone: bdNationalToE164(form.recipientPhone),
       division: form.division.trim() || undefined,
       district: form.district.trim(),
       upazila: form.upazila.trim() || undefined,
@@ -255,49 +277,68 @@ export function AddressFormDialog({
             </div>
           </div>
 
-          {/* Verified mobile number — the delivery contact + account identity */}
+          {/* Mobile number — the delivery + confirmation contact. Required, but
+              verifying it is optional (an unverified number gets a confirmation
+              call). We show a Verified badge when it matches the account phone. */}
           <div className="flex flex-col gap-1.5">
-            <Label>Mobile number</Label>
-            {verifiedPhone ? (
-              <div className="flex items-center gap-3 rounded-[var(--radius)] border border-border bg-muted px-3.5 py-2.5">
-                <Smartphone className="size-4 shrink-0 text-faint" />
-                <span className="flex-1 text-sm font-bold text-ink">
-                  {verifiedPhone}
-                </span>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="recipientPhone">Mobile number</Label>
+              {isVerifiedNumber ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-soft px-2 py-0.5 text-[11px] font-extrabold text-green">
                   <BadgeCheck className="size-3.5" />
                   Verified
                 </span>
+              ) : (
                 <button
                   type="button"
                   onClick={() => setVerifyOpen(true)}
                   className="text-[12px] font-bold text-primary hover:underline"
                 >
-                  Change
+                  Verify number
                 </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setVerifyOpen(true)}
-                className="flex items-center gap-3 rounded-[var(--radius)] border border-dashed border-primary/40 bg-blue-soft/50 px-3.5 py-3 text-left transition-colors hover:bg-blue-soft"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-soft text-primary">
-                  <Smartphone className="size-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-ink">
-                    Verify your mobile number
-                  </span>
-                  <span className="block text-[12px] text-sub">
-                    Required — we send a one-time code by SMS.
-                  </span>
-                </span>
-                <span className="shrink-0 text-[12px] font-extrabold text-primary">
-                  Verify
-                </span>
-              </button>
-            )}
+              )}
+            </div>
+            <div
+              className={cn(
+                "flex h-11 items-center rounded-[var(--radius)] border border-input bg-muted transition-colors",
+                "focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring",
+                errors.recipientPhone &&
+                  "border-destructive focus-within:ring-destructive",
+              )}
+            >
+              <span className="select-none pl-3.5 pr-2 text-sm font-bold text-sub">
+                +880
+              </span>
+              <span className="h-5 w-px bg-border" />
+              <input
+                id="recipientPhone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={form.recipientPhone}
+                onChange={(e) => set("recipientPhone", toBdNational(e.target.value))}
+                placeholder="1XXXXXXXXX"
+                aria-invalid={!!errors.recipientPhone}
+                aria-describedby={fieldMessageId("recipientPhone")}
+                className="h-full flex-1 bg-transparent px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              {isVerifiedNumber && (
+                <BadgeCheck className="mr-3 size-4 shrink-0 text-green" />
+              )}
+            </div>
+            <p
+              id={fieldMessageId("recipientPhone")}
+              className={cn(
+                "text-xs",
+                errors.recipientPhone ? "text-destructive" : "text-faint",
+              )}
+            >
+              {errors.recipientPhone
+                ? errors.recipientPhone
+                : isVerifiedNumber
+                  ? "This number is verified on your account."
+                  : "We'll call this number to confirm your order — verify it to skip the call."}
+            </p>
           </div>
 
           <Field
@@ -381,7 +422,12 @@ export function AddressFormDialog({
       <PhoneVerifyDialog
         open={verifyOpen}
         onOpenChange={setVerifyOpen}
-        initialPhone={verifiedPhone ?? ""}
+        initialPhone={
+          form.recipientPhone
+            ? bdNationalToE164(form.recipientPhone)
+            : verifiedPhone ?? ""
+        }
+        onVerified={(phone) => set("recipientPhone", toBdNational(phone))}
       />
     </Dialog>
   );
