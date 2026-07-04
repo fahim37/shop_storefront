@@ -13,7 +13,6 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { looksLikeHtml, sanitizeRichText } from "@/lib/sanitize";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +41,12 @@ import type {
 
 export interface ReviewsSectionProps {
   product: ProductCardRow;
+  /**
+   * Description sanitized on the server (see `renderDescriptionHtml`), or null
+   * for a legacy plain-text description. Sanitizing server-side keeps the
+   * (jsdom-free) parser out of the client bundle.
+   */
+  descriptionHtml?: string | null;
 }
 
 /**
@@ -49,7 +54,10 @@ export interface ReviewsSectionProps {
  * Questions, all visible on the page (no tabs) so everything is scannable and
  * deep-linkable (`#reviews`, `#questions`).
  */
-export function ProductDetailSections({ product }: ReviewsSectionProps) {
+export function ProductDetailSections({
+  product,
+  descriptionHtml,
+}: ReviewsSectionProps) {
   const attributeEntries = React.useMemo(
     () => specEntries(product.attributes),
     [product.attributes],
@@ -58,7 +66,7 @@ export function ProductDetailSections({ product }: ReviewsSectionProps) {
   return (
     <div className="flex flex-col gap-8 sm:gap-12">
       <DetailSection id="description" title="Description">
-        <DescriptionTab product={product} />
+        <DescriptionTab product={product} descriptionHtml={descriptionHtml} />
       </DetailSection>
 
       {attributeEntries.length > 0 && (
@@ -105,7 +113,13 @@ function DetailSection({
 /* Description                                                             */
 /* ----------------------------------------------------------------------- */
 
-function DescriptionTab({ product }: { product: ProductCardRow }) {
+function DescriptionTab({
+  product,
+  descriptionHtml,
+}: {
+  product: ProductCardRow;
+  descriptionHtml?: string | null;
+}) {
   const text = product.description?.trim();
   if (!text) {
     return (
@@ -116,14 +130,14 @@ function DescriptionTab({ product }: { product: ProductCardRow }) {
       </p>
     );
   }
-  // Rich-text descriptions are stored as HTML — sanitize before rendering.
-  // Legacy plain-text descriptions keep their pre-wrapped rendering.
-  if (looksLikeHtml(text)) {
+  // Rich-text descriptions arrive pre-sanitized from the server (see
+  // renderDescriptionHtml); legacy plain-text keeps its pre-wrapped rendering.
+  if (descriptionHtml) {
     return (
       <div
         className="rte-content max-w-3xl text-[14.5px] leading-relaxed text-sub"
-        // Sanitized above with a strict allowlist (see lib/sanitize).
-        dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }}
+        // Server-sanitized with a strict allowlist (see lib/sanitize).
+        dangerouslySetInnerHTML={{ __html: descriptionHtml }}
       />
     );
   }

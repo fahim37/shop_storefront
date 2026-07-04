@@ -21,6 +21,7 @@ import { ProductDetailSections } from "@/components/product/reviews-section";
 import { RecentlyViewedTracker } from "@/components/product/recently-viewed-tracker";
 import { fromRecHit, type CardProduct } from "@/lib/api/card";
 import { formatCompact, formatRating } from "@/lib/format";
+import { renderDescriptionHtml } from "@/lib/sanitize";
 import {
   getCategoryBreadcrumbs,
   getProductBySlug,
@@ -115,6 +116,11 @@ export default async function ProductPage({ params }: PageParams) {
   ];
 
   const relatedCards: CardProduct[] = related.items.map(fromRecHit);
+
+  // Sanitize the vendor rich-text description HERE, on the server, so the
+  // sanitizer (and its parser) never ship to the browser. The client PDP
+  // sections receive already-clean HTML. null → legacy plain-text description.
+  const descriptionHtml = renderDescriptionHtml(product.description);
 
   return (
     <div className="wrap py-3 pb-10 sm:py-4 sm:pb-16">
@@ -212,7 +218,7 @@ export default async function ProductPage({ params }: PageParams) {
 
       {/* Description / Specs / Reviews / Questions — full, stacked (no tabs) */}
       <section className="mt-8 sm:mt-12">
-        <ProductDetailSections product={product} />
+        <ProductDetailSections product={product} descriptionHtml={descriptionHtml} />
       </section>
 
       {/* You may also like */}
