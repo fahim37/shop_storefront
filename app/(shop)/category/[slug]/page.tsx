@@ -14,7 +14,9 @@ import {
 } from "@/lib/api/server";
 import type { Category, CategoryNode, ProductCardRow } from "@/lib/api/types";
 
-export const revalidate = 120;
+// Fallback only — category and product events revalidate the page's cache
+// tags on demand via /api/revalidate (see lib/api/server.ts).
+export const revalidate = 3600;
 
 /**
  * Opts the route into ISR (render once per slug, serve cached HTML for

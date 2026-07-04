@@ -5,7 +5,9 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { getCmsPage, NotFoundError } from "@/lib/api/server";
 import { formatDate } from "@/lib/format";
 
-export const revalidate = 300;
+// Fallback only — CMS edits revalidate `page:<slug>` on demand via
+// /api/revalidate (see lib/api/server.ts).
+export const revalidate = 3600;
 
 /**
  * Opts the route into ISR (render once per slug, serve cached HTML for

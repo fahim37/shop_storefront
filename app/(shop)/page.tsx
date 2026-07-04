@@ -15,7 +15,9 @@ import type {
   HomepageCarouselConfig,
 } from "@/lib/api/types";
 
-export const revalidate = 120;
+// Fallback only — homepage-block and product events revalidate the page's
+// cache tags on demand via /api/revalidate (see lib/api/server.ts).
+export const revalidate = 3600;
 
 async function settle<T>(p: Promise<T>, fallback: T): Promise<T> {
   try {

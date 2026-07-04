@@ -30,7 +30,9 @@ import {
 } from "@/lib/api/server";
 import type { Category, RecResponse } from "@/lib/api/types";
 
-export const revalidate = 60;
+// Fallback only — review/price/stock/image events revalidate the page's
+// cache tags on demand via /api/revalidate (see lib/api/server.ts).
+export const revalidate = 3600;
 
 /**
  * No slugs are prerendered at build time, but declaring generateStaticParams

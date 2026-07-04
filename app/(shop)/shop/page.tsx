@@ -4,7 +4,9 @@ import { ProductGridSkeleton } from "@/components/product/product-grid";
 import { getProductsPage } from "@/lib/api/server";
 import type { ProductCardRow } from "@/lib/api/types";
 
-export const revalidate = 60;
+// Fallback only — product events revalidate the `products` cache tag on
+// demand via /api/revalidate (see lib/api/server.ts).
+export const revalidate = 3600;
 
 export const metadata = {
   title: "Shop — GCL",

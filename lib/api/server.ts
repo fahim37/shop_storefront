@@ -17,7 +17,14 @@ import type {
   RecResponse,
 } from "@/lib/api/types";
 
-const DEFAULT_REVALIDATE = 120; // seconds
+/**
+ * Fallback ISR window. Freshness is EVENT-DRIVEN: the backend POSTs
+ * invalidated cache tags to /api/revalidate when catalog data changes
+ * (reviews, product/price/image edits, stock bucket changes, category/
+ * homepage/CMS edits), so this timer is only the safety net for missed
+ * events. Keep every fetch below tagged so those webhooks can reach it.
+ */
+const DEFAULT_REVALIDATE = 3600; // seconds
 
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
   const base = `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -72,7 +79,7 @@ async function serverGetList<T>(
 /* ---- typed public fetchers ---- */
 
 export function getCategoryTree() {
-  return serverGet<CategoryNode[]>("/categories", { revalidate: 300, tags: ["categories"] });
+  return serverGet<CategoryNode[]>("/categories", { tags: ["categories"] });
 }
 
 export function getCategoryBySlug(slug: string) {
@@ -95,7 +102,6 @@ export function getProductsPage(params: {
 }) {
   return serverGetList<ProductCardRow>("/products", {
     params,
-    revalidate: 60,
     tags: ["products"],
   });
 }
@@ -111,27 +117,26 @@ export async function getProductsByIds(ids: string[]) {
   if (clean.length === 0) return { data: [] as ProductCardRow[] };
   return serverGetList<ProductCardRow>("/products", {
     params: { ids: clean.join(","), limit: Math.min(clean.length, 100) },
-    revalidate: 60,
     tags: ["products"],
   });
 }
 
 export async function getProductBySlug(slug: string) {
   return serverGet<ProductDetail>(`/products/${slug}`, {
-    revalidate: 60,
     tags: ["products", `product:${slug}`],
   });
 }
 
 export function getRelatedProducts(id: string) {
   return serverGet<RecResponse>(`/products/${id}/recommendations/related`, {
-    revalidate: 120,
+    // Rails embed product cards (price/rating), so product events must
+    // reach them — hence the `products` tag.
+    tags: ["products"],
   });
 }
 
 export function getHomepageBlocks() {
   return serverGet<{ blocks: HomepageBlock[] }>("/homepage", {
-    revalidate: 120,
     tags: ["homepage"],
   });
 }
@@ -147,9 +152,9 @@ export async function getHomepage(): Promise<HomepageBlock[]> {
 }
 
 export function getHomeRecommendations() {
-  return serverGet<RecResponse>("/me/recommendations/home", { revalidate: 120 });
+  return serverGet<RecResponse>("/me/recommendations/home", { tags: ["products"] });
 }
 
 export function getCmsPage(slug: string) {
-  return serverGet<CmsPage>(`/pages/${slug}`, { revalidate: 300, tags: [`page:${slug}`] });
+  return serverGet<CmsPage>(`/pages/${slug}`, { tags: [`page:${slug}`] });
 }
