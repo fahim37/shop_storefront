@@ -15,7 +15,7 @@ function CartMergeBridge() {
 }
 
 /**
- * App-wide client providers: React Query + Auth + Tooltip + Toaster. The auth
+ * App-wide client providers: React Query + Auth + Tooltip + Toaster. The auth verceltriggering
  * modal is mounted here so any component can open it via useAuth().openAuth().
  */
 export function Providers({ children }: { children: React.ReactNode }) {
