@@ -8,6 +8,21 @@ import { useAutocomplete, useTrending } from "@/lib/api/search";
 import { useCategoryTree } from "@/lib/api/catalog";
 import { MediaImage } from "@/components/ui/media-image";
 
+/** Bold the typed text inside a suggestion title (first case-insensitive
+ *  occurrence). Typo matches have no literal substring — rendered plain. */
+function HighlightMatch({ title, query }: { title: string; query: string }) {
+  const q = query.trim();
+  const at = q ? title.toLowerCase().indexOf(q.toLowerCase()) : -1;
+  if (at < 0) return <>{title}</>;
+  return (
+    <>
+      {title.slice(0, at)}
+      <span className="font-extrabold text-primary">{title.slice(at, at + q.length)}</span>
+      {title.slice(at + q.length)}
+    </>
+  );
+}
+
 export interface SearchBarProps {
   className?: string;
   placeholder?: string;
@@ -126,7 +141,9 @@ export function SearchBar({
                         <span className="size-9 shrink-0 overflow-hidden rounded-md">
                           <MediaImage mediaId={s.thumbnailMediaId} variant="thumbnail" alt="" />
                         </span>
-                        <span className="line-clamp-1 font-semibold">{s.title}</span>
+                        <span className="line-clamp-1 font-semibold">
+                          <HighlightMatch title={s.title} query={trimmed} />
+                        </span>
                       </button>
                     </li>
                   ))}

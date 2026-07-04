@@ -16,6 +16,7 @@ import type {
 import { CampaignPanel } from "@/components/home/campaign-panel";
 import { CategoryCircles } from "@/components/home/blocks/category-circles";
 import { ProductRail } from "@/components/home/blocks/product-rail";
+import { RecommendedRail } from "@/components/home/blocks/recommended-rail";
 import { PromoGrid } from "@/components/home/blocks/promo-grid";
 import { UspStrip } from "@/components/home/blocks/usp-strip";
 
@@ -198,28 +199,28 @@ export async function HomepageRenderer({
     const block = bySlot.get(slot);
     if (block && !block.isActive) return null;
     const cfg = (block?.config ?? {}) as unknown as HomepageProductRailConfig;
+    const source = cfg.source ?? defaults.source;
+    const limit = cfg.limit ?? defaults.limit;
     // "View all" points to the auto rail's browse page. For hand-picked
     // (manual) sections it's a finite list, so hide the link unless the admin
     // set an explicit one.
-    const isManual = (cfg.source ?? defaults.source) === "manual";
+    const isManual = source === "manual";
     const linkHref = cfg.linkUrl ?? (isManual ? undefined : defaults.linkHref);
     const linkLabel = linkHref ? (cfg.linkLabel ?? defaults.linkLabel) : undefined;
-    return (
-      <ProductRail
-        key={slot}
-        title={block?.title ?? defaults.title}
-        subtitle={cfg.subtitle ?? defaults.subtitle}
-        linkLabel={linkLabel}
-        linkHref={linkHref}
-        carousel={defaults.carousel}
-        products={resolveProducts(
-          cfg.source ?? defaults.source,
-          cfg.productIds,
-          cfg.limit ?? defaults.limit,
-          feeds,
-          manual,
-        )}
-      />
+    const railProps = {
+      title: block?.title ?? defaults.title,
+      subtitle: cfg.subtitle ?? defaults.subtitle,
+      linkLabel,
+      linkHref,
+      carousel: defaults.carousel,
+      products: resolveProducts(source, cfg.productIds, limit, feeds, manual),
+    };
+    // Recommendation rails get the client wrapper that personalizes for
+    // signed-in shoppers after hydration (the server feed is anonymous).
+    return source === "recommendations" ? (
+      <RecommendedRail key={slot} {...railProps} limit={limit} />
+    ) : (
+      <ProductRail key={slot} {...railProps} />
     );
   };
 

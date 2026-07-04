@@ -23,6 +23,7 @@ import {
   useShopFacets,
 } from "@/lib/api/catalog";
 import { takaToPaisa, useFilterParams } from "@/lib/use-filters";
+import type { CursorMeta, ProductCardRow } from "@/lib/api/types";
 import type { ProductListParams } from "@/lib/api/query-keys";
 
 /**
@@ -41,11 +42,19 @@ const HEADINGS: Record<string, { title: string; subtitle: string }> = {
   rating_desc: { title: "Top rated", subtitle: "Highest-rated products" },
 };
 
-export function ShopListing() {
-  const { get, getList, getOptions } = useFilterParams();
+export function ShopListing({
+  initialPage,
+}: {
+  /** Server-fetched DEFAULT first page (no filters/sort) — see the page. */
+  initialPage?: { data: ProductCardRow[]; meta?: CursorMeta };
+}) {
+  const { get, getList, getOptions, activeCount } = useFilterParams();
 
   const sort = get("sort");
   const onSale = get("sale") === "1";
+
+  // Seed only the unfiltered default view (mirrors CategoryListing).
+  const isDefaultView = activeCount === 0 && !sort;
 
   const params: ProductListParams = {
     brandIds: getList("brand"),
@@ -67,7 +76,7 @@ export function ShopListing() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useProductsInfinite(params);
+  } = useProductsInfinite(params, isDefaultView ? initialPage : undefined);
 
   const { data: facets } = useShopFacets();
 

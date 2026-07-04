@@ -188,6 +188,9 @@ export interface SearchResponse {
   semanticEnabled: boolean;
   /** "Did you mean" — closest product title when the query returns nothing. */
   suggestion: string | null;
+  /** Set when the backend auto-corrected a typo'd query ("hedphones" →
+   *  "headphones") and the results include matches for the corrected term. */
+  correctedQuery?: string | null;
 }
 
 export interface AutocompleteItem {

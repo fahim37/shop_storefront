@@ -132,5 +132,6 @@ export function useFilterParams() {
 export function takaToPaisa(value: string): string | undefined {
   const n = Number(value);
   if (!value || Number.isNaN(n) || n < 0) return undefined;
-  return String(Math.round(n) * 100);
+  // Convert BEFORE rounding so fractional taka survive (10.5৳ → 1050 paisa).
+  return String(Math.round(n * 100));
 }

@@ -142,6 +142,8 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
                       src={mediaUrl(s.imageMediaId, "hero")!}
                       alt={s.caption ?? `Promotion ${i + 1}`}
                       loading={i === 0 ? "eager" : "lazy"}
+                      // First slide is the LCP candidate — let it jump the queue.
+                      fetchPriority={i === 0 ? "high" : undefined}
                       decoding="async"
                       draggable={false}
                       className="size-full object-cover bg-gradient-to-br from-blue-soft to-surface will-change-transform"

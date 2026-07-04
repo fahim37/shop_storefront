@@ -111,6 +111,21 @@ function SearchResults() {
         </p>
       </div>
 
+      {/* Auto-correction notice — the backend snapped a typo'd query to the
+          closest catalog vocabulary ("hedphones" → "headphones") and ranked
+          exact matches for the corrected term into these results. */}
+      {!isLoading && products.length > 0 && pages[0]?.correctedQuery && (
+        <p className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink">
+          <Lightbulb className="size-4 shrink-0 text-amber-500" strokeWidth={2.2} />
+          <span>
+            Including results for{" "}
+            <span className="font-extrabold text-primary">
+              {pages[0].correctedQuery}
+            </span>
+          </span>
+        </p>
+      )}
+
       {/* "Did you mean" hint — shown when the exact term didn't match but we
           found close (typo/semantic) results anyway, so the smart matching is
           visible instead of silent. The zero-results case is handled below. */}

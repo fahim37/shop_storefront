@@ -7,9 +7,7 @@
 import "server-only";
 import { API_BASE_URL } from "@/lib/config";
 import type {
-  Brand,
   Category,
-  CategoryAttribute,
   CategoryNode,
   CmsPage,
   CursorMeta,
@@ -17,7 +15,6 @@ import type {
   ProductCardRow,
   ProductDetail,
   RecResponse,
-  SearchResponse,
 } from "@/lib/api/types";
 
 const DEFAULT_REVALIDATE = 120; // seconds
@@ -84,16 +81,6 @@ export function getCategoryBySlug(slug: string) {
 
 export function getCategoryBreadcrumbs(id: string) {
   return serverGet<Category[]>(`/categories/${id}/breadcrumbs`, { tags: ["categories"] });
-}
-
-export function getCategoryAttributes(id: string) {
-  return serverGet<CategoryAttribute[]>(`/categories/${id}/attributes`, {
-    revalidate: 300,
-  });
-}
-
-export function getBrands() {
-  return serverGet<Brand[]>("/brands", { revalidate: 300, tags: ["brands"] });
 }
 
 export function getProductsPage(params: {
@@ -165,12 +152,4 @@ export function getHomeRecommendations() {
 
 export function getCmsPage(slug: string) {
   return serverGet<CmsPage>(`/pages/${slug}`, { revalidate: 300, tags: [`page:${slug}`] });
-}
-
-export function searchProductsServer(params: {
-  q: string;
-  sort?: string;
-  limit?: number;
-}) {
-  return serverGet<SearchResponse>("/search", { params, revalidate: 0 });
 }

@@ -5,7 +5,7 @@ import {
   useQuery,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import { http } from "@/lib/api/http";
+import { http, type ListEnvelope } from "@/lib/api/http";
 import { qk, type ProductListParams } from "@/lib/api/query-keys";
 import {
   compactParams,
@@ -13,13 +13,9 @@ import {
   unionBrandIds,
 } from "@/lib/api/filter-params";
 import type {
-  Brand,
-  CategoryAttribute,
   CategoryNode,
   Facets,
   ProductCardRow,
-  ProductDetail,
-  RecResponse,
 } from "@/lib/api/types";
 
 /** Build the flat filter query the /products (listing) endpoint reads. */
@@ -41,8 +37,19 @@ function listingQuery(params: ProductListParams) {
 /* Products                                                                */
 /* ----------------------------------------------------------------------- */
 
-/** Cursor-paginated product listing (cursor lives in `meta.nextCursor`). */
-export function useProductsInfinite(params: ProductListParams = {}) {
+/**
+ * Cursor-paginated product listing (cursor lives in `meta.nextCursor`).
+ *
+ * `initialPage` seeds the cache with a server-rendered first page (see the
+ * category/shop pages) so the grid paints instantly on landing instead of
+ * waiting for hydration + a client fetch. Callers must only pass it when the
+ * current `params` match what the server fetched (i.e. the default,
+ * unfiltered view) — otherwise the seed would masquerade as filtered results.
+ */
+export function useProductsInfinite(
+  params: ProductListParams = {},
+  initialPage?: ListEnvelope<ProductCardRow>,
+) {
   const limit = params.limit ?? 20;
   return useInfiniteQuery({
     queryKey: qk.products(params),
@@ -57,6 +64,9 @@ export function useProductsInfinite(params: ProductListParams = {}) {
       }),
     getNextPageParam: (last) =>
       last.meta?.hasMore ? (last.meta.nextCursor ?? undefined) : undefined,
+    initialData: initialPage
+      ? { pages: [initialPage], pageParams: [undefined] }
+      : undefined,
   });
 }
 
@@ -101,29 +111,8 @@ export function flattenProducts(
   return pages?.flatMap((p) => p.data) ?? [];
 }
 
-export function useProduct(
-  slug: string,
-  options?: Partial<UseQueryOptions<ProductDetail>>,
-) {
-  return useQuery({
-    queryKey: qk.product(slug),
-    queryFn: () => http.get<ProductDetail>(`/products/${slug}`),
-    enabled: !!slug,
-    ...options,
-  });
-}
-
-export function useRelatedProducts(productId: string | undefined) {
-  return useQuery({
-    queryKey: qk.productRelated(productId ?? ""),
-    queryFn: () =>
-      http.get<RecResponse>(`/products/${productId}/recommendations/related`),
-    enabled: !!productId,
-  });
-}
-
 /* ----------------------------------------------------------------------- */
-/* Categories & brands                                                     */
+/* Categories                                                              */
 /* ----------------------------------------------------------------------- */
 
 export function useCategoryTree(
@@ -132,25 +121,6 @@ export function useCategoryTree(
   return useQuery({
     queryKey: qk.categories(),
     queryFn: () => http.get<CategoryNode[]>("/categories"),
-    staleTime: 5 * 60_000,
-    ...options,
-  });
-}
-
-export function useCategoryAttributes(categoryId: string | undefined) {
-  return useQuery({
-    queryKey: qk.categoryAttributes(categoryId ?? ""),
-    queryFn: () =>
-      http.get<CategoryAttribute[]>(`/categories/${categoryId}/attributes`),
-    enabled: !!categoryId,
-    staleTime: 5 * 60_000,
-  });
-}
-
-export function useBrands(options?: Partial<UseQueryOptions<Brand[]>>) {
-  return useQuery({
-    queryKey: qk.brands(),
-    queryFn: () => http.get<Brand[]>("/brands"),
     staleTime: 5 * 60_000,
     ...options,
   });

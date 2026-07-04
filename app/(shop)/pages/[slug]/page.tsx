@@ -7,6 +7,14 @@ import { formatDate } from "@/lib/format";
 
 export const revalidate = 300;
 
+/**
+ * Opts the route into ISR (render once per slug, serve cached HTML for
+ * `revalidate` seconds) — see the note on the product page.
+ */
+export function generateStaticParams() {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

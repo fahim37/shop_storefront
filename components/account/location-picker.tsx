@@ -72,8 +72,12 @@ export function LocationPicker({ value, onPick, className }: LocationPickerProps
   const [open, setOpen] = React.useState(false);
   const [locating, setLocating] = React.useState(false);
 
+  // Keep the latest onPick reachable from async callbacks without re-binding
+  // them; synced in an effect (writing a ref during render is unsafe).
   const onPickRef = React.useRef(onPick);
-  onPickRef.current = onPick;
+  React.useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   const newSession = React.useCallback(() => {
     const places = placesRef.current;

@@ -16,16 +16,6 @@ const apiBase = (
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://62.72.58.29:4000/v1"
 ).replace(/\/+$/, "");
 
-let apiHost = "localhost";
-let apiProtocol: "http" | "https" = "http";
-try {
-  const u = new URL(apiBase);
-  apiHost = u.hostname;
-  apiProtocol = u.protocol === "https:" ? "https" : "http";
-} catch {
-  /* keep defaults */
-}
-
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -43,12 +33,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [{ source: "/bff/v1/:path*", destination: `${apiBase}/:path*` }];
   },
-  images: {
-    remotePatterns: [
-      { protocol: apiProtocol, hostname: apiHost, port: "", pathname: "/**" },
-      { protocol: "https", hostname: "**" },
-    ],
-  },
+  // No `images` config on purpose: media renders via plain <img> against the
+  // backend's pre-resized variants (see lib/media.ts), never next/image. Keeping
+  // remotePatterns around (esp. a wildcard host) would silently turn the image
+  // optimizer into an open proxy if next/image were ever introduced.
 };
 
 export default nextConfig;

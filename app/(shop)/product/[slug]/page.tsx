@@ -31,6 +31,16 @@ import type { Category, RecResponse } from "@/lib/api/types";
 
 export const revalidate = 60;
 
+/**
+ * No slugs are prerendered at build time, but declaring generateStaticParams
+ * opts the route into ISR: each product page is rendered once on first hit,
+ * then served as cached static HTML for `revalidate` seconds. Without this a
+ * dynamic route re-renders on EVERY request.
+ */
+export function generateStaticParams() {
+  return [];
+}
+
 interface PageParams {
   params: Promise<{ slug: string }>;
 }

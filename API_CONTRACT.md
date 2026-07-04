@@ -37,9 +37,14 @@ notifications + wallet/transactions are truly cursor-paginated.
 
 - `GET /search?q&sort&limit(=20)&cursor&filters[categoryId]&filters[brandId]&filters[priceMinPaisa]&filters[priceMaxPaisa]&filters[rating]`
   → `{ items:[{ productId,title,slug,thumbnailMediaId,pricePaisa,ratingAverage(number),vendorId,categoryId,brandId,score }],
-  nextCursor, hasMore, searchQueryId, semanticEnabled }`. sort ∈ `relevance|price_asc|price_desc|rating_desc|newest`.
+  nextCursor, hasMore, searchQueryId, semanticEnabled, suggestion, correctedQuery }`.
+  sort ∈ `relevance|price_asc|price_desc|rating_desc|newest`.
+  `correctedQuery` (string|null): set when a typo'd q was auto-corrected and results
+  include matches for the corrected term ("Including results for …" UI).
+  `suggestion` (string|null): "did you mean" title; never set alongside correctedQuery.
   NO facets — build filter UI from catalog endpoints.
-- `GET /search/autocomplete?q` (min 2) → `{ items:[{ id,title,slug,thumbnailMediaId }] }` (max 8).
+- `GET /search/autocomplete?q` (min 2) → `{ items:[{ id,title,slug,thumbnailMediaId }], suggestion }` (max 8;
+  ranked word-prefix → substring → FTS-prefix → typo-closeness, popularity tiebreak).
 - `POST /search/click { searchQueryId, productId, position }` → 201. Skip if searchQueryId === "".
 - `GET /me/recommendations/home` → `{ items: RecHit[], placement:"home", modelVersion }` (popular feed).
   RecHit = `{ productId, title, slug, thumbnailMediaId, pricePaisa, ratingAverage(number) }`.

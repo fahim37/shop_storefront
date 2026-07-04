@@ -22,7 +22,8 @@ export const CLIENT_API_BASE = "/bff/v1";
 /**
  * Brand logo, served from backend media storage (R2). Generated + uploaded via
  * the admin media API; swap the media id to rebrand without a redeploy of
- * assets. Resolved through the BFF proxy by `resolveMediaPath`.
+ * assets. Resolved to the absolute backend URL by `resolveMediaPath` (images
+ * go direct — cross-origin <img> loads are not CORS-restricted).
  */
 export const LOGO_MEDIA_PATH =
   "/v1/media/c1f6abd1-e0f4-42d5-ba5d-868705cb8b48/card";

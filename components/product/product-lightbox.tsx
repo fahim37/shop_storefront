@@ -37,7 +37,6 @@ export function ProductLightbox({
   onClose: () => void;
   title: string;
 }) {
-  const [mounted, setMounted] = React.useState(false);
   const [scale, setScale] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
   // Unzoomed finger-follow displacement while swiping between images.
@@ -55,8 +54,6 @@ export function ProductLightbox({
     moved: boolean;
   } | null>(null);
 
-  React.useEffect(() => setMounted(true), []);
-
   // Lock body scroll while the viewer is open.
   React.useEffect(() => {
     const prev = document.body.style.overflow;
@@ -65,13 +62,6 @@ export function ProductLightbox({
       document.body.style.overflow = prev;
     };
   }, []);
-
-  // Reset zoom/swipe whenever the active image changes.
-  React.useEffect(() => {
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
-    setSwipe({ x: 0, y: 0 });
-  }, [index]);
 
   // Keep the active thumbnail centered in its strip.
   React.useEffect(() => {
@@ -85,8 +75,15 @@ export function ProductLightbox({
   }, [index]);
 
   const count = images.length;
+  // Every image change flows through here (arrows, keyboard, swipe, thumbs),
+  // so resetting zoom/swipe in the same handler keeps it out of an effect.
   const go = React.useCallback(
-    (next: number) => onIndex((next + count) % count),
+    (next: number) => {
+      setScale(1);
+      setOffset({ x: 0, y: 0 });
+      setSwipe({ x: 0, y: 0 });
+      onIndex((next + count) % count);
+    },
     [count, onIndex],
   );
 
@@ -161,8 +158,8 @@ export function ProductLightbox({
     if (scale === 1) {
       const horizontal = Math.abs(d.dx) > Math.abs(d.dy);
       if (horizontal && count > 1 && Math.abs(d.dx) > SWIPE_NAV_PX) {
-        go(index + (d.dx < 0 ? 1 : -1));
-        return; // index effect resets the swipe state
+        go(index + (d.dx < 0 ? 1 : -1)); // go() resets the swipe state
+        return;
       }
       if (!horizontal && d.dy > SWIPE_CLOSE_PX) {
         onClose();
@@ -174,8 +171,8 @@ export function ProductLightbox({
 
   const src = mediaUrl(images[index]?.mediaId, "original");
 
-  if (!mounted) return null;
-
+  // No `mounted` gate needed: the lightbox only renders after a user click
+  // (post-hydration), so `document.body` is always available for the portal.
   return createPortal(
     <div
       className="fixed inset-0 z-[70] flex flex-col bg-black/92 animate-in fade-in-0 duration-150"
@@ -277,7 +274,7 @@ export function ProductLightbox({
                 key={img.id}
                 data-thumb={i}
                 type="button"
-                onClick={() => onIndex(i)}
+                onClick={() => go(i)}
                 aria-label={`View image ${i + 1}`}
                 aria-pressed={i === index}
                 className={cn(

@@ -77,10 +77,14 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     () => false,
   );
 
-  // Pre-warm the high-res zoom source as soon as the hero changes, so the
-  // panel is sharp on first hover instead of loading lazily.
-  React.useEffect(() => {
-    if (!canZoom || !zoomSrc) return;
+  // Pre-warm the high-res zoom source on hover INTENT (first mouse-enter of
+  // the hero), not eagerly on every hero change — otherwise skimming the
+  // thumbnail rail downloads a full-resolution original per thumbnail even if
+  // the zoom is never used. De-duped per URL for the session.
+  const warmedRef = React.useRef<Set<string>>(new Set());
+  const warmZoom = React.useCallback(() => {
+    if (!canZoom || !zoomSrc || warmedRef.current.has(zoomSrc)) return;
+    warmedRef.current.add(zoomSrc);
     const img = new Image();
     img.src = zoomSrc;
   }, [canZoom, zoomSrc]);
@@ -169,6 +173,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                 }
               : undefined
           }
+          onMouseEnter={warmZoom}
           onMouseMove={canZoom && zoomSrc ? moveLens : undefined}
           onMouseLeave={() => setLens(null)}
           className={cn(

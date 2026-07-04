@@ -23,12 +23,14 @@ import {
   useProductsInfinite,
 } from "@/lib/api/catalog";
 import { takaToPaisa, useFilterParams } from "@/lib/use-filters";
-import type { CategoryNode } from "@/lib/api/types";
+import type { CategoryNode, CursorMeta, ProductCardRow } from "@/lib/api/types";
 import type { ProductListParams } from "@/lib/api/query-keys";
 
 export interface CategoryListingProps {
   categoryId: string;
   subcategories: CategoryNode[];
+  /** Server-fetched DEFAULT first page (no filters/sort) — see the page. */
+  initialPage?: { data: ProductCardRow[]; meta?: CursorMeta };
 }
 
 /**
@@ -39,8 +41,14 @@ export interface CategoryListingProps {
 export function CategoryListing({
   categoryId,
   subcategories,
+  initialPage,
 }: CategoryListingProps) {
-  const { get, getList, getOptions } = useFilterParams();
+  const { get, getList, getOptions, activeCount } = useFilterParams();
+
+  // The server seed represents the unfiltered default listing; only hand it
+  // to the query when the URL matches that state, else it would briefly show
+  // the wrong (unfiltered) results under an active filter/sort.
+  const isDefaultView = activeCount === 0 && !get("sort");
 
   const params: ProductListParams = {
     categoryId,
@@ -63,7 +71,7 @@ export function CategoryListing({
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useProductsInfinite(params);
+  } = useProductsInfinite(params, isDefaultView ? initialPage : undefined);
 
   const { data: facets } = useListingFacets({ categoryId });
 

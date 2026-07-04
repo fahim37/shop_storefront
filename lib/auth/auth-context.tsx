@@ -3,6 +3,9 @@
 import * as React from "react";
 import {
   clearAccessToken,
+  clearSessionHint,
+  hasSessionHint,
+  markSessionHint,
   setAccessToken,
 } from "@/lib/auth/tokens";
 import {
@@ -137,8 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Persist a token bundle into the in-memory store + local refresh ref. */
   const applyTokens = React.useCallback((tokens: TokenPair) => {
-    setAccessToken(tokens.accessToken, tokens.expiresAt);
+    setAccessToken(tokens.accessToken);
     refreshTokenRef.current = tokens.refreshToken;
+    // Remember that this browser has a session, so future page loads know a
+    // bootstrap refresh is worth attempting (see the mount effect below).
+    markSessionHint();
   }, []);
 
   /** Wipe all local session state. */
@@ -241,6 +247,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Logout is best-effort; clear local state regardless.
     } finally {
       clearSession();
+      // Only an EXPLICIT logout drops the hint — transient refresh failures
+      // keep it so the next reload still attempts session restore.
+      clearSessionHint();
     }
   }, [clearSession]);
 
@@ -335,6 +344,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Defer a microtask so no setState below ever runs synchronously
+      // inside the effect body (react-hooks/set-state-in-effect).
+      await Promise.resolve();
+      // First-time visitors have never held a session here, so there is no
+      // refresh cookie to redeem — skip the guaranteed-401 POST /auth/refresh
+      // that would otherwise fire on every anonymous page load.
+      if (!hasSessionHint()) {
+        if (!cancelled) clearSession();
+        return;
+      }
       // Route the post-reload bootstrap through the SAME single-flight guard
       // the http client uses for 401 refreshes. React StrictMode mounts this
       // effect twice in dev (and extra tabs mount it in parallel); calling

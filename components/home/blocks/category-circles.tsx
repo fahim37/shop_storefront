@@ -1,5 +1,6 @@
 "use client";
 
+import { createElement } from "react";
 import Link from "next/link";
 import { SectionHeader } from "@/components/layout/section-header";
 import { useSteppedLoop } from "@/components/home/blocks/use-stepped-loop";
@@ -104,7 +105,6 @@ function CategoryItem({
   tone: string;
   clone: boolean;
 }) {
-  const Icon = categoryIcon(cat.slug);
   return (
     <Link
       href={`/category/${cat.slug}`}
@@ -126,7 +126,12 @@ function CategoryItem({
         <span
           className={`flex size-16 items-center justify-center rounded-full transition-all group-hover:-translate-y-0.5 lg:size-20 ${tone}`}
         >
-          <Icon className="size-7 lg:size-8" strokeWidth={1.5} />
+          {/* createElement: the icon is a stable lookup from a static map,
+              not a component defined during render (same as mega-menu). */}
+          {createElement(categoryIcon(cat.slug), {
+            className: "size-7 lg:size-8",
+            strokeWidth: 1.5,
+          })}
         </span>
       )}
       <b className="line-clamp-2 w-full text-center text-[12px] font-extrabold leading-tight text-ink group-hover:text-primary">

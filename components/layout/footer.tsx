@@ -4,11 +4,13 @@ import { Logo } from "@/components/layout/logo";
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {
     heading: "Marketplace",
+    // Only evergreen routes here (/shop and its query variants) — a hardcoded
+    // /category/<slug> 404s on catalogs whose seeded slugs differ.
     links: [
-      { label: "All categories", href: "/category/electronics" },
-      { label: "Flash deals", href: "/search?q=deals" },
-      { label: "New arrivals", href: "/search?q=new&sort=newest" },
-      { label: "Top stores", href: "/search?q=" },
+      { label: "All products", href: "/shop" },
+      { label: "Flash deals", href: "/shop?sale=1" },
+      { label: "New arrivals", href: "/shop?sort=newest" },
+      { label: "Best sellers", href: "/shop?sort=best_selling" },
     ],
   },
   {

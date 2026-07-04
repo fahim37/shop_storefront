@@ -9,11 +9,20 @@ import {
   getCategoryBreadcrumbs,
   getCategoryBySlug,
   getCategoryTree,
+  getProductsPage,
   NotFoundError,
 } from "@/lib/api/server";
-import type { Category, CategoryNode } from "@/lib/api/types";
+import type { Category, CategoryNode, ProductCardRow } from "@/lib/api/types";
 
 export const revalidate = 120;
+
+/**
+ * Opts the route into ISR (render once per slug, serve cached HTML for
+ * `revalidate` seconds) — see the note on the product page.
+ */
+export function generateStaticParams() {
+  return [];
+}
 
 type Params = Promise<{ slug: string }>;
 
@@ -63,9 +72,16 @@ export default async function CategoryPage({ params }: { params: Params }) {
   }
 
   // The rest is resilient (fall back to [] so the page still renders).
-  const [tree, crumbs] = await Promise.all([
+  // `firstPage` pre-fetches the DEFAULT product listing (no filters/sort) so
+  // the client grid paints instantly for the common landing case; the client
+  // island ignores it whenever URL filters are active.
+  const [tree, crumbs, firstPage] = await Promise.all([
     settle(getCategoryTree(), [] as CategoryNode[]),
     settle(getCategoryBreadcrumbs(category.id), [] as Category[]),
+    settle(
+      getProductsPage({ categoryId: category.id, limit: 20 }),
+      undefined as { data: ProductCardRow[] } | undefined,
+    ),
   ]);
 
   // Locate this category's node in the tree to read its children (subcategories).
@@ -101,6 +117,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
         <CategoryListing
           categoryId={category.id}
           subcategories={subcategories}
+          initialPage={firstPage}
         />
       </React.Suspense>
     </div>

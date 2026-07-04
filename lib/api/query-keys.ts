@@ -41,17 +41,10 @@ export type SearchParams = {
 export const qk = {
   // catalog
   products: (params: ProductListParams = {}) => ["products", params] as const,
-  product: (slug: string) => ["product", slug] as const,
   listingFacets: (params: ProductListParams = {}) =>
     ["facets", "products", params] as const,
   searchFacets: (params: SearchParams) => ["facets", "search", params] as const,
-  productRelated: (id: string) => ["product", id, "related"] as const,
   categories: () => ["categories"] as const,
-  category: (slug: string) => ["category", slug] as const,
-  categoryAttributes: (id: string) => ["category", id, "attributes"] as const,
-  breadcrumbs: (id: string) => ["category", id, "breadcrumbs"] as const,
-  brands: () => ["brands"] as const,
-  brand: (slug: string) => ["brand", slug] as const,
 
   // search
   search: (params: SearchParams) => ["search", params] as const,
@@ -72,12 +65,9 @@ export const qk = {
   // reviews & qa
   reviews: (productId: string) => ["reviews", productId] as const,
   questions: (productId: string) => ["questions", productId] as const,
-  vendorReviews: (vendorId: string) => ["vendor-reviews", vendorId] as const,
 
   // engagement
   wishlist: () => ["wishlist"] as const,
-  follows: () => ["follows"] as const,
-  recentlyViewed: () => ["recently-viewed"] as const,
 
   // account
   me: () => ["me"] as const,
@@ -87,7 +77,6 @@ export const qk = {
   unreadCount: () => ["notifications", "unread-count"] as const,
   notificationPrefs: () => ["notification-preferences"] as const,
   wallet: () => ["wallet"] as const,
-  walletTransactions: () => ["wallet", "transactions"] as const,
 
   // content
   homepage: () => ["homepage"] as const,

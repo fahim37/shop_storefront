@@ -4,11 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/lib/api/http";
 import { qk } from "@/lib/api/query-keys";
 import { useAuth } from "@/lib/auth/auth-context";
-import type {
-  FollowedStore,
-  RecentlyViewedItem,
-  WishlistItem,
-} from "@/lib/api/types";
+import type { WishlistItem } from "@/lib/api/types";
 
 /* ---- Wishlist ---- */
 
@@ -109,49 +105,6 @@ export function useToggleWishlist() {
       }),
     pending: add.isPending || remove.isPending,
   };
-}
-
-/* ---- Follow store ---- */
-
-export function useFollows() {
-  const { isAuthenticated } = useAuth();
-  return useQuery({
-    queryKey: qk.follows(),
-    queryFn: () => http.get<FollowedStore[]>("/follow"),
-    enabled: isAuthenticated,
-  });
-}
-
-export function useFollowStore() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (vars: { vendorId: string; notificationsEnabled?: boolean }) =>
-      http.post(`/follow/store/${vars.vendorId}`, {
-        notificationsEnabled: vars.notificationsEnabled ?? true,
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.follows() }),
-  });
-}
-
-export function useUnfollowStore() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (vendorId: string) =>
-      http.delete<{ removed: boolean }>(`/follow/store/${vendorId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.follows() }),
-  });
-}
-
-/* ---- Recently viewed ---- */
-
-export function useRecentlyViewed(limit = 12) {
-  const { isAuthenticated } = useAuth();
-  return useQuery({
-    queryKey: qk.recentlyViewed(),
-    queryFn: () =>
-      http.get<RecentlyViewedItem[]>("/me/recently-viewed", { params: { limit } }),
-    enabled: isAuthenticated,
-  });
 }
 
 /**

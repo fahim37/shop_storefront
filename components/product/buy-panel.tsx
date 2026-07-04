@@ -63,7 +63,12 @@ function COLOR_HEX(name: string): string | null {
 
 export function BuyPanel({ detail }: { detail: ProductDetail }) {
   const router = useRouter();
-  const variants = detail.variants.filter((v) => v.isActive);
+  // Memoized so the derived-option memos below keep a stable dep (a bare
+  // `.filter()` would mint a new array every render, defeating them).
+  const variants = React.useMemo(
+    () => detail.variants.filter((v) => v.isActive),
+    [detail.variants],
+  );
   const optionGroups = React.useMemo(() => deriveOptions(variants), [variants]);
   const colorHexes = React.useMemo(() => deriveColorHexes(variants), [variants]);
   const optionKeys = Array.from(optionGroups.keys());
@@ -71,7 +76,9 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
   const [selected, setSelected] = React.useState<Record<string, string>>(
     () => Object.fromEntries(visibleOptionEntries(variants[0]?.optionValues)),
   );
-  const [qty, setQty] = React.useState(1);
+  // The user's *requested* quantity; the effective `qty` below re-clamps it to
+  // live stock at render time (no effect needed).
+  const [rawQty, setQty] = React.useState(1);
 
   const activeVariant =
     variants.find((v) =>
@@ -109,10 +116,9 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
   const stepperMax = Math.min(STEPPER_MAX, Math.max(1, available));
 
   // Never let the requested qty exceed what's available (e.g. after switching
-  // to a lower-stock variant, or after a race correction).
-  React.useEffect(() => {
-    if (available > 0 && qty > available) setQty(available);
-  }, [available, qty]);
+  // to a lower-stock variant, or after a race correction). Derived at render —
+  // clamping in an effect would flash the stale value and cascade a re-render.
+  const qty = outOfStock ? rawQty : Math.min(rawQty, stepperMax);
 
   const pickColor = (key: string) =>
     /colou?r/i.test(key) ? key : null;

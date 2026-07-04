@@ -8,7 +8,6 @@
  */
 
 let accessToken: string | null = null;
-let accessTokenExpiresAt: number | null = null;
 
 /** Returns the current in-memory access token, or null when logged out. */
 export function getAccessToken(): string | null {
@@ -16,32 +15,16 @@ export function getAccessToken(): string | null {
 }
 
 /**
- * Store the access token (and optional expiry as an epoch-ms timestamp or
- * ISO string). Pass null to clear.
+ * Store the access token. Pass null to clear. Expiry isn't tracked — a stale
+ * token simply 401s and the http client's single-flight refresh replaces it.
  */
-export function setAccessToken(
-  token: string | null,
-  expiresAt?: number | string | null,
-): void {
+export function setAccessToken(token: string | null): void {
   accessToken = token;
-  if (token === null) {
-    accessTokenExpiresAt = null;
-    return;
-  }
-  if (expiresAt == null) {
-    accessTokenExpiresAt = null;
-  } else if (typeof expiresAt === "number") {
-    accessTokenExpiresAt = expiresAt;
-  } else {
-    const parsed = Date.parse(expiresAt);
-    accessTokenExpiresAt = Number.isNaN(parsed) ? null : parsed;
-  }
 }
 
 /** Clear the stored access token (e.g. on logout or failed refresh). */
 export function clearAccessToken(): void {
   accessToken = null;
-  accessTokenExpiresAt = null;
 }
 
 /** True when an access token is currently held in memory. */
@@ -49,11 +32,42 @@ export function hasAccessToken(): boolean {
   return accessToken !== null;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Session hint                                                               */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Best-effort check for whether the stored token is past (or near) expiry.
- * Returns false when no expiry is known. `skewMs` adds a safety margin.
+ * localStorage marker meaning "this browser has held a session before".
+ *
+ * The refresh token is an httpOnly cookie we can't read, so without a hint the
+ * app must fire a POST /auth/refresh on EVERY full page load just to learn the
+ * visitor is anonymous — a wasted backend hit for the (majority) logged-out
+ * traffic. The flag carries no secrets: it only skips the bootstrap refresh
+ * when absent. Worst case (user clears storage but still has a valid cookie)
+ * they simply appear logged out until they sign in again.
  */
-export function isAccessTokenExpired(skewMs = 0): boolean {
-  if (accessTokenExpiresAt == null) return false;
-  return Date.now() + skewMs >= accessTokenExpiresAt;
+const SESSION_HINT_KEY = "gcl.hadSession";
+
+export function markSessionHint(): void {
+  try {
+    window.localStorage.setItem(SESSION_HINT_KEY, "1");
+  } catch {
+    /* storage unavailable (SSR, private mode) — hint is best-effort */
+  }
+}
+
+export function clearSessionHint(): void {
+  try {
+    window.localStorage.removeItem(SESSION_HINT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasSessionHint(): boolean {
+  try {
+    return window.localStorage.getItem(SESSION_HINT_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
