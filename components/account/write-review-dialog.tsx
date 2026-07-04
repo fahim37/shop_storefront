@@ -16,9 +16,19 @@ import { Field } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
-import { useSubmitReview } from "@/lib/api/reviews";
+import {
+  useAttachReviewMedia,
+  useRemoveReviewMedia,
+  useSubmitReview,
+  useUpdateReview,
+} from "@/lib/api/reviews";
 import { ApiError } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
+import {
+  ReviewPhotoUploader,
+  type ReviewPhoto,
+} from "@/components/account/review-photo-uploader";
+import type { MyReview } from "@/lib/api/types";
 
 export interface WriteReviewDialogProps {
   open: boolean;
@@ -26,6 +36,12 @@ export interface WriteReviewDialogProps {
   productId: string;
   subOrderId: string;
   productTitle: string;
+  /**
+   * The user's existing review for this item, if any. When present the dialog
+   * switches to edit mode: fields are pre-filled and submit PATCHes instead of
+   * creating a new review.
+   */
+  existingReview?: MyReview | null;
 }
 
 const RATING_LABELS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
@@ -61,33 +77,50 @@ export function WriteReviewDialog({
   productId,
   subOrderId,
   productTitle,
+  existingReview,
 }: WriteReviewDialogProps) {
   const submit = useSubmitReview();
+  const update = useUpdateReview();
+  const attachMedia = useAttachReviewMedia();
+  const removeMedia = useRemoveReviewMedia();
+  const isEdit = !!existingReview;
+  const pending = isEdit ? update.isPending : submit.isPending;
 
   const [rating, setRating] = React.useState(0);
   const [hovered, setHovered] = React.useState(0);
   const [title, setTitle] = React.useState("");
   const [body, setBody] = React.useState("");
   const [recommend, setRecommend] = React.useState(true);
+  const [photos, setPhotos] = React.useState<ReviewPhoto[]>([]);
   const [ratingError, setRatingError] = React.useState<string | undefined>();
 
   // Reset the form whenever the dialog transitions to open. Done during render
-  // (tracking the previous `open`) rather than in an effect so the cleared
-  // fields are visible on the very first open frame.
+  // (tracking the previous `open`) rather than in an effect so the fields are
+  // populated on the very first open frame. In edit mode we seed from the
+  // existing review; otherwise we start from a blank 5-star form.
   const [wasOpen, setWasOpen] = React.useState(open);
   if (open && !wasOpen) {
     setWasOpen(true);
-    setRating(0);
+    setRating(existingReview?.rating ?? 5);
     setHovered(0);
-    setTitle("");
-    setBody("");
-    setRecommend(true);
+    setTitle(existingReview?.title ?? "");
+    setBody(existingReview?.body ?? "");
+    setRecommend(existingReview?.recommend ?? true);
+    setPhotos(
+      (existingReview?.media ?? []).map((m) => ({
+        key: m.id,
+        status: "existing" as const,
+        reviewMediaId: m.id,
+        url: m.url,
+      })),
+    );
     setRatingError(undefined);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
 
   const displayRating = hovered || rating;
+  const uploading = photos.some((p) => p.status === "uploading");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,18 +128,68 @@ export function WriteReviewDialog({
       setRatingError("Please pick a star rating.");
       return;
     }
+    if (uploading) {
+      toast.error("Please wait for your photos to finish uploading.");
+      return;
+    }
+    // Freshly-uploaded photos not yet linked to a review.
+    const newMediaIds = photos
+      .filter((p) => p.status === "uploaded" && p.mediaId)
+      .map((p) => p.mediaId as string);
     try {
-      await submit.mutateAsync({
-        productId,
-        subOrderId,
-        rating,
-        title: title.trim() || undefined,
-        body: body.trim() || undefined,
-        recommend,
-      });
-      toast.success("Review submitted", {
-        description: "Thanks! Your review will appear on the product page once published.",
-      });
+      if (isEdit && existingReview) {
+        await update.mutateAsync({
+          reviewId: existingReview.id,
+          productId,
+          rating,
+          // Send null (not undefined) to clear a previously-set field.
+          title: title.trim() || null,
+          body: body.trim() || null,
+          recommend,
+        });
+        // Apply photo changes after the content save. These are non-fatal —
+        // the review text is already saved — so a failure warns but still closes.
+        try {
+          const keptExisting = new Set(
+            photos.filter((p) => p.status === "existing").map((p) => p.reviewMediaId),
+          );
+          const removed = (existingReview.media ?? []).filter(
+            (m) => !keptExisting.has(m.id),
+          );
+          if (newMediaIds.length > 0) {
+            await attachMedia.mutateAsync({
+              reviewId: existingReview.id,
+              productId,
+              mediaIds: newMediaIds,
+            });
+          }
+          for (const m of removed) {
+            await removeMedia.mutateAsync({
+              reviewId: existingReview.id,
+              productId,
+              reviewMediaId: m.id,
+            });
+          }
+        } catch {
+          toast.error("Saved, but some photos couldn't be updated. Try again from your order.");
+        }
+        toast.success("Review updated", {
+          description: "Your changes are saved and will show as edited on the product page.",
+        });
+      } else {
+        await submit.mutateAsync({
+          productId,
+          subOrderId,
+          rating,
+          title: title.trim() || undefined,
+          body: body.trim() || undefined,
+          recommend,
+          mediaIds: newMediaIds.length > 0 ? newMediaIds : undefined,
+        });
+        toast.success("Review submitted", {
+          description: "Thanks! Your review will appear on the product page once published.",
+        });
+      }
       onOpenChange(false);
     } catch (err) {
       toast.error(reviewErrorMessage(err));
@@ -117,7 +200,9 @@ export function WriteReviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display">Write a review</DialogTitle>
+          <DialogTitle className="font-display">
+            {isEdit ? "Edit your review" : "Write a review"}
+          </DialogTitle>
           <DialogDescription className="line-clamp-2">{productTitle}</DialogDescription>
         </DialogHeader>
 
@@ -215,6 +300,13 @@ export function WriteReviewDialog({
             </p>
           </div>
 
+          {/* Photos */}
+          <ReviewPhotoUploader
+            photos={photos}
+            onChange={setPhotos}
+            disabled={pending}
+          />
+
           {/* Recommend */}
           <label
             htmlFor="review-recommend"
@@ -235,12 +327,17 @@ export function WriteReviewDialog({
               type="button"
               variant="soft"
               onClick={() => onOpenChange(false)}
-              disabled={submit.isPending}
+              disabled={pending}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="accent" loading={submit.isPending}>
-              Submit review
+            <Button
+              type="submit"
+              variant="accent"
+              loading={pending}
+              disabled={uploading}
+            >
+              {isEdit ? "Save changes" : "Submit review"}
             </Button>
           </DialogFooter>
         </form>

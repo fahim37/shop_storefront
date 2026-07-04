@@ -183,50 +183,103 @@ export function MobileBottomNav() {
   const { data: unread } = useUnreadCount();
   const unreadCount = unread?.count ?? 0;
 
+  // Single active slot drives both the tab tint and the sliding indicator/glow
+  // (hidden entirely on routes that aren't in the bar, e.g. product pages).
+  const activeIndex = TABS.findIndex(
+    (t) =>
+      !t.isCart &&
+      (t.href === "/" ? pathname === "/" : pathname.startsWith(t.href)),
+  );
+  const slide = {
+    transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+  };
+  const slideCls = cn(
+    "pointer-events-none absolute left-0 w-1/5 transition-[transform,opacity] duration-[550ms] [transition-timing-function:cubic-bezier(0.3,1.35,0.4,1)]",
+    activeIndex < 0 && "opacity-0",
+  );
+
   return (
-    <nav className="sticky bottom-0 z-40 flex border-t border-border bg-card md:hidden">
-      {TABS.map((t) => {
-        const active = !t.isCart && (t.href === "/" ? pathname === "/" : pathname.startsWith(t.href));
-        const content = (
-          <span className="relative flex flex-col items-center gap-1">
-            <span className="relative">
-              <t.icon className="size-[22px]" strokeWidth={active ? 2.4 : 1.8} />
-              {t.isCart && count > 0 && (
-                <span className="absolute -right-2.5 -top-1.5 flex min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-extrabold text-white">
-                  {count}
-                </span>
-              )}
-              {t.isAlerts && unreadCount > 0 && (
-                <span className="absolute -right-2.5 -top-1.5 flex min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[9px] font-extrabold text-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </span>
-            {t.label}
-          </span>
-        );
-        const cls = cn(
-          "flex flex-1 items-center justify-center py-2.5 text-[10px] font-bold transition-colors",
-          active ? "text-primary" : "text-faint",
-        );
-        return t.isCart ? (
-          <button key={t.label} type="button" onClick={openCart} className={cls}>
-            {content}
-          </button>
-        ) : (
-          <Link
-            key={t.label}
-            href={t.href}
-            onClick={() => {
-              if (pathname === t.href)
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={cls}
-          >
-            {content}
-          </Link>
-        );
-      })}
+    <nav className="sticky bottom-0 z-40 overflow-hidden rounded-t-[20px] bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
+      {/* soft glow trailing the active tab */}
+      <div className={cn(slideCls, "inset-y-0 flex items-center justify-center")} style={slide}>
+        <span
+          className="size-[62px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, color-mix(in oklch, var(--primary) 16%, transparent) 0%, transparent 70%)",
+          }}
+        />
+      </div>
+      {/* sliding top indicator */}
+      <div className={cn(slideCls, "top-0 flex justify-center")} style={slide}>
+        <span
+          className="h-1 w-[42px] rounded-b-[4px]"
+          style={{
+            background:
+              "linear-gradient(90deg, color-mix(in oklch, var(--primary) 75%, transparent), var(--primary))",
+            boxShadow:
+              "0 2px 10px color-mix(in oklch, var(--primary) 45%, transparent)",
+          }}
+        />
+      </div>
+      <div className="relative flex">
+        {TABS.map((t, i) => {
+          const active = i === activeIndex;
+          const content = (
+            <>
+              <span
+                className={cn(
+                  "relative flex transition-[transform,color] duration-[450ms] ease-spring",
+                  active
+                    ? "-translate-y-[3px] scale-[1.12] text-primary"
+                    : "text-faint",
+                )}
+              >
+                <t.icon className="size-[22px]" strokeWidth={active ? 2.1 : 1.7} />
+                {t.isCart && count > 0 && (
+                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold text-white">
+                    {count}
+                  </span>
+                )}
+                {t.isAlerts && unreadCount > 0 && (
+                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-red px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-[11px] transition-colors duration-300",
+                  active ? "font-bold text-primary" : "font-medium text-faint",
+                )}
+              >
+                {t.label}
+              </span>
+            </>
+          );
+          // pt-[18px] keeps the badge (rides 7px above the icon, plus its
+          // pulse) clear of the 4px indicator bar at the top edge.
+          const cls =
+            "flex flex-1 flex-col items-center gap-1 pb-2 pt-[18px] transition-transform duration-[180ms] ease-out active:scale-[0.92]";
+          return t.isCart ? (
+            <button key={t.label} type="button" onClick={openCart} className={cls}>
+              {content}
+            </button>
+          ) : (
+            <Link
+              key={t.label}
+              href={t.href}
+              onClick={() => {
+                if (pathname === t.href)
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={cls}
+            >
+              {content}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

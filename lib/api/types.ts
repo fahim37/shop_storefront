@@ -473,11 +473,53 @@ export interface Review {
   recommend: boolean | null;
   status: string;
   helpfulCount: number;
+  /** Set when the author has edited the review; null if never edited. */
+  editedAt: string | null;
   createdAt: string;
   updatedAt: string;
   reviewerName: string | null;
   media: ReviewMedia[];
   response: ReviewResponse | null;
+}
+
+/**
+ * A review as returned by `GET /reviews/mine` — the caller's own reviews across
+ * all statuses, joined with the product they belong to. Drives the "already
+ * reviewed / edit" state on the account order pages.
+ */
+export interface MyReview {
+  id: string;
+  userId: string;
+  productId: string;
+  subOrderId: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  recommend: boolean | null;
+  status: string;
+  helpfulCount: number;
+  editedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  productTitle: string | null;
+  productSlug: string | null;
+  thumbnailMediaId: string | null;
+  /** Photos already attached to this review (shown + removable when editing). */
+  media: ReviewMedia[];
+}
+
+export type ReviewSort = "recent" | "helpful" | "rating_desc" | "rating_asc";
+
+/** Payload of `GET /products/:id/reviews` — one page + summary metadata. */
+export interface ReviewListResponse {
+  reviews: Review[];
+  /** Published-review count per star, keys "1".."5" (always unfiltered). */
+  distribution: Record<string, number>;
+  /** Total published reviews (sum of distribution). */
+  total: number;
+  hasMore: boolean;
+  limit: number;
+  offset: number;
 }
 
 export interface Answer {

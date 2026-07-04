@@ -155,6 +155,7 @@
   --animate-marquee: marquee 22s linear infinite;
   --animate-fade-up: fade-up 0.5s var(--ease-out-soft) both;
   --animate-pop: pop 0.28s var(--ease-spring) both;
+  --animate-badge-pulse: badge-pulse 2.6s ease-in-out infinite;
   --animate-accordion-down: accordion-down 0.24s var(--ease-out-soft);
   --animate-accordion-up: accordion-up 0.24s var(--ease-out-soft);
 }
@@ -219,6 +220,15 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.14);
   }
 }
 

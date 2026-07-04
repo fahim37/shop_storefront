@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
+  ChevronDown,
   HelpCircle,
   MessageSquare,
   MessageSquareQuote,
@@ -11,6 +12,7 @@ import {
   PencilLine,
   Star,
   ThumbsUp,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,13 +25,22 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MediaImage } from "@/components/ui/media-image";
 import { RatingStars } from "@/components/ui/rating-stars";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { ApiError } from "@/lib/api/http";
+import { resolveMediaPath } from "@/lib/media";
 import { formatRating, formatRelative, initials } from "@/lib/format";
 import {
+  REVIEWS_PAGE_SIZE,
   useAskQuestion,
+  useInfiniteProductReviews,
   useProductQuestions,
-  useProductReviews,
   useReviewHelpful,
 } from "@/lib/api/reviews";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -37,6 +48,7 @@ import type {
   ProductCardRow,
   Question,
   Review,
+  ReviewSort,
 } from "@/lib/api/types";
 
 export interface ReviewsSectionProps {
@@ -206,65 +218,251 @@ function SpecificationsTab({ entries }: { entries: Array<[string, string]> }) {
 /* Reviews                                                                */
 /* ----------------------------------------------------------------------- */
 
+const REVIEW_SORTS: Array<{ value: ReviewSort; label: string }> = [
+  { value: "recent", label: "Newest first" },
+  { value: "helpful", label: "Most helpful" },
+  { value: "rating_desc", label: "Highest rated" },
+  { value: "rating_asc", label: "Lowest rated" },
+];
+
 function ReviewsTab({ product }: { product: ProductCardRow }) {
-  const { data, isLoading, isError } = useProductReviews(product.id);
-  const reviews = data?.reviews ?? [];
+  const [sort, setSort] = React.useState<ReviewSort>("recent");
+  const [starFilter, setStarFilter] = React.useState<number | null>(null);
+  const query = useInfiniteProductReviews(product.id, {
+    sort,
+    rating: starFilter ?? undefined,
+  });
+
+  const pages = query.data?.pages ?? [];
+  const reviews = pages.flatMap((p) => p.reviews);
+  const summary = pages[0];
+  const total = summary?.total ?? product.ratingCount;
+  const shownCount = starFilter
+    ? (summary?.distribution?.[String(starFilter)] ?? reviews.length)
+    : total;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:gap-6">
-      {/* Rating summary */}
-      <Card className="h-fit lg:sticky lg:top-24">
-        <CardContent className="flex flex-col items-center gap-2 py-5 text-center sm:py-7">
-          <span className="font-display text-4xl font-extrabold leading-none sm:text-5xl">
-            {formatRating(product.ratingAverage)}
-          </span>
-          <RatingStars value={product.ratingAverage} size={18} precise />
-          <span className="text-[12.5px] font-bold text-faint">
-            {product.ratingCount}{" "}
-            {product.ratingCount === 1 ? "rating" : "ratings"}
-          </span>
-          <Separator className="my-3" />
-          <p className="text-[12.5px] leading-relaxed text-sub">
-            Only verified buyers can review. Bought this?
-          </p>
-          <Button asChild variant="outline" size="sm" className="mt-1">
-            <Link href="/account/orders">
-              <PencilLine className="size-4" /> Write a review
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="grid gap-4 lg:grid-cols-[300px_1fr] lg:gap-6">
+      <RatingSummaryCard
+        product={product}
+        distribution={summary?.distribution}
+        total={total}
+        activeStar={starFilter}
+        onToggleStar={(star) =>
+          setStarFilter((cur) => (cur === star ? null : star))
+        }
+      />
 
       {/* Review list */}
       <div className="min-w-0">
-        {isLoading ? (
+        {/* Toolbar: count / active filter + sort */}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-ink">
+            {starFilter ? (
+              <>
+                <span>
+                  {shownCount} {starFilter}-star{" "}
+                  {shownCount === 1 ? "review" : "reviews"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStarFilter(null)}
+                  className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-[11.5px] font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <X className="size-3" strokeWidth={2.5} /> Clear
+                </button>
+              </>
+            ) : (
+              <span>
+                {total} {total === 1 ? "review" : "reviews"}
+              </span>
+            )}
+          </div>
+          <Select
+            value={sort}
+            onValueChange={(v) => setSort(v as ReviewSort)}
+          >
+            <SelectTrigger
+              aria-label="Sort reviews"
+              className="h-9 w-[160px] text-[13px] font-semibold"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {REVIEW_SORTS.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {query.isLoading ? (
           <ReviewListSkeleton />
-        ) : isError ? (
+        ) : query.isError ? (
           <EmptyState
             icon={<Star className="size-6" />}
             title="Couldn't load reviews"
             description="Please try again in a moment."
           />
         ) : reviews.length === 0 ? (
-          <EmptyState
-            icon={<MessageSquareQuote />}
-            title="No reviews yet"
-            description="Be the first to review this product after your order is delivered."
-            action={
-              <Button asChild variant="outline" size="sm">
-                <Link href="/account/orders">Go to my orders</Link>
-              </Button>
-            }
-          />
+          starFilter ? (
+            <EmptyState
+              icon={<Star className="size-6" />}
+              title={`No ${starFilter}-star reviews`}
+              description="Try a different rating, or view all reviews."
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStarFilter(null)}
+                >
+                  Show all reviews
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<MessageSquareQuote />}
+              title="No reviews yet"
+              description="Be the first to review this product after your order is delivered."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/account/orders">Go to my orders</Link>
+                </Button>
+              }
+            />
+          )
         ) : (
-          <ul className="flex flex-col gap-4 sm:gap-5">
-            {reviews.map((rv) => (
-              <ReviewItem key={rv.id} review={rv} productId={product.id} />
-            ))}
-          </ul>
+          <>
+            <ul className="flex flex-col gap-4 sm:gap-5">
+              {reviews.map((rv) => (
+                <ReviewItem key={rv.id} review={rv} productId={product.id} />
+              ))}
+            </ul>
+
+            {/* View more / end of list */}
+            {query.hasNextPage ? (
+              <div className="mt-5 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="min-w-48"
+                  loading={query.isFetchingNextPage}
+                  onClick={() => void query.fetchNextPage()}
+                >
+                  View more reviews
+                  <ChevronDown className="size-4" />
+                </Button>
+              </div>
+            ) : reviews.length > REVIEWS_PAGE_SIZE ? (
+              <p className="mt-5 text-center text-xs font-semibold text-faint">
+                You&apos;ve seen all {shownCount}{" "}
+                {shownCount === 1 ? "review" : "reviews"}
+              </p>
+            ) : null}
+          </>
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Daraz-style rating summary: big average, star histogram (each row doubles
+ * as a filter toggle), and the write-review CTA.
+ */
+function RatingSummaryCard({
+  product,
+  distribution,
+  total,
+  activeStar,
+  onToggleStar,
+}: {
+  product: ProductCardRow;
+  distribution: Record<string, number> | undefined;
+  total: number;
+  activeStar: number | null;
+  onToggleStar: (star: number) => void;
+}) {
+  return (
+    <Card className="h-fit lg:sticky lg:top-24">
+      <CardContent className="flex flex-col gap-4 py-5 sm:py-6">
+        {/* Average */}
+        <div className="flex flex-col items-center gap-1.5 text-center">
+          <div className="flex items-end justify-center gap-1">
+            <span className="font-display text-4xl font-extrabold leading-none sm:text-5xl">
+              {formatRating(product.ratingAverage)}
+            </span>
+            <span className="pb-0.5 text-sm font-bold text-faint">/5</span>
+          </div>
+          <RatingStars value={product.ratingAverage} size={18} precise />
+          <span className="text-[12.5px] font-bold text-faint">
+            {total} {total === 1 ? "rating" : "ratings"}
+          </span>
+        </div>
+
+        {/* Star histogram — rows toggle the star filter */}
+        <div className="flex flex-col gap-0.5">
+          {[5, 4, 3, 2, 1].map((star) => {
+            const n = distribution?.[String(star)] ?? 0;
+            const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+            const active = activeStar === star;
+            const disabled = n === 0 && !active;
+            return (
+              <button
+                key={star}
+                type="button"
+                onClick={() => onToggleStar(star)}
+                disabled={disabled}
+                aria-pressed={active}
+                title={
+                  disabled
+                    ? `No ${star}-star reviews`
+                    : `Show only ${star}-star reviews`
+                }
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "bg-blue-soft ring-1 ring-primary/30"
+                    : "hover:bg-muted",
+                  disabled && "cursor-default opacity-45 hover:bg-transparent",
+                )}
+              >
+                <span className="flex w-8 shrink-0 items-center justify-end gap-0.5 text-[12px] font-bold text-sub">
+                  {star}
+                  <Star className="size-3 shrink-0 fill-amber-deep text-amber-deep" />
+                </span>
+                <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border/60">
+                  <span
+                    className="block h-full rounded-full bg-amber-deep transition-[width] duration-300"
+                    style={{ width: `${pct}%` }}
+                  />
+                </span>
+                <span className="w-8 shrink-0 text-right text-[11.5px] font-bold tabular-nums text-faint">
+                  {n}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <Separator />
+
+        {/* Write-review CTA */}
+        <div className="flex flex-col items-center gap-1.5 text-center">
+          <p className="text-[12.5px] leading-relaxed text-sub">
+            Only verified buyers can review. Bought this?
+          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/account/orders">
+              <PencilLine className="size-4" /> Write a review
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -315,6 +513,7 @@ function ReviewItem({
             <RatingStars value={review.rating} size={14} />
             <span className="text-[11.5px] font-semibold text-faint">
               {formatRelative(review.createdAt)}
+              {review.editedAt ? " · Edited" : ""}
             </span>
           </div>
         </div>
@@ -334,12 +533,19 @@ function ReviewItem({
       {review.media.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {review.media.map((m) => (
-            <div
+            <a
               key={m.id}
-              className="size-16 overflow-hidden rounded-lg border border-border bg-muted"
+              href={
+                resolveMediaPath(m.url.replace("/card", "/original")) ??
+                undefined
+              }
+              target="_blank"
+              rel="noreferrer"
+              title="View full size"
+              className="block size-20 overflow-hidden rounded-lg border border-border bg-muted transition-opacity hover:opacity-85"
             >
-              <MediaImage src={m.url} alt="Review attachment" />
-            </div>
+              <MediaImage src={m.url} alt="Review photo" />
+            </a>
           ))}
         </div>
       )}

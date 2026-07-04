@@ -84,8 +84,10 @@ Radii `rounded-xl/2xl`; shadows `shadow-[var(--shadow-card)]`, `shadow-[var(--sh
   `useRemoveCartItem()`, `useSaveForLater()`, `useApplyCoupon()`, `useRemoveCoupon()`. Mutations take/return per API.
 - Orders `@/lib/api/orders`: `useOrders({limit?,placedAfter?})`→OrderListItem[], `useOrder(id)`→OrderView,
   `useOrderTracking(id)`→OrderTracking, `useCheckout()`, `useCancelOrder()`.
-- Reviews `@/lib/api/reviews`: `useProductReviews(id)`→`{reviews}`, `useProductQuestions(id)`→Question[],
-  `useSubmitReview()`, `useReviewHelpful(productId)`, `useAskQuestion(productId)`, `useAnswerQuestion(productId)`.
+- Reviews `@/lib/api/reviews`: `useInfiniteProductReviews(id,{sort,rating?})`→infinite pages of
+  `ReviewListResponse` (`{reviews,distribution,total,hasMore}`), `useMyReviews()`→MyReview[],
+  `useProductQuestions(id)`→Question[], `useSubmitReview()`, `useUpdateReview()`, `useAttachReviewMedia()`,
+  `useRemoveReviewMedia()`, `useReviewHelpful(productId)`, `useAskQuestion(productId)`, `useAnswerQuestion(productId)`.
 - Engagement `@/lib/api/engagement`: `useWishlist()`→WishlistItem[], `useToggleWishlist()`→`{isWishlisted(id), toggle(id), pending}`,
   `useRemoveWishlist()`, `useFollows()`, `useFollowStore()`, `useUnfollowStore()`, `useRecentlyViewed()`, `trackProductView(id)`.
 - Account `@/lib/api/account`: `useMe()`→Me, `useUpdateProfile()` (input `{fullName?,dateOfBirth?,gender?,photoUrl}`),
@@ -99,7 +101,8 @@ Radii `rounded-xl/2xl`; shadows `shadow-[var(--shadow-card)]`, `shadow-[var(--sh
 
 ## Gotchas
 - Orders list/detail/wishlist/addresses/reviews/questions are **bare arrays / single objects** (no `meta`).
-- `useProductReviews` returns `{ reviews: Review[] }`. `useProductQuestions` returns `Question[]`.
+- `GET /products/:id/reviews` returns `{ reviews, distribution, total, hasMore, limit, offset }`
+  (sort: recent|helpful|rating_desc|rating_asc; `rating` filters one star bucket). `useProductQuestions` returns `Question[]`.
 - Submitting a review needs a `subOrderId` (verified purchase) — only offer it from a delivered order context;
   on the PDP, the review tab is **read-only** (list reviews + "Write a review" can deep-link to orders).
 - Cart vendor groups have only `vendorId` (no store name) — label generically ("Store 1").

@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, PackageX, Star, Truck } from "lucide-react";
+import { ArrowLeft, PackageX, PencilLine, Star, Truck } from "lucide-react";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/lib/api/orders";
+import { useMyReviews } from "@/lib/api/reviews";
 import {
   SUBORDER_STATUS,
   STATUS_TONE_CLASS,
@@ -40,10 +41,16 @@ import {
 } from "@/components/ui/dialog";
 import type {
   HydratedSubOrder,
+  MyReview,
   OrderItem,
   OrderView,
   TrackingSubOrder,
 } from "@/lib/api/types";
+
+/** Map key for a review, unique per (sub-order, product). */
+function reviewKey(subOrderId: string, productId: string): string {
+  return `${subOrderId}::${productId}`;
+}
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -134,6 +141,17 @@ function OrderDetail({
   const isCancelled = !!order.cancelledAt;
   const statusBadge = ORDER_LIST_STATUS_BADGE[deriveViewStatus(order)];
 
+  // The user's own reviews, keyed by (sub-order, product), so each item row can
+  // show "Edit review" instead of a second "Review" button once reviewed.
+  const { data: myReviews } = useMyReviews();
+  const reviewByKey = React.useMemo(() => {
+    const map = new Map<string, MyReview>();
+    for (const r of myReviews ?? []) {
+      map.set(reviewKey(r.subOrderId, r.productId), r);
+    }
+    return map;
+  }, [myReviews]);
+
   return (
     <div className="space-y-6">
       {/* Back + header */}
@@ -195,6 +213,7 @@ function OrderDetail({
             tracking={tracking?.subOrders.find(
               (t) => t.subOrderNumber === sub.subOrderNumber,
             )}
+            reviewByKey={reviewByKey}
           />
         ))}
       </div>
@@ -217,14 +236,23 @@ function OrderDetail({
 function SubOrderSection({
   sub,
   tracking,
+  reviewByKey,
 }: {
   sub: HydratedSubOrder;
   tracking: TrackingSubOrder | undefined;
+  reviewByKey: Map<string, MyReview>;
 }) {
   const meta = SUBORDER_STATUS[sub.status];
   const toneClass = STATUS_TONE_CLASS[meta.tone];
   const delivered = sub.status === "delivered";
   const [reviewItem, setReviewItem] = React.useState<OrderItem | null>(null);
+
+  const reviewFor = (item: OrderItem) =>
+    reviewByKey.get(reviewKey(sub.id, item.productId)) ?? null;
+  // Once every item in a delivered sub-order is reviewed, swap the "tell other
+  // shoppers" nudge for a gentler "thanks, you can still edit" note.
+  const allReviewed =
+    delivered && sub.items.length > 0 && sub.items.every((it) => !!reviewFor(it));
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -251,7 +279,9 @@ function SubOrderSection({
         <div className="flex items-center gap-2.5 border-b border-line bg-amber-soft px-4 py-2.5 sm:px-5">
           <Star className="size-4 shrink-0 fill-amber-deep text-amber-deep" />
           <p className="text-[13px] font-semibold text-amber-deep">
-            Delivered — tell other shoppers what you think of your items.
+            {allReviewed
+              ? "Thanks for reviewing — you can edit your reviews anytime."
+              : "Delivered — tell other shoppers what you think of your items."}
           </p>
         </div>
       )}
@@ -263,6 +293,7 @@ function SubOrderSection({
             <OrderItemRow
               item={item}
               canReview={delivered}
+              hasReview={!!reviewFor(item)}
               onReview={() => setReviewItem(item)}
             />
           </li>
@@ -274,7 +305,7 @@ function SubOrderSection({
         <ShipmentTimeline tracking={tracking} />
       )}
 
-      {/* Verified-purchase review dialog */}
+      {/* Verified-purchase review dialog (create or edit) */}
       {reviewItem && (
         <WriteReviewDialog
           open
@@ -284,6 +315,7 @@ function SubOrderSection({
           productId={reviewItem.productId}
           subOrderId={sub.id}
           productTitle={reviewItem.titleSnapshot}
+          existingReview={reviewFor(reviewItem)}
         />
       )}
     </section>
@@ -293,10 +325,13 @@ function SubOrderSection({
 function OrderItemRow({
   item,
   canReview,
+  hasReview,
   onReview,
 }: {
   item: OrderItem;
   canReview: boolean;
+  /** True when the user already has a review for this item — show "Edit". */
+  hasReview: boolean;
   onReview: () => void;
 }) {
   // Reserved "_<Option>Hex" keys carry swatch colors, not display values.
@@ -363,8 +398,17 @@ function OrderItemRow({
             className="h-8 px-3 text-xs"
             onClick={onReview}
           >
-            <Star className="size-3.5" />
-            Review
+            {hasReview ? (
+              <>
+                <PencilLine className="size-3.5" />
+                Edit review
+              </>
+            ) : (
+              <>
+                <Star className="size-3.5" />
+                Review
+              </>
+            )}
           </Button>
         )}
       </div>
