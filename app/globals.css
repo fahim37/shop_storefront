@@ -143,7 +143,7 @@
 
   /* Fonts (variables injected by next/font in layout.tsx) */
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-sora), var(--font-manrope), ui-sans-serif, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-manrope), ui-sans-serif, sans-serif;
   --font-bengali: var(--font-bengali), var(--font-manrope), sans-serif;
 
   /* ── Type scale ────────────────────────────────────────────────────────────

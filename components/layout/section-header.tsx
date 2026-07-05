@@ -14,7 +14,7 @@ export interface SectionHeaderProps {
   className?: string;
 }
 
-/** Section heading: Sora title + subtitle on the left, "View all →" on the right. */
+/** Section heading: display-font title + subtitle on the left, "View all →" on the right. */
 export function SectionHeader({
   title,
   subtitle,

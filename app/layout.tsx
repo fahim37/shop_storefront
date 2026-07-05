@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Sora, Manrope, Noto_Sans_Bengali } from "next/font/google";
+import { Bricolage_Grotesque, Manrope, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-/* Display / headingsss */
-const sora = Sora({
-  variable: "--font-sora",
+/* Display / headings */
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   weight: ["600", "700", "800"],
   display: "swap",
@@ -53,7 +53,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${sora.variable} ${manrope.variable} ${notoBengali.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${manrope.variable} ${notoBengali.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: browser extensions (password managers,
           Grammarly, etc.) inject attributes like `__processed_<uuid>__` onto
