@@ -199,7 +199,7 @@ function OrderGroupCard({ order }: { order: OrderListItem }) {
                   />
                 ))}
               </div>
-              <span className="whitespace-nowrap text-[11px] font-semibold text-sub">
+              <span className="whitespace-nowrap text-11 font-semibold text-sub">
                 {TRACKING_STEPS[step].label}
               </span>
             </div>
@@ -207,7 +207,7 @@ function OrderGroupCard({ order }: { order: OrderListItem }) {
         </div>
 
         <div className="shrink-0 sm:text-right">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-faint">
+          <p className="text-11 font-bold uppercase tracking-wide text-faint">
             Total
           </p>
           <p className="font-display text-base font-extrabold text-ink">

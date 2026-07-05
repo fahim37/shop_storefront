@@ -263,7 +263,7 @@ export function AddressFormDialog({
                     onClick={() => set("label", opt.value)}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-bold transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-13 font-bold transition-colors",
                       active
                         ? "border-primary bg-primary text-white"
                         : "border-border bg-card text-sub hover:bg-muted",
@@ -284,7 +284,7 @@ export function AddressFormDialog({
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="recipientPhone">Mobile number</Label>
               {isVerifiedNumber ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-soft px-2 py-0.5 text-[11px] font-extrabold text-green">
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-soft px-2 py-0.5 text-11 font-extrabold text-green">
                   <BadgeCheck className="size-3.5" />
                   Verified
                 </span>
@@ -292,7 +292,7 @@ export function AddressFormDialog({
                 <button
                   type="button"
                   onClick={() => setVerifyOpen(true)}
-                  className="text-[12px] font-bold text-primary hover:underline"
+                  className="text-xs font-bold text-primary hover:underline"
                 >
                   Verify number
                 </button>

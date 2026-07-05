@@ -22,7 +22,7 @@ export function CountBadge({
 }) {
   const reduce = useReducedMotion();
   const base = cn(
-    "pointer-events-none absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center overflow-hidden rounded-full px-1 text-[10px] font-extrabold leading-none tabular-nums",
+    "pointer-events-none absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center overflow-hidden rounded-full px-1 text-2xs font-extrabold leading-none tabular-nums",
     className,
   );
 

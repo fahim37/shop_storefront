@@ -39,7 +39,7 @@ export function PdpActionBar({
   const unread = useUnreadTotal(isAuthenticated);
 
   const iconTab =
-    "flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg py-1 text-[10px] font-bold text-sub transition-transform duration-150 active:scale-90";
+    "flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg py-1 text-2xs font-bold text-sub transition-transform duration-150 active:scale-90";
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
@@ -65,7 +65,7 @@ export function PdpActionBar({
           <span className="relative">
             <MessageCircle className="size-[22px] text-faint" strokeWidth={1.8} />
             {unread > 0 && (
-              <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-red px-1 text-[9.5px] font-extrabold text-white">
+              <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-red px-1 text-2xs font-extrabold text-white">
                 {unread > 99 ? "99+" : unread}
               </span>
             )}
@@ -82,7 +82,7 @@ export function PdpActionBar({
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 px-2 text-[13.5px]"
+              className="flex-1 px-2 text-sm"
               onClick={onAddToCart}
             >
               Add to cart
@@ -90,7 +90,7 @@ export function PdpActionBar({
             <Button
               variant="accent"
               size="lg"
-              className="flex-1 px-2 text-[13.5px]"
+              className="flex-1 px-2 text-sm"
               onClick={onBuyNow}
               loading={buyingNow}
             >

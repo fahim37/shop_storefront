@@ -313,11 +313,11 @@ export function LocationPicker({ value, onPick, className }: LocationPickerProps
                   >
                     <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
                     <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-bold text-ink">
+                      <span className="block truncate text-13 font-bold text-ink">
                         {s.primary}
                       </span>
                       {s.secondary && (
-                        <span className="block truncate text-[12px] text-faint">
+                        <span className="block truncate text-xs text-faint">
                           {s.secondary}
                         </span>
                       )}
@@ -333,7 +333,7 @@ export function LocationPicker({ value, onPick, className }: LocationPickerProps
           type="button"
           onClick={useMyLocation}
           disabled={status !== "ready" || locating}
-          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius)] border border-border bg-card px-3 text-[13px] font-bold text-sub transition-colors hover:bg-muted disabled:opacity-60"
+          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[var(--radius)] border border-border bg-card px-3 text-13 font-bold text-sub transition-colors hover:bg-muted disabled:opacity-60"
           title="Use my current location"
         >
           {locating ? (
@@ -356,7 +356,7 @@ export function LocationPicker({ value, onPick, className }: LocationPickerProps
         {status === "error" && (
           <div className="absolute inset-0 grid place-items-center gap-1 bg-muted px-6 text-center">
             <TriangleAlert className="mx-auto size-5 text-amber" />
-            <p className="text-[12.5px] font-semibold text-sub">
+            <p className="text-13 font-semibold text-sub">
               Map couldn&apos;t load. You can still enter your address below.
             </p>
           </div>
@@ -364,7 +364,7 @@ export function LocationPicker({ value, onPick, className }: LocationPickerProps
       </div>
 
       {status === "ready" && (
-        <p className="text-[11.5px] font-medium text-faint">
+        <p className="text-xs font-medium text-faint">
           Search, tap the map, or drag the pin to set your exact location — then
           confirm the details below.
         </p>

@@ -181,12 +181,12 @@ export default async function ProductPage({ params }: PageParams) {
             </Badge>
           </div>
 
-          <h1 className="font-display text-xl font-extrabold leading-snug tracking-tight sm:text-[28px] sm:leading-tight">
+          <h1 className="font-display text-xl font-extrabold leading-snug tracking-tight sm:text-28 sm:leading-tight">
             {product.title}
           </h1>
 
           {/* meta row */}
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-bold text-sub sm:gap-x-3 sm:gap-y-1.5 sm:text-[13px]">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-bold text-sub sm:gap-x-3 sm:gap-y-1.5 sm:text-13">
             <span className="flex items-center gap-1.5">
               <RatingStars value={product.ratingAverage} size={15} precise />
               <span className="text-ink">
@@ -229,10 +229,10 @@ export default async function ProductPage({ params }: PageParams) {
                 <u.icon className="size-[18px] sm:size-5" strokeWidth={1.9} />
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-[12px] font-extrabold sm:text-[12.5px]">
+                <b className="block truncate text-xs font-extrabold sm:text-13">
                   {u.title}
                 </b>
-                <span className="block truncate text-[10.5px] font-semibold text-faint sm:text-[11px]">
+                <span className="block truncate text-11 font-semibold text-faint">
                   {u.sub}
                 </span>
               </span>
@@ -246,10 +246,10 @@ export default async function ProductPage({ params }: PageParams) {
               <Store className="size-5" strokeWidth={1.6} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[11px] font-bold uppercase tracking-wide text-faint">
+              <span className="block text-11 font-bold uppercase tracking-wide text-faint">
                 Sold by
               </span>
-              <b className="block truncate text-[13.5px] font-extrabold">
+              <b className="block truncate text-sm font-extrabold">
                 {product.vendorName}
               </b>
             </span>

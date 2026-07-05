@@ -33,7 +33,7 @@ function Row({ c, onOpen }: { c: Conversation; onOpen: (id: string) => void }) {
           <p className={cn("truncate text-sm", unread ? "font-extrabold text-ink" : "font-bold text-ink")}>
             {c.vendor.storeName}
           </p>
-          <span className="ml-auto shrink-0 text-[10.5px] font-semibold text-faint">
+          <span className="ml-auto shrink-0 text-11 font-semibold text-faint">
             {formatRelative(c.lastMessageAt)}
           </span>
         </div>
@@ -47,7 +47,7 @@ function Row({ c, onOpen }: { c: Conversation; onOpen: (id: string) => void }) {
             {preview}
           </p>
           {unread ? (
-            <span className="ml-auto grid size-5 shrink-0 place-items-center rounded-full bg-primary text-[10px] font-extrabold text-white">
+            <span className="ml-auto grid size-5 shrink-0 place-items-center rounded-full bg-primary text-2xs font-extrabold text-white">
               {c.customerUnread > 9 ? "9+" : c.customerUnread}
             </span>
           ) : null}

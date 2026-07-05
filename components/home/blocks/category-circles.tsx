@@ -295,7 +295,7 @@ function CategoryItem({
           })}
         </span>
       )}
-      <b className="line-clamp-2 w-full text-center text-[12px] font-extrabold leading-tight text-ink group-hover:text-primary">
+      <b className="line-clamp-2 w-full text-center text-xs font-extrabold leading-tight text-ink group-hover:text-primary">
         {cat.name}
       </b>
     </Link>

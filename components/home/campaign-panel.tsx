@@ -38,13 +38,13 @@ export function CampaignPanel({
           {/* Branded rail */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-col lg:items-stretch lg:justify-center lg:gap-4 lg:py-4">
             <div className="min-w-0 sm:col-span-2 lg:text-center">
-              <span className="inline-block -rotate-2 rounded-md bg-amber px-2.5 py-0.5 font-display text-[11px] font-extrabold tracking-wide text-blue-deep shadow-[2.5px_2.5px_0_oklch(0.3_0.12_262)] sm:px-3 sm:py-1 sm:text-[13px]">
+              <span className="inline-block -rotate-2 rounded-md bg-amber px-2.5 py-0.5 font-display text-11 font-extrabold tracking-wide text-blue-deep shadow-[2.5px_2.5px_0_oklch(0.3_0.12_262)] sm:px-3 sm:py-1 sm:text-13">
                 GCL
               </span>
-              <h2 className="mt-2 font-display text-lg font-extrabold uppercase leading-none tracking-tight text-white sm:mt-2.5 sm:text-2xl lg:text-[28px]">
+              <h2 className="mt-2 font-display text-lg font-extrabold uppercase leading-none tracking-tight text-white sm:mt-2.5 sm:text-2xl lg:text-28">
                 {title}
               </h2>
-              <p className="mt-0.5 text-[12px] font-semibold text-white/70 sm:mt-1 sm:text-[12.5px]">
+              <p className="mt-0.5 text-xs font-semibold text-white/70 sm:mt-1 sm:text-13">
                 {subtitle}
               </p>
             </div>
@@ -53,7 +53,7 @@ export function CampaignPanel({
             <div className="flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-2.5 shadow-sm sm:gap-3 sm:px-4 sm:py-3">
               <Ticket className="size-6 shrink-0 text-red sm:size-7" strokeWidth={1.6} />
               <span className="min-w-0">
-                <span className="block text-[10px] font-extrabold uppercase tracking-wider text-sub sm:text-[10.5px]">
+                <span className="block text-2xs font-extrabold uppercase tracking-wider text-sub sm:text-11">
                   Use coupon*
                 </span>
                 <b className="block truncate font-display text-sm font-extrabold tracking-wide text-red sm:text-base">
@@ -66,10 +66,10 @@ export function CampaignPanel({
             <div className="flex items-center gap-2.5 rounded-xl bg-white px-3.5 py-2.5 shadow-sm sm:gap-3 sm:px-4 sm:py-3">
               <Truck className="size-6 shrink-0 text-green sm:size-7" strokeWidth={1.6} />
               <span className="min-w-0">
-                <b className="block text-[12px] font-extrabold leading-tight text-ink sm:text-[13px]">
+                <b className="block text-xs font-extrabold leading-tight text-ink sm:text-13">
                   Free delivery
                 </b>
-                <span className="block truncate text-[10.5px] font-semibold text-sub sm:text-[11px]">
+                <span className="block truncate text-11 font-semibold text-sub">
                   Dhaka orders over <span className="bn">৳</span>1,500
                 </span>
               </span>
@@ -77,12 +77,12 @@ export function CampaignPanel({
 
             <Link
               href={ctaHref}
-              className="flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-[12px] font-extrabold text-white transition-colors hover:bg-white/20 sm:col-span-2 sm:py-2 sm:text-[12.5px] lg:inline-flex"
+              className="flex items-center justify-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-xs font-extrabold text-white transition-colors hover:bg-white/20 sm:col-span-2 sm:py-2 sm:text-13 lg:inline-flex"
             >
               Shop all deals <ArrowRight className="size-3.5" strokeWidth={2.6} />
             </Link>
 
-            <p className="hidden text-center text-[10px] font-semibold text-white/45 lg:block">
+            <p className="hidden text-center text-2xs font-semibold text-white/45 lg:block">
               *Conditions apply
             </p>
           </div>

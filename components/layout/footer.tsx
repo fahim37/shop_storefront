@@ -39,17 +39,17 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
           <div>
             <Logo light size="sm" />
-            <p className="mt-3 max-w-xs text-[13px] leading-relaxed opacity-65">
+            <p className="mt-3 max-w-xs text-13 leading-relaxed opacity-65">
               Bangladesh&apos;s marketplace for verified local sellers. Cash on
               delivery, nationwide shipping, 7-day easy returns.
             </p>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.heading}>
-              <h4 className="mb-3.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white opacity-55">
+              <h4 className="mb-3.5 text-11 font-extrabold uppercase tracking-[0.1em] text-white opacity-55">
                 {col.heading}
               </h4>
-              <ul className="flex flex-col gap-2.5 text-[13px]">
+              <ul className="flex flex-col gap-2.5 text-13">
                 {col.links.map((l) => (
                   <li key={l.label}>
                     <Link href={l.href} className="opacity-90 transition-opacity hover:opacity-100">

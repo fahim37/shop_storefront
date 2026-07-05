@@ -72,10 +72,10 @@ export default function CartPage() {
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
               {cart.vendorGroups.map((group, gi) => (
                 <div key={group.vendorId}>
-                  <div className="flex items-center gap-2.5 border-y border-border bg-muted px-5 py-3 text-[12.5px] font-extrabold first:border-t-0">
+                  <div className="flex items-center gap-2.5 border-y border-border bg-muted px-5 py-3 text-13 font-extrabold first:border-t-0">
                     <Store className="size-4 text-primary" />
                     Store {gi + 1}
-                    <span className="ml-auto text-[11.5px] font-bold text-faint">
+                    <span className="ml-auto text-xs font-bold text-faint">
                       Ships via Pathao · {formatPaisa(group.subtotalPaisa)}
                     </span>
                   </div>
@@ -93,12 +93,12 @@ export default function CartPage() {
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <Link
                           href={`/product/${line.productSlug}`}
-                          className="line-clamp-1 text-[13.5px] font-bold hover:text-primary"
+                          className="line-clamp-1 text-sm font-bold hover:text-primary"
                         >
                           {line.productTitle}
                         </Link>
                         {visibleOptionEntries(line.optionValues).length > 0 && (
-                          <span className="flex flex-wrap gap-1.5 text-[11.5px] font-bold text-faint">
+                          <span className="flex flex-wrap gap-1.5 text-xs font-bold text-faint">
                             {visibleOptionEntries(line.optionValues).map(([k, v]) => (
                               <span key={k} className="rounded bg-muted px-1.5 py-0.5">
                                 {v}
@@ -107,14 +107,14 @@ export default function CartPage() {
                           </span>
                         )}
                         {line.priceChanged && (
-                          <span className="text-[11px] font-extrabold text-red">
+                          <span className="text-11 font-extrabold text-red">
                             Price changed to {formatPaisa(line.livePricePaisa)}
                           </span>
                         )}
                         <button
                           type="button"
                           onClick={() => remove.mutate(line.itemId)}
-                          className="mt-0.5 inline-flex items-center gap-1 self-start text-[11.5px] font-bold text-faint hover:text-red"
+                          className="mt-0.5 inline-flex items-center gap-1 self-start text-xs font-bold text-faint hover:text-red"
                         >
                           <Trash2 className="size-3.5" /> Remove
                         </button>
@@ -129,7 +129,7 @@ export default function CartPage() {
                         }
                       />
                       <div className="w-24 shrink-0 text-right">
-                        <b className="font-display text-[15px] font-extrabold text-primary">
+                        <b className="font-display text-15 font-extrabold text-primary">
                           {formatPaisa(line.lineTotalPaisa)}
                         </b>
                       </div>
@@ -140,7 +140,7 @@ export default function CartPage() {
             </div>
 
             {cart.vendorGroups.length > 1 && (
-              <div className="flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 text-[12.5px] font-bold text-sub">
+              <div className="flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 text-13 font-bold text-sub">
                 <Truck className="size-4 text-primary" />
                 Items from {cart.vendorGroups.length} stores will arrive as{" "}
                 {cart.vendorGroups.length} deliveries under one order.
@@ -206,7 +206,7 @@ function CartSummary() {
   return (
     <div className="h-max rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-44">
       <h3 className="font-display text-base font-extrabold">Order summary</h3>
-      <div className="mt-4 flex flex-col gap-3 text-[13px]">
+      <div className="mt-4 flex flex-col gap-3 text-13">
         <Row label={`Subtotal (${cart.items.length} item${cart.items.length === 1 ? "" : "s"})`}>
           {formatPaisa(cart.subtotalPaisa)}
         </Row>
@@ -244,7 +244,7 @@ function CartSummary() {
       )}
 
       <div className="mt-4 flex items-baseline justify-between border-t border-dashed border-border pt-4">
-        <span className="text-[13.5px] font-extrabold">Grand total</span>
+        <span className="text-sm font-extrabold">Grand total</span>
         <span className="font-display text-2xl font-extrabold text-primary">
           {formatPaisa(cart.grandTotalPaisa)}
         </span>
@@ -256,7 +256,7 @@ function CartSummary() {
         </Link>
       </Button>
 
-      <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-muted px-3 py-2.5 text-[11.5px] font-bold text-faint">
+      <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-muted px-3 py-2.5 text-xs font-bold text-faint">
         <Wallet className="size-4 shrink-0 text-green" />
         Cash on delivery available · VAT included where applicable
       </div>

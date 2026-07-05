@@ -16,7 +16,7 @@ const SIZES = {
   sm: "text-sm",
   md: "text-base",
   lg: "text-xl",
-  xl: "text-[22px] leading-none sm:text-[28px]",
+  xl: "text-22 leading-none sm:text-28",
 } as const;
 
 /** Brand price block: bold blue current price + strikethrough + optional save chip. */
@@ -37,7 +37,7 @@ export function Price({
         <s className="text-sm font-medium text-faint">{formatPaisa(comparePaisa)}</s>
       ) : null}
       {showSave && pct ? (
-        <span className="rounded-md bg-red px-1.5 py-0.5 text-[11px] font-extrabold text-white">
+        <span className="rounded-md bg-red px-1.5 py-0.5 text-11 font-extrabold text-white">
           -{pct}%
         </span>
       ) : null}

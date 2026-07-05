@@ -101,19 +101,19 @@ export function CartDrawer() {
                         <Link
                           href={`/product/${line.productSlug}`}
                           onClick={() => setOpen(false)}
-                          className="line-clamp-1 text-[13px] font-semibold hover:text-primary"
+                          className="line-clamp-1 text-13 font-semibold hover:text-primary"
                         >
                           {line.productTitle}
                         </Link>
                         {visibleOptionEntries(line.optionValues).length > 0 && (
-                          <span className="line-clamp-1 text-[11px] font-semibold text-faint">
+                          <span className="line-clamp-1 text-11 font-semibold text-faint">
                             {visibleOptionEntries(line.optionValues)
                               .map(([, v]) => v)
                               .join(" · ")}
                           </span>
                         )}
                         {line.priceChanged && (
-                          <span className="text-[11px] font-bold text-red">
+                          <span className="text-11 font-bold text-red">
                             Price updated to {formatPaisa(line.livePricePaisa)}
                           </span>
                         )}
@@ -149,7 +149,7 @@ export function CartDrawer() {
 
             <div className="border-t border-border px-5 py-4">
               {cart.appliedCoupon && (
-                <div className="mb-1.5 flex justify-between text-[13px] font-semibold text-green">
+                <div className="mb-1.5 flex justify-between text-13 font-semibold text-green">
                   <span>Voucher · {cart.appliedCoupon.code}</span>
                   <span>−{formatPaisa(cart.discountPaisa)}</span>
                 </div>
@@ -168,7 +168,7 @@ export function CartDrawer() {
                   <Link href="/checkout">Checkout</Link>
                 </Button>
               </div>
-              <p className="mt-2.5 text-center text-[11px] font-semibold text-faint">
+              <p className="mt-2.5 text-center text-11 font-semibold text-faint">
                 Cash on delivery available · taxes at checkout
               </p>
             </div>

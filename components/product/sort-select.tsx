@@ -49,7 +49,7 @@ export function SortSelect({
   const value = get("sort") || fallback;
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden text-[12.5px] font-bold text-faint sm:inline">Sort by</span>
+      <span className="hidden text-13 font-bold text-faint sm:inline">Sort by</span>
       <Select
         value={value}
         onValueChange={(v) => setParams({ sort: v === fallback ? null : v })}

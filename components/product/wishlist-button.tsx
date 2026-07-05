@@ -60,7 +60,9 @@ export function WishlistButton({
       aria-pressed={wished}
       whileTap={reduce ? undefined : { scale: 0.88 }}
       className={cn(
-        "flex items-center justify-center transition-colors",
+        // ::after pads the tap target ~8px past the visible shell so the
+        // 32px card heart still meets the ~44px touch-target guideline.
+        "relative flex items-center justify-center transition-colors after:absolute after:-inset-2 after:content-['']",
         className,
       )}
     >

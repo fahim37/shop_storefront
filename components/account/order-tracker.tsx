@@ -291,7 +291,7 @@ export function OrderTracker({
                         >
                           {stepDay(times[i]!)}
                         </p>
-                        <p className="text-[11px] font-medium leading-tight text-sub">
+                        <p className="text-11 font-medium leading-tight text-sub">
                           {stepClock(times[i]!)}
                         </p>
                       </>
@@ -360,13 +360,13 @@ export function OrderTracker({
                 />
               )}
             </div>
-            <p className="text-[13px] font-medium text-sub">{banner.desc}</p>
+            <p className="text-13 font-medium text-sub">{banner.desc}</p>
           </div>
         </div>
         {chip && (
           <span
             className={cn(
-              "self-start whitespace-nowrap rounded-full bg-accent px-4.5 py-2 text-[13px] font-extrabold text-accent-foreground shadow-[0_4px_12px_rgb(245_179_30/0.35)] sm:self-auto",
+              "self-start whitespace-nowrap rounded-full bg-accent px-4.5 py-2 text-13 font-extrabold text-accent-foreground shadow-[0_4px_12px_rgb(245_179_30/0.35)] sm:self-auto",
               celebrate &&
                 "animate-[tracker-celebrate-pop_.55s_cubic-bezier(.34,1.56,.64,1)_.35s_both]",
             )}

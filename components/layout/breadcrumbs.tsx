@@ -20,7 +20,7 @@ export function Breadcrumbs({
     <nav
       aria-label="Breadcrumb"
       className={cn(
-        "flex flex-wrap items-center gap-1.5 text-[13px] font-semibold text-faint",
+        "flex flex-wrap items-center gap-1.5 text-13 font-semibold text-faint",
         className,
       )}
     >

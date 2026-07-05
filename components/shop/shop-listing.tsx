@@ -101,7 +101,7 @@ export function ShopListing({
         <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
           {heading.title}
         </h1>
-        <p className="text-[13px] font-semibold text-sub">{heading.subtitle}</p>
+        <p className="text-13 font-semibold text-sub">{heading.subtitle}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -111,7 +111,7 @@ export function ShopListing({
           {/* Toolbar: result hint + sort + mobile filters */}
           <div className="flex items-center justify-between gap-3">
             <p
-              className="min-w-0 truncate text-[13px] font-semibold text-sub"
+              className="min-w-0 truncate text-13 font-semibold text-sub"
               aria-live="polite"
             >
               {showSkeleton

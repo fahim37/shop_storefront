@@ -125,7 +125,7 @@ export function MobileNav() {
 
           {/* categories */}
           <div className="p-2">
-            <p className="px-3 py-2 text-[11px] font-extrabold uppercase tracking-wide text-faint">
+            <p className="px-3 py-2 text-11 font-extrabold uppercase tracking-wide text-faint">
               Categories
             </p>
             {roots.map((cat) => {
@@ -239,19 +239,19 @@ export function MobileBottomNav() {
               >
                 <t.icon className="size-[22px]" />
                 {t.isCart && count > 0 && (
-                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
                     {count}
                   </span>
                 )}
                 {t.isAlerts && unreadCount > 0 && (
-                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-red px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-red px-1 text-2xs font-bold text-white">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </span>
               <span
                 className={cn(
-                  "text-[11px] transition-colors duration-300",
+                  "text-11 transition-colors duration-300",
                   active ? "font-bold text-primary" : "font-medium text-faint",
                 )}
               >

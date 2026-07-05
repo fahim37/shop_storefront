@@ -42,7 +42,7 @@ export function ProductCard({
           className="transition-transform duration-300 group-hover:scale-[1.04]"
         />
         {pct ? (
-          <span className="absolute left-2.5 top-2.5 rounded bg-amber px-1.5 py-0.5 text-[11px] font-extrabold text-blue-deep">
+          <span className="absolute left-2.5 top-2.5 rounded bg-amber px-1.5 py-0.5 text-11 font-extrabold text-blue-deep">
             -{pct}%
           </span>
         ) : null}
@@ -54,11 +54,11 @@ export function ProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        <span className="line-clamp-1 text-[13.5px] font-semibold text-ink group-hover:text-primary">
+        <span className="line-clamp-1 text-sm font-semibold text-ink group-hover:text-primary">
           {product.title}
         </span>
 
-        <div className="flex items-center gap-1.5 text-[11.5px] text-faint">
+        <div className="flex items-center gap-1.5 text-xs text-faint">
           {product.ratingAverage && Number(product.ratingAverage) > 0 ? (
             <>
               <RatingStars value={product.ratingAverage} size={11} />
@@ -78,7 +78,7 @@ export function ProductCard({
         </div>
 
         {product.vendorName ? (
-          <span className="flex items-center gap-1 text-[11px] text-faint">
+          <span className="flex items-center gap-1 text-11 text-faint">
             <Store className="size-3" strokeWidth={2} />
             <span className="line-clamp-1">{product.vendorName}</span>
           </span>

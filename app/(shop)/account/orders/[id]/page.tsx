@@ -179,7 +179,7 @@ function OrderDetail({
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-faint">
+            <p className="text-11 font-bold uppercase tracking-wide text-faint">
               Order total
             </p>
             <p className="font-display text-xl font-extrabold text-ink">
@@ -278,7 +278,7 @@ function SubOrderSection({
       {delivered && (
         <div className="flex items-center gap-2.5 border-b border-line bg-amber-soft px-4 py-2.5 sm:px-5">
           <Star className="size-4 shrink-0 fill-amber-deep text-amber-deep" />
-          <p className="text-[13px] font-semibold text-amber-deep">
+          <p className="text-13 font-semibold text-amber-deep">
             {allReviewed
               ? "Thanks for reviewing — you can edit your reviews anytime."
               : "Delivered — tell other shoppers what you think of your items."}
@@ -473,7 +473,7 @@ function ShipmentTimeline({ tracking }: { tracking: TrackingSubOrder }) {
                     {formatEventType(ev.eventType)}
                   </p>
                   {ev.notes && <p className="text-xs text-sub">{ev.notes}</p>}
-                  <p className="mt-0.5 text-[11px] text-faint">
+                  <p className="mt-0.5 text-11 text-faint">
                     {formatDateTime(ev.at)}
                   </p>
                 </div>

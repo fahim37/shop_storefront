@@ -43,7 +43,7 @@ export function AccountMenu() {
       >
         <AccountIcon className="size-6" />
         <span className="text-left leading-tight">
-          <small className="block text-[10.5px] font-semibold text-faint">Hello,</small>
+          <small className="block text-11 font-semibold text-faint">Hello,</small>
           Sign in
         </span>
       </button>
@@ -57,7 +57,7 @@ export function AccountMenu() {
           type="button"
           className="flex items-center gap-2 text-xs font-bold text-ink outline-none"
         >
-          <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-blue-deep font-display text-[13px] font-extrabold text-amber">
+          <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-blue-deep font-display text-13 font-extrabold text-amber">
             {user.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.photoUrl} alt="" className="size-full object-cover" />
@@ -66,7 +66,7 @@ export function AccountMenu() {
             )}
           </span>
           <span className="hidden text-left leading-tight sm:block">
-            <small className="block text-[10.5px] font-semibold text-faint">Hello,</small>
+            <small className="block text-11 font-semibold text-faint">Hello,</small>
             {user.fullName.split(" ")[0]}
           </span>
         </button>
@@ -133,7 +133,7 @@ export function WishlistLink() {
         <CountBadge count={count} className="bg-amber text-blue-deep" />
       </span>
       <span className="hidden text-left leading-tight lg:block">
-        <small className="block text-[10.5px] font-semibold text-faint">Saved</small>
+        <small className="block text-11 font-semibold text-faint">Saved</small>
         Wishlist
       </span>
     </Link>
@@ -158,7 +158,7 @@ export function CartButton({ className }: { className?: string }) {
         <CountBadge count={count} className="bg-amber text-blue-deep" />
       </span>
       <span className="hidden text-left leading-tight lg:block">
-        <small className="block text-[10.5px] font-semibold text-faint">Total</small>
+        <small className="block text-11 font-semibold text-faint">Total</small>
         {formatPaisa(cart.grandTotalPaisa)}
       </span>
     </button>

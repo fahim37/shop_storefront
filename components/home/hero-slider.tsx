@@ -186,12 +186,12 @@ export function HeroSlider() {
                   >
                     {s.badge}
                   </span>
-                  <h2 className="mt-5 font-display text-4xl font-extrabold uppercase leading-[1.02] tracking-tight sm:text-5xl md:text-[52px]">
+                  <h2 className="mt-5 font-display text-4xl font-extrabold uppercase leading-[1.02] tracking-tight sm:text-5xl">
                     {s.title[0]}
                     <br />
                     <em className={cn("not-italic", s.accentClass)}>{s.title[1]}</em>
                   </h2>
-                  <p className="mt-4 max-w-md text-sm opacity-85 sm:text-[15px]">
+                  <p className="mt-4 max-w-md text-sm opacity-85 sm:text-15">
                     {s.sub}
                   </p>
                   <div className="mt-6 flex flex-wrap items-center gap-4">

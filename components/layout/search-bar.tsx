@@ -170,7 +170,7 @@ export function SearchBar({
                 type="button"
                 onMouseDown={keepFocus}
                 onClick={() => submit(value)}
-                className="flex w-full items-center gap-2 border-t border-border bg-muted px-4 py-2.5 text-left text-[13px] font-bold text-primary"
+                className="flex w-full items-center gap-2 border-t border-border bg-muted px-4 py-2.5 text-left text-13 font-bold text-primary"
               >
                 <TrendingUp className="size-4" />
                 Search for &ldquo;{trimmed}&rdquo;
@@ -180,7 +180,7 @@ export function SearchBar({
             <div className="p-3">
               {trendingTerms.length > 0 && (
                 <div className="mb-1">
-                  <p className="flex items-center gap-1.5 px-1 pb-1.5 text-[11px] font-extrabold uppercase tracking-wide text-faint">
+                  <p className="flex items-center gap-1.5 px-1 pb-1.5 text-11 font-extrabold uppercase tracking-wide text-faint">
                     <TrendingUp className="size-3.5" strokeWidth={2.4} />
                     Trending
                   </p>
@@ -191,7 +191,7 @@ export function SearchBar({
                         type="button"
                         onMouseDown={keepFocus}
                         onClick={() => submit(term)}
-                        className="rounded-full border border-border bg-muted px-3 py-1.5 text-[13px] font-semibold text-ink hover:border-blue-deep hover:text-primary"
+                        className="rounded-full border border-border bg-muted px-3 py-1.5 text-13 font-semibold text-ink hover:border-blue-deep hover:text-primary"
                       >
                         {term}
                       </button>
@@ -202,7 +202,7 @@ export function SearchBar({
 
               {topCategories.length > 0 && (
                 <div className={cn(trendingTerms.length > 0 && "mt-3")}>
-                  <p className="flex items-center gap-1.5 px-1 pb-1.5 text-[11px] font-extrabold uppercase tracking-wide text-faint">
+                  <p className="flex items-center gap-1.5 px-1 pb-1.5 text-11 font-extrabold uppercase tracking-wide text-faint">
                     <Grid3x3 className="size-3.5" strokeWidth={2.4} />
                     Browse categories
                   </p>

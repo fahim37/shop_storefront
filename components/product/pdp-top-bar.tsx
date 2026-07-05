@@ -68,7 +68,7 @@ export function PdpTopBar({ title }: { title: string }) {
         <p
           aria-hidden={!solid}
           className={cn(
-            "min-w-0 flex-1 truncate px-1 text-center text-[13px] font-extrabold transition-opacity duration-300",
+            "min-w-0 flex-1 truncate px-1 text-center text-13 font-extrabold transition-opacity duration-300",
             solid ? "opacity-100" : "opacity-0",
           )}
         >

@@ -114,7 +114,7 @@ function DetailSection({
   return (
     <section id={id} className="scroll-mt-24">
       <div className="mb-4 flex items-center gap-3 sm:mb-5">
-        <h2 className="font-display text-lg font-extrabold tracking-tight sm:text-[22px]">
+        <h2 className="font-display text-lg font-extrabold tracking-tight sm:text-22">
           {title}
         </h2>
         <span className="h-px flex-1 bg-border" />
@@ -150,14 +150,14 @@ function DescriptionTab({
   if (descriptionHtml) {
     return (
       <div
-        className="rte-content max-w-3xl text-[14.5px] leading-relaxed text-sub"
+        className="rte-content max-w-3xl text-15 leading-relaxed text-sub"
         // Server-sanitized with a strict allowlist (see lib/sanitize).
         dangerouslySetInnerHTML={{ __html: descriptionHtml }}
       />
     );
   }
   return (
-    <div className="max-w-3xl whitespace-pre-line text-[14.5px] leading-relaxed text-sub">
+    <div className="max-w-3xl whitespace-pre-line text-15 leading-relaxed text-sub">
       {text}
     </div>
   );
@@ -205,7 +205,7 @@ function SpecificationsTab({ entries }: { entries: Array<[string, string]> }) {
         <div
           key={key}
           className={cn(
-            "flex items-start justify-between gap-4 border-b border-border py-2.5 text-[13.5px]",
+            "flex items-start justify-between gap-4 border-b border-border py-2.5 text-sm",
             i < 2 && "border-t sm:border-t-0",
           )}
         >
@@ -293,7 +293,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
                 <button
                   type="button"
                   onClick={() => setStarFilter(null)}
-                  className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-[11.5px] font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+                  className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
                 >
                   <X className="size-3" strokeWidth={2.5} /> Clear
                 </button>
@@ -310,7 +310,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
           >
             <SelectTrigger
               aria-label="Sort reviews"
-              className="h-9 w-[160px] text-[13px] font-semibold"
+              className="h-9 w-[160px] text-13 font-semibold"
             >
               <SelectValue />
             </SelectTrigger>
@@ -429,7 +429,7 @@ function RatingSummaryCard({
             <span className="pb-0.5 text-sm font-bold text-faint">/5</span>
           </div>
           <RatingStars value={product.ratingAverage} size={18} precise />
-          <span className="text-[12.5px] font-bold text-faint">
+          <span className="text-13 font-bold text-faint">
             {total} {total === 1 ? "rating" : "ratings"}
           </span>
         </div>
@@ -461,7 +461,7 @@ function RatingSummaryCard({
                   disabled && "cursor-default opacity-45 hover:bg-transparent",
                 )}
               >
-                <span className="flex w-8 shrink-0 items-center justify-end gap-0.5 text-[12px] font-bold text-sub">
+                <span className="flex w-8 shrink-0 items-center justify-end gap-0.5 text-xs font-bold text-sub">
                   {star}
                   <Star className="size-3 shrink-0 fill-amber-deep text-amber-deep" />
                 </span>
@@ -471,7 +471,7 @@ function RatingSummaryCard({
                     style={{ width: `${pct}%` }}
                   />
                 </span>
-                <span className="w-8 shrink-0 text-right text-[11.5px] font-bold tabular-nums text-faint">
+                <span className="w-8 shrink-0 text-right text-xs font-bold tabular-nums text-faint">
                   {n}
                 </span>
               </button>
@@ -483,7 +483,7 @@ function RatingSummaryCard({
 
         {/* Write-review CTA */}
         <div className="flex flex-col items-center gap-1.5 text-center">
-          <p className="text-[12.5px] leading-relaxed text-sub">
+          <p className="text-13 leading-relaxed text-sub">
             Only verified buyers can review. Bought this?
           </p>
           <Button asChild variant="outline" size="sm">
@@ -552,7 +552,7 @@ function ReviewItem({
         </Avatar>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13.5px] font-extrabold text-ink">
+            <span className="text-sm font-extrabold text-ink">
               {review.reviewerName ?? "Verified buyer"}
             </span>
             <Badge variant="success" size="sm">
@@ -562,7 +562,7 @@ function ReviewItem({
           </div>
           <div className="mt-1 flex items-center gap-2">
             <RatingStars value={review.rating} size={14} />
-            <span className="text-[11.5px] font-semibold text-faint">
+            <span className="text-xs font-semibold text-faint">
               {formatRelative(review.createdAt)}
               {review.editedAt ? " · Edited" : ""}
             </span>
@@ -576,7 +576,7 @@ function ReviewItem({
         </h4>
       )}
       {review.body && (
-        <p className="mt-1 whitespace-pre-line text-[13.5px] leading-relaxed text-sub">
+        <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-sub">
           {review.body}
         </p>
       )}
@@ -615,7 +615,7 @@ function ReviewItem({
         onClick={markHelpful}
         disabled={bumped || helpful.isPending}
         className={cn(
-          "mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold transition-colors",
+          "mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold transition-colors",
           bumped
             ? "border-primary/40 bg-blue-soft text-primary"
             : "text-sub hover:border-primary/40 hover:text-primary",
@@ -690,7 +690,7 @@ function ConversationBubble({
     >
       <div
         className={cn(
-          "flex items-center gap-1.5 text-[12px] font-extrabold",
+          "flex items-center gap-1.5 text-xs font-extrabold",
           isVendor ? "text-primary" : "text-sub",
         )}
       >
@@ -700,11 +700,11 @@ function ConversationBubble({
           <CornerDownRight className="size-3.5" strokeWidth={2.4} />
         )}
         {isVendor ? "Seller" : authorName || "Buyer"}
-        <span className="ml-1 text-[11px] font-semibold text-faint">
+        <span className="ml-1 text-11 font-semibold text-faint">
           {formatRelative(createdAt)}
         </span>
       </div>
-      <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-sub">
+      <p className="mt-1 whitespace-pre-line text-13 leading-relaxed text-sub">
         {body}
       </p>
     </div>
@@ -753,7 +753,7 @@ function ReviewReplyForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
       >
         <CornerDownRight className="size-3.5" strokeWidth={2.4} /> Reply to seller
       </button>
@@ -865,10 +865,10 @@ function QuestionItem({ question }: { question: Question }) {
   return (
     <li className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-navy text-[11px] font-extrabold text-white">
+        <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-navy text-11 font-extrabold text-white">
           Q
         </span>
-        <p className="text-[14px] font-bold leading-snug text-ink">
+        <p className="text-sm font-bold leading-snug text-ink">
           {question.body}
         </p>
       </div>
@@ -877,16 +877,16 @@ function QuestionItem({ question }: { question: Question }) {
         <div className="mt-3 space-y-3 border-l-2 border-border pl-4">
           {question.answers.map((a) => (
             <div key={a.id} className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-blue-soft text-[11px] font-extrabold text-primary">
+              <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-blue-soft text-11 font-extrabold text-primary">
                 A
               </span>
               <div className="min-w-0">
                 {a.responderRole && (
-                  <span className="block text-[11px] font-extrabold uppercase tracking-wide text-faint">
+                  <span className="block text-11 font-extrabold uppercase tracking-wide text-faint">
                     {ROLE_LABEL[a.responderRole] ?? a.responderRole}
                   </span>
                 )}
-                <p className="text-[13.5px] leading-relaxed text-sub">
+                <p className="text-sm leading-relaxed text-sub">
                   {a.body}
                 </p>
               </div>
@@ -894,7 +894,7 @@ function QuestionItem({ question }: { question: Question }) {
           ))}
         </div>
       ) : (
-        <p className="mt-2 pl-8 text-[12.5px] font-semibold text-faint">
+        <p className="mt-2 pl-8 text-13 font-semibold text-faint">
           Awaiting an answer from the seller.
         </p>
       )}
@@ -938,7 +938,7 @@ function AskQuestionForm({ productId }: { productId: string }) {
         <h3 className="font-display text-base font-extrabold">
           Ask a question
         </h3>
-        <p className="mt-0.5 text-[12.5px] text-faint">
+        <p className="mt-0.5 text-13 text-faint">
           Get answers from the seller and other buyers.
         </p>
         <form onSubmit={submit} className="mt-4 flex flex-col gap-3">

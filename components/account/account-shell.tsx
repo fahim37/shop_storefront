@@ -119,7 +119,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3.5 py-2.5 text-[13px] font-bold transition-colors",
+                    "flex items-center gap-3 rounded-md px-3.5 py-2.5 text-13 font-bold transition-colors",
                     active
                       ? "bg-primary text-white"
                       : "text-sub hover:bg-muted",
@@ -135,7 +135,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => void logout()}
-              className="mt-1 flex items-center gap-3 rounded-md px-3.5 py-2.5 text-[13px] font-bold text-red hover:bg-red/10"
+              className="mt-1 flex items-center gap-3 rounded-md px-3.5 py-2.5 text-13 font-bold text-red hover:bg-red/10"
             >
               <LogOut className="size-4 text-red" />
               Log out

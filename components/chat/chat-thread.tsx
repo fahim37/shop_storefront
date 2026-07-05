@@ -41,7 +41,7 @@ function ThreadHeader({
         {slug ? (
           <Link
             href={`/search?q=${encodeURIComponent(name ?? slug)}`}
-            className="flex items-center gap-1 text-[11px] font-semibold text-sub hover:text-primary"
+            className="flex items-center gap-1 text-11 font-semibold text-sub hover:text-primary"
           >
             <Store className="size-3" /> Visit store
           </Link>
@@ -56,7 +56,7 @@ function ProductChip({ product }: { product: ChatMessage["product"] }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="mb-1 flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2 py-1 text-[11px] font-semibold text-sub hover:border-primary"
+      className="mb-1 flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2 py-1 text-11 font-semibold text-sub hover:border-primary"
     >
       <Package className="size-3 shrink-0" />
       <span className="line-clamp-1">{product.title}</span>
@@ -71,7 +71,7 @@ function MessageBubble({ message, isMine }: { message: ChatMessage; isMine: bool
         {message.product ? <ProductChip product={message.product} /> : null}
         <div
           className={cn(
-            "whitespace-pre-wrap wrap-break-word rounded-2xl px-3 py-2 text-[13px] font-medium leading-relaxed",
+            "whitespace-pre-wrap wrap-break-word rounded-2xl px-3 py-2 text-13 font-medium leading-relaxed",
             isMine
               ? "rounded-br-md bg-primary text-white"
               : "rounded-bl-md bg-muted text-ink",
@@ -80,7 +80,7 @@ function MessageBubble({ message, isMine }: { message: ChatMessage; isMine: bool
           {message.body}
         </div>
       </div>
-      <span className="mt-0.5 px-1 text-[10px] font-semibold text-faint">
+      <span className="mt-0.5 px-1 text-2xs font-semibold text-faint">
         {formatRelative(message.createdAt)}
         {isMine && message.readAt ? " · Seen" : ""}
       </span>
@@ -204,7 +204,7 @@ export function ChatThread() {
                   type="button"
                   onClick={() => void thread.fetchNextPage()}
                   disabled={thread.isFetchingNextPage}
-                  className="rounded-full border border-border px-3 py-1 text-[11px] font-bold text-sub hover:border-primary disabled:opacity-60"
+                  className="rounded-full border border-border px-3 py-1 text-11 font-bold text-sub hover:border-primary disabled:opacity-60"
                 >
                   {thread.isFetchingNextPage ? "Loading…" : "Load earlier messages"}
                 </button>
@@ -225,7 +225,7 @@ export function ChatThread() {
               ))
             )}
             {isTyping ? (
-              <div className="flex items-center gap-1 px-1 text-[11px] font-semibold text-faint">
+              <div className="flex items-center gap-1 px-1 text-11 font-semibold text-faint">
                 <span className="inline-flex gap-0.5">
                   <span className="size-1.5 animate-bounce rounded-full bg-faint [animation-delay:-0.2s]" />
                   <span className="size-1.5 animate-bounce rounded-full bg-faint [animation-delay:-0.1s]" />
@@ -242,7 +242,7 @@ export function ChatThread() {
       {/* Composer */}
       <div className="border-t border-border bg-card px-2.5 py-2">
         {attachedTitle ? (
-          <div className="mb-1.5 flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2 py-1 text-[11px] font-semibold text-sub">
+          <div className="mb-1.5 flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2 py-1 text-11 font-semibold text-sub">
             <Package className="size-3 shrink-0" />
             <span className="line-clamp-1 flex-1">About: {attachedTitle}</span>
             <button type="button" onClick={clearAttachment} aria-label="Remove product">
@@ -257,7 +257,7 @@ export function ChatThread() {
             onKeyDown={onKeyDown}
             rows={1}
             placeholder="Write a message…"
-            className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-[13px] font-medium outline-none focus:border-primary"
+            className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-13 font-medium outline-none focus:border-primary"
           />
           <EmojiPicker
             align="end"

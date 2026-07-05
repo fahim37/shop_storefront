@@ -14,7 +14,7 @@ import { useAddToCart } from "@/lib/api/cart";
 import { WishlistButton } from "@/components/product/wishlist-button";
 import { PdpActionBar } from "@/components/product/pdp-action-bar";
 import { useUIStore } from "@/lib/store/ui";
-import { visibleOptionEntries, carriedColorHex } from "@/lib/options";
+import { visibleOptionEntries, carriedColorHex, colorNameHex } from "@/lib/options";
 import type { ProductDetail, ProductVariant } from "@/lib/api/types";
 
 /** Distinct option keys → ordered distinct values, derived from variants.
@@ -41,25 +41,6 @@ function deriveColorHexes(variants: ProductVariant[]) {
     }
   }
   return map;
-}
-
-function COLOR_HEX(name: string): string | null {
-  const map: Record<string, string> = {
-    black: "#000000",
-    white: "#FFFFFF",
-    red: "#E11D48",
-    blue: "#2563EB",
-    green: "#16A34A",
-    grey: "#6B7280",
-    gray: "#6B7280",
-    silver: "#C0C5CE",
-    gold: "#D4AF37",
-    navy: "#1E2A6E",
-    sage: "#9CAF88",
-    pink: "#EC4899",
-    yellow: "#F5B82E",
-  };
-  return map[name.toLowerCase()] ?? null;
 }
 
 export function BuyPanel({ detail }: { detail: ProductDetail }) {
@@ -209,7 +190,7 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
           size="xl"
           showSave
         />
-        <span className="ml-auto text-[11.5px] font-bold text-faint">
+        <span className="ml-auto text-xs font-bold text-faint">
           per unit · VAT included
         </span>
       </div>
@@ -220,14 +201,14 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
         const colorKey = pickColor(key);
         return (
           <div key={key} className="flex flex-col gap-2">
-            <label className="text-[12.5px] font-extrabold">
+            <label className="text-13 font-extrabold">
               {key}: <span className="font-bold text-faint">{selected[key]}</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {values.map((val) => {
                 const on = selected[key] === val;
                 if (colorKey) {
-                  const hex = colorHexes.get(`${key} ${val}`) ?? COLOR_HEX(val);
+                  const hex = colorHexes.get(`${key} ${val}`) ?? colorNameHex(val);
                   return (
                     <button
                       key={val}
@@ -240,7 +221,7 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
                       )}
                       style={{ background: hex ?? "var(--surface)" }}
                     >
-                      {!hex && <span className="text-[10px] font-bold">{val[0]}</span>}
+                      {!hex && <span className="text-2xs font-bold">{val[0]}</span>}
                     </button>
                   );
                 }
@@ -325,14 +306,14 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
       </div>
 
       {outOfStock && (
-        <p className="text-[12px] font-semibold text-faint">
+        <p className="text-xs font-semibold text-faint">
           This item is sold out. Tap the heart to save it and we&apos;ll keep it
           on your wishlist.
         </p>
       )}
 
       {activeVariant && (
-        <p className="text-[11px] font-semibold text-faint">
+        <p className="text-11 font-semibold text-faint">
           SKU: {activeVariant.sku} · {formatPaisa(activeVariant.pricePaisa)} each
         </p>
       )}

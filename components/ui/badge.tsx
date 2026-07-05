@@ -16,8 +16,8 @@ const badgeVariants = cva(
         muted: "bg-muted text-sub",
       },
       size: {
-        sm: "px-2 py-0.5 text-[10px]",
-        md: "px-2.5 py-1 text-[11px]",
+        sm: "px-2 py-0.5 text-2xs",
+        md: "px-2.5 py-1 text-11",
         lg: "px-3 py-1.5 text-xs",
       },
     },

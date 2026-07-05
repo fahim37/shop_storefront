@@ -36,11 +36,11 @@ export function UspStrip({ items }: { items: HomepageUspItem[] }) {
                 <Icon className="size-4 lg:size-5" strokeWidth={2} />
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-xs font-extrabold text-ink lg:text-[13px]">
+                <b className="block truncate text-xs font-extrabold text-ink lg:text-13">
                   {u.title}
                 </b>
                 {u.subtitle && (
-                  <span className="block truncate text-[10.5px] font-semibold text-sub lg:text-[11.5px]">
+                  <span className="block truncate text-11 font-semibold text-sub lg:text-xs">
                     {u.subtitle}
                   </span>
                 )}

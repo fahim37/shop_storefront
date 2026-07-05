@@ -112,7 +112,7 @@ function SearchResults() {
             Results for &ldquo;{q}&rdquo;
           </h1>
         </div>
-        <p className="text-[13px] font-semibold text-sub" aria-live="polite">
+        <p className="text-13 font-semibold text-sub" aria-live="polite">
           {showSkeleton || updating
             ? "Searching…"
             : `${totalLabel} ${hits.length === 1 ? "result" : "results"} found`}
@@ -123,7 +123,7 @@ function SearchResults() {
           closest catalog vocabulary ("hedphones" → "headphones") and ranked
           exact matches for the corrected term into these results. */}
       {!showSkeleton && !updating && products.length > 0 && pages[0]?.correctedQuery && (
-        <p className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink">
+        <p className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-13 font-semibold text-ink">
           <Lightbulb className="size-4 shrink-0 text-amber-500" strokeWidth={2.2} />
           <span>
             Including results for{" "}
@@ -140,7 +140,7 @@ function SearchResults() {
       {!showSkeleton && !updating && products.length > 0 && pages[0]?.suggestion && (
         <Link
           href={`/search?q=${encodeURIComponent(pages[0].suggestion)}`}
-          className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-blue-soft"
+          className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-13 font-semibold text-ink hover:bg-blue-soft"
         >
           <Lightbulb className="size-4 shrink-0 text-amber-500" strokeWidth={2.2} />
           <span>

@@ -33,13 +33,13 @@ export function SectionHeader({
           {extra}
         </div>
         {subtitle && (
-          <p className="mt-0.5 text-[12.5px] text-sub sm:text-[13px]">{subtitle}</p>
+          <p className="mt-0.5 text-13 text-sub">{subtitle}</p>
         )}
       </div>
       {linkLabel && linkHref && (
         <Link
           href={linkHref}
-          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[13px] font-bold text-primary hover:text-primary-hover"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-13 font-bold text-primary hover:text-primary-hover"
         >
           {linkLabel}
           <ArrowRight className="size-3.5" strokeWidth={2.4} />

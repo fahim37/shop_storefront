@@ -166,7 +166,7 @@ export function ReviewPhotoUploader({
             className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-faint outline-none transition-colors hover:border-primary hover:bg-blue-soft/30 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ImagePlus className="size-5" strokeWidth={1.8} />
-            <span className="text-[11px] font-semibold">Add</span>
+            <span className="text-11 font-semibold">Add</span>
           </button>
         )}
 

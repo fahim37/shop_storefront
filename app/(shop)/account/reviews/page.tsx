@@ -109,7 +109,7 @@ function ConversationBubble({
     >
       <div
         className={cn(
-          "flex items-center gap-1.5 text-[12px] font-extrabold",
+          "flex items-center gap-1.5 text-xs font-extrabold",
           isVendor ? "text-primary" : "text-sub",
         )}
       >
@@ -119,11 +119,11 @@ function ConversationBubble({
           <CornerDownRight className="size-3.5" strokeWidth={2.4} />
         )}
         {isVendor ? "Seller" : "You"}
-        <span className="ml-1 text-[11px] font-semibold text-faint">
+        <span className="ml-1 text-11 font-semibold text-faint">
           {formatRelative(createdAt)}
         </span>
       </div>
-      <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-sub">
+      <p className="mt-1 whitespace-pre-line text-13 leading-relaxed text-sub">
         {body}
       </p>
     </div>
@@ -165,7 +165,7 @@ function ReplyForm({ review }: { review: MyReview }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
       >
         <CornerDownRight className="size-3.5" strokeWidth={2.4} /> Reply to seller
       </button>
@@ -238,7 +238,7 @@ function MyReviewCard({ review }: { review: MyReview }) {
             )}
             <div className="mt-1 flex items-center gap-2">
               <RatingStars value={review.rating} size={14} />
-              <span className="text-[11.5px] font-semibold text-faint">
+              <span className="text-xs font-semibold text-faint">
                 {formatRelative(review.createdAt)}
                 {review.editedAt ? " · Edited" : ""}
               </span>
@@ -258,7 +258,7 @@ function MyReviewCard({ review }: { review: MyReview }) {
           <h4 className="text-sm font-extrabold text-ink">{review.title}</h4>
         )}
         {review.body && (
-          <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-sub">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-sub">
             {review.body}
           </p>
         )}

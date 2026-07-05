@@ -206,11 +206,11 @@ export default function CheckoutPage() {
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-sm font-extrabold text-ink">
                   Verify your number for a smoother delivery
-                  <span className="rounded-full bg-amber/25 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-deep">
+                  <span className="rounded-full bg-amber/25 px-2 py-0.5 text-2xs font-extrabold uppercase tracking-wide text-amber-deep">
                     Optional
                   </span>
                 </p>
-                <p className="text-[13px] text-sub">
+                <p className="text-13 text-sub">
                   A verified number lets us reach you instantly about your order.
                   You can place your order without it — we&apos;ll just call to
                   confirm before delivery.
@@ -278,7 +278,7 @@ export default function CheckoutPage() {
                         )}
                       >
                         <div className="mb-2 flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-soft px-2.5 py-0.5 text-[11px] font-extrabold text-primary">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-soft px-2.5 py-0.5 text-11 font-extrabold text-primary">
                             {a.label?.toLowerCase() === "office" ? (
                               <Store className="size-3" />
                             ) : (
@@ -287,7 +287,7 @@ export default function CheckoutPage() {
                             {a.label ?? "Address"}
                           </span>
                           {a.isDefault && (
-                            <span className="text-[10px] font-extrabold uppercase tracking-wide text-faint">
+                            <span className="text-2xs font-extrabold uppercase tracking-wide text-faint">
                               Default
                             </span>
                           )}
@@ -300,12 +300,12 @@ export default function CheckoutPage() {
                             {on && <span className="size-2.5 rounded-full bg-primary" />}
                           </span>
                         </div>
-                        <b className="block text-[13px] font-extrabold">
+                        <b className="block text-13 font-extrabold">
                           {[a.recipientName, a.recipientPhone]
                             .filter(Boolean)
                             .join(" · ")}
                         </b>
-                        <p className="mt-0.5 text-[12px] font-semibold text-sub">
+                        <p className="mt-0.5 text-xs font-semibold text-sub">
                           {[a.streetAddress, a.upazila, a.district]
                             .filter((p) => !!p && p.trim().length > 0)
                             .join(", ")}
@@ -317,7 +317,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setAddressDialogOpen(true)}
-                    className="flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-[13px] font-bold text-sub transition-colors hover:border-primary/50 hover:text-primary"
+                    className="flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-13 font-bold text-sub transition-colors hover:border-primary/50 hover:text-primary"
                   >
                     <Plus className="size-5" />
                     Add new address
@@ -338,7 +338,7 @@ export default function CheckoutPage() {
               {cart.items.map((line) => (
                 <div
                   key={line.itemId}
-                  className="flex items-center gap-3 border-b border-[oklch(0.96_0.005_258)] py-2.5 text-[13px] last:border-b-0"
+                  className="flex items-center gap-3 border-b border-[oklch(0.96_0.005_258)] py-2.5 text-13 last:border-b-0"
                 >
                   <span className="size-11 shrink-0 overflow-hidden rounded-lg">
                     <MediaImage mediaId={line.imageMediaId} variant="thumbnail" alt={line.productTitle} />
@@ -372,17 +372,17 @@ export default function CheckoutPage() {
                     )}
                   >
                     <span
-                      className="flex h-8 w-11 shrink-0 items-center justify-center rounded-md text-[10px] font-extrabold text-white"
+                      className="flex h-8 w-11 shrink-0 items-center justify-center rounded-md text-2xs font-extrabold text-white"
                       style={{ background: p.badgeBg }}
                     >
                       {p.badge}
                     </span>
                     <span className="flex-1">
-                      <b className="block text-[13px] font-extrabold">{p.label}</b>
-                      <span className="text-[11.5px] font-semibold text-faint">{p.hint}</span>
+                      <b className="block text-13 font-extrabold">{p.label}</b>
+                      <span className="text-xs font-semibold text-faint">{p.hint}</span>
                     </span>
                     {!p.enabled && (
-                      <span className="shrink-0 rounded-full bg-amber-soft px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-deep">
+                      <span className="shrink-0 rounded-full bg-amber-soft px-2 py-0.5 text-2xs font-extrabold uppercase tracking-wide text-amber-deep">
                         Soon
                       </span>
                     )}
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
         {/* summary */}
         <div className="h-max rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-44">
           <h3 className="font-display text-base font-extrabold">Order summary</h3>
-          <div className="mt-4 flex flex-col gap-3 text-[13px]">
+          <div className="mt-4 flex flex-col gap-3 text-13">
             <Row label="Subtotal">{formatPaisa(cart.subtotalPaisa)}</Row>
             <Row label="Shipping">{formatPaisa(cart.shippingTotalPaisa)}</Row>
             <Row label="VAT">{cart.vatPaisa === "0" ? "Included" : formatPaisa(cart.vatPaisa)}</Row>
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
             )}
           </div>
           <div className="mt-4 flex items-baseline justify-between border-t border-dashed border-border pt-4">
-            <span className="text-[13.5px] font-extrabold">Grand total</span>
+            <span className="text-sm font-extrabold">Grand total</span>
             <span className="font-display text-2xl font-extrabold text-primary">
               {formatPaisa(cart.grandTotalPaisa)}
             </span>
@@ -425,7 +425,7 @@ export default function CheckoutPage() {
           {!addrLoading && !hasAddresses && (
             <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-amber-soft p-3">
               <MapPin className="size-4 shrink-0 text-amber-deep" />
-              <p className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-amber-deep">
+              <p className="min-w-0 flex-1 text-xs font-semibold leading-snug text-amber-deep">
                 <b className="block font-extrabold">No delivery address yet</b>
                 Add one to place your order.
               </p>
@@ -443,7 +443,7 @@ export default function CheckoutPage() {
           <label
             ref={agreeRef}
             className={cn(
-              "mt-3 flex cursor-pointer items-start gap-2.5 rounded-lg p-2 text-[12px] font-semibold text-sub transition-colors duration-300",
+              "mt-3 flex cursor-pointer items-start gap-2.5 rounded-lg p-2 text-xs font-semibold text-sub transition-colors duration-300",
               attention === "terms" && "bg-amber-soft ring-2 ring-amber",
             )}
           >
@@ -476,7 +476,7 @@ export default function CheckoutPage() {
             Place order · {formatPaisa(cart.grandTotalPaisa)}
           </Button>
 
-          <div className="mt-4 flex flex-col gap-2 text-[12px] font-bold text-sub">
+          <div className="mt-4 flex flex-col gap-2 text-xs font-bold text-sub">
             <span className="flex items-center gap-2">
               <ShieldCheck className="size-4 text-green" /> Payment data encrypted end-to-end
             </span>
@@ -510,10 +510,10 @@ function StepHead({
 }) {
   return (
     <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-      <span className="flex size-7 items-center justify-center rounded-lg bg-blue-deep text-[13px] font-extrabold text-white">
+      <span className="flex size-7 items-center justify-center rounded-lg bg-blue-deep text-13 font-extrabold text-white">
         {n}
       </span>
-      <h3 className="font-display text-[15px] font-extrabold">{title}</h3>
+      <h3 className="font-display text-15 font-extrabold">{title}</h3>
       {children && <span className="ml-auto">{children}</span>}
     </div>
   );

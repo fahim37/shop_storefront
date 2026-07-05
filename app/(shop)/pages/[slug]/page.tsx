@@ -137,7 +137,7 @@ export default async function CmsPageRoute({ params }: PageProps) {
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">
           {page.title}
         </h1>
-        <p className="mt-1.5 text-[13px] font-semibold text-faint">
+        <p className="mt-1.5 text-13 font-semibold text-faint">
           Last updated {formatDate(page.updatedAt)}
         </p>
 

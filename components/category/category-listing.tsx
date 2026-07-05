@@ -94,7 +94,7 @@ export function CategoryListing({
         {/* Toolbar: result hint + sort + mobile filters */}
         <div className="flex items-center justify-between gap-3">
           <p
-            className="min-w-0 truncate text-[13px] font-semibold text-sub"
+            className="min-w-0 truncate text-13 font-semibold text-sub"
             aria-live="polite"
           >
             {showSkeleton

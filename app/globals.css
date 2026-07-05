@@ -146,6 +146,37 @@
   --font-display: var(--font-sora), var(--font-manrope), ui-sans-serif, sans-serif;
   --font-bengali: var(--font-bengali), var(--font-manrope), sans-serif;
 
+  /* ── Type scale ────────────────────────────────────────────────────────────
+   * Dense-commerce scale. Every text size in the app comes from this ladder —
+   * no arbitrary `text-[NNpx]` values. Between Tailwind's t-shirt steps we add
+   * numeric steps (named for their px size, authored in rem) because dense
+   * marketplace UI genuinely needs 11/13/15:
+   *
+   *   text-2xs  10px  overlines, badges, count bubbles
+   *   text-11   11px  timestamps, micro meta, fine print
+   *   text-xs   12px  captions, secondary meta          (Tailwind default)
+   *   text-13   13px  compact UI text, filters, menus
+   *   text-sm   14px  body / default control text       (Tailwind default)
+   *   text-15   15px  emphasized body, large buttons
+   *   text-base 16px  lead paragraphs, mobile inputs    (Tailwind default)
+   *   text-lg+  18/20 section titles                    (Tailwind default)
+   *   text-22   22px  big prices, rating score
+   *   text-2xl  24px  page headings                     (Tailwind default)
+   *   text-28   28px  PDP price hero, campaign headlines
+   */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-11: 0.6875rem;
+  --text-11--line-height: 1rem;
+  --text-13: 0.8125rem;
+  --text-13--line-height: 1.25rem;
+  --text-15: 0.9375rem;
+  --text-15--line-height: 1.375rem;
+  --text-22: 1.375rem;
+  --text-22--line-height: 1.75rem;
+  --text-28: 1.75rem;
+  --text-28--line-height: 2.125rem;
+
   /* Custom easings + durations for subtle motion */
   --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -166,6 +197,18 @@
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
     cursor: pointer;
+  }
+}
+
+/* iOS Safari force-zooms the page when a focused text control is under 16px.
+ * On touch-primary devices, floor every text field at 16px regardless of the
+ * utility class it carries (hence !important — this must beat text-sm/text-13
+ * from the utilities layer). Desktop keeps the compact component sizes. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }
 

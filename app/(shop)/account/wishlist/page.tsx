@@ -126,7 +126,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
         </Link>
 
         {item.vendorName && (
-          <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-faint">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-faint">
             <Store className="size-3.5 text-primary" />
             {item.vendorName}
           </span>
@@ -134,7 +134,7 @@ function WishlistRow({ item }: { item: WishlistItem }) {
 
         <span
           className={cn(
-            "inline-flex w-max items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-extrabold",
+            "inline-flex w-max items-center gap-1.5 rounded-md px-2 py-0.5 text-11 font-extrabold",
             inStock ? "bg-green-soft text-green" : "bg-red/10 text-red",
           )}
         >

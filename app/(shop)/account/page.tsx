@@ -197,7 +197,7 @@ function MobileAccountHub() {
 
       {/* Account settings */}
       <section>
-        <h2 className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-wide text-faint">
+        <h2 className="mb-2 px-1 text-11 font-extrabold uppercase tracking-wide text-faint">
           Account settings
         </h2>
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -208,7 +208,7 @@ function MobileAccountHub() {
                 {...link}
                 badge={
                   link.href === "/account/notifications" && unreadCount > 0 ? (
-                    <span className="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                    <span className="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red px-1.5 py-0.5 text-2xs font-extrabold text-white">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   ) : undefined

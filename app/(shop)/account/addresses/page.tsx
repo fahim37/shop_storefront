@@ -116,7 +116,7 @@ function AddressCard({
             </span>
           )}
         </p>
-        <p className="mt-1 text-[13px] leading-relaxed text-sub">
+        <p className="mt-1 text-13 leading-relaxed text-sub">
           {locationLine}
         </p>
       </div>

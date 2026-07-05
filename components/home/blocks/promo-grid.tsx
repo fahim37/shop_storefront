@@ -52,7 +52,7 @@ export function PromoGrid({ cards }: { cards: HomepagePromoCard[] }) {
                 {card.title}
               </h3>
               {card.subtitle && (
-                <p className="mt-0.5 text-[12px] font-semibold opacity-75 sm:text-[12.5px]">
+                <p className="mt-0.5 text-xs font-semibold opacity-75 sm:text-13">
                   {card.subtitle}
                 </p>
               )}

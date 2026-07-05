@@ -108,7 +108,7 @@ export function CategoryMegaMenu() {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           className={cn(
-            "flex h-[52px] cursor-pointer items-center gap-2.5 px-4 text-[13.5px] font-extrabold transition-colors duration-200",
+            "flex h-[52px] cursor-pointer items-center gap-2.5 px-4 text-sm font-extrabold transition-colors duration-200",
             open ? "bg-amber text-blue-deep" : "bg-blue-deep text-white",
           )}
         >
@@ -137,7 +137,7 @@ export function CategoryMegaMenu() {
                     onFocus={() => setActiveId(cat.id)}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors duration-150",
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-13 font-semibold transition-colors duration-150",
                       on
                         ? "bg-card text-primary shadow-sm"
                         : "text-sub hover:bg-card/60",
@@ -168,7 +168,7 @@ export function CategoryMegaMenu() {
                   <Link
                     href={`/category/${active.slug}`}
                     onClick={() => setOpen(false)}
-                    className="group flex items-center gap-1 text-[13px] font-bold text-primary"
+                    className="group flex items-center gap-1 text-13 font-bold text-primary"
                   >
                     View all{" "}
                     <ArrowRight
@@ -213,10 +213,10 @@ function Subcategories({
           >
             <CategoryCircleIcon cat={sub} className="size-12" />
             <span className="min-w-0">
-              <b className="block truncate text-[13.5px] font-bold text-ink transition-colors group-hover:text-primary">
+              <b className="block truncate text-sm font-bold text-ink transition-colors group-hover:text-primary">
                 {sub.name}
               </b>
-              <span className="block text-[11.5px] font-semibold text-faint">
+              <span className="block text-xs font-semibold text-faint">
                 {(sub.children?.length ?? 0) > 0
                   ? `${sub.children!.length} collections`
                   : "Shop now"}
@@ -228,7 +228,7 @@ function Subcategories({
               key={leaf.id}
               href={`/category/${leaf.slug}`}
               onClick={onNavigate}
-              className="ml-[60px] block py-1 text-[12.5px] font-semibold text-sub transition-colors hover:text-primary"
+              className="ml-[60px] block py-1 text-13 font-semibold text-sub transition-colors hover:text-primary"
             >
               {leaf.name}
             </Link>
@@ -255,7 +255,7 @@ export function CatbarLinks() {
           key={l.label}
           href={l.href}
           className={cn(
-            "flex h-[52px] items-center gap-1.5 px-3.5 text-[13px] font-bold transition-colors",
+            "flex h-[52px] items-center gap-1.5 px-3.5 text-13 font-bold transition-colors",
             l.hot ? "text-amber" : "text-white/85 hover:text-white",
           )}
         >
@@ -264,7 +264,7 @@ export function CatbarLinks() {
       ))}
       <Link
         href="/#mega-sale"
-        className="ml-auto hidden items-center gap-1.5 rounded-lg bg-amber px-3.5 py-1.5 text-[12.5px] font-extrabold text-blue-deep transition-colors hover:bg-amber-hover lg:flex"
+        className="ml-auto hidden items-center gap-1.5 rounded-lg bg-amber px-3.5 py-1.5 text-13 font-extrabold text-blue-deep transition-colors hover:bg-amber-hover lg:flex"
       >
         Mega Sale
       </Link>

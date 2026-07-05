@@ -25,6 +25,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useFilterParams } from "@/lib/use-filters";
+import { colorNameHex } from "@/lib/options";
 import type { CategoryNode, FacetOption, Facets } from "@/lib/api/types";
 
 export interface FilterProps {
@@ -43,8 +44,8 @@ export interface FilterSheetProps extends FilterProps {
   resultLoading?: boolean;
 }
 
-const SECTION_HEADER = "font-display text-[13px] font-extrabold";
-const COUNT_CLS = "ml-auto text-[11px] font-bold tabular-nums text-faint";
+const SECTION_HEADER = "font-display text-13 font-extrabold";
+const COUNT_CLS = "ml-auto text-11 font-bold tabular-nums text-faint";
 /**
  * Checkbox/label rows: full-row hover + a touch-friendly hit area. Kept inset
  * (no negative-margin overhang): the accordion content is overflow-hidden and
@@ -52,7 +53,21 @@ const COUNT_CLS = "ml-auto text-[11px] font-bold tabular-nums text-faint";
  * or summon a horizontal scrollbar.
  */
 const ROW_CLS =
-  "flex min-h-9 cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-sub transition-colors hover:bg-muted";
+  "flex min-h-8 cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1 text-13 font-semibold text-sub transition-colors hover:bg-muted";
+
+/** One shared toggle-chip look (availability, rating, text options). */
+const CHIP_CLS =
+  "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 text-13 font-bold transition-colors";
+const CHIP_ON = "border-primary bg-blue-soft text-primary";
+const CHIP_OFF = "border-border text-sub hover:border-primary/40 hover:bg-muted";
+
+/**
+ * Tighter accordion rhythm than the shared default — the rail packs several
+ * sections into a sticky viewport, so density matters more here than on the
+ * order-details page that shares the component.
+ */
+const TRIGGER_CLS = "py-3";
+const CONTENT_CLS = "pb-3.5";
 
 /** A neutral swatch fallback when a color value carries no hex. */
 const NEUTRAL_SWATCH = "oklch(0.85 0.01 258)";
@@ -61,7 +76,7 @@ const NEUTRAL_SWATCH = "oklch(0.85 0.01 258)";
 function SectionBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="ml-2 inline-flex min-w-[18px] items-center justify-center rounded-full bg-blue-soft px-1.5 py-px text-[11px] font-extrabold tabular-nums text-primary">
+    <span className="ml-2 inline-flex min-w-[18px] items-center justify-center rounded-full bg-blue-soft px-1.5 py-px text-11 font-extrabold tabular-nums text-primary">
       {count}
     </span>
   );
@@ -149,7 +164,7 @@ function PriceFilterInner({
 
   return (
     <form
-      className="space-y-4"
+      className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         apply(min, max);
@@ -175,7 +190,7 @@ function PriceFilterInner({
           placeholder={hasRange ? `${floor}` : "Min ৳"}
           value={min}
           onChange={(e) => setMin(e.target.value.replace(/\D/g, ""))}
-          className="h-9 text-[13px]"
+          className="h-8 text-13"
           aria-label="Minimum price (৳)"
         />
         <span className="text-faint">—</span>
@@ -184,10 +199,10 @@ function PriceFilterInner({
           placeholder={hasRange ? `${ceil}` : "Max ৳"}
           value={max}
           onChange={(e) => setMax(e.target.value.replace(/\D/g, ""))}
-          className="h-9 text-[13px]"
+          className="h-8 text-13"
           aria-label="Maximum price (৳)"
         />
-        <Button type="submit" size="sm" variant="soft" className="shrink-0">
+        <Button type="submit" size="sm" variant="soft" className="h-8 shrink-0 px-3">
           Go
         </Button>
       </div>
@@ -199,31 +214,16 @@ function PriceFilterInner({
 /* Rating rows                                                             */
 /* ----------------------------------------------------------------------- */
 
-function RatingStars({ value }: { value: number }) {
-  return (
-    <span className="flex items-center gap-0.5 text-amber-deep">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={cn(
-            "size-3.5",
-            i <= value ? "fill-amber-deep" : "text-[oklch(0.88_0.01_258)]",
-          )}
-          strokeWidth={1.6}
-        />
-      ))}
-    </span>
-  );
-}
-
 function RatingFilter({ facets }: { facets: Facets }) {
   const { get, setParams } = useFilterParams();
   const active = get("rating");
-  // Always show buckets 4..1 (descending), with counts when present.
+  // Buckets 4..1 (descending) as one row of "★N+" chips — the old stacked
+  // five-star rows spent ~4x the height saying the same thing. Counts move
+  // to the tooltip/label; empty buckets stay clickable but dim.
   const counts = new Map(facets.ratingCounts.map((r) => [r.min, r.count]));
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Minimum rating">
       {[4, 3, 2, 1].map((r) => {
         const count = counts.get(r) ?? 0;
         const selected = active === String(r);
@@ -232,16 +232,62 @@ function RatingFilter({ facets }: { facets: Facets }) {
             key={r}
             type="button"
             aria-pressed={selected}
-            aria-label={`${r} stars and up`}
+            aria-label={`${r} stars and up (${count} products)`}
+            title={`${count} products`}
             onClick={() => setParams({ rating: selected ? null : r })}
             className={cn(
-              "flex min-h-9 items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] font-semibold transition-colors",
-              selected ? "bg-blue-soft text-primary" : "text-sub hover:bg-muted",
+              CHIP_CLS,
+              "gap-1 px-1 tabular-nums",
+              selected ? CHIP_ON : CHIP_OFF,
+              count === 0 && !selected && "opacity-45",
             )}
           >
-            <RatingStars value={r} />
-            <span>&amp; up</span>
-            <span className={COUNT_CLS}>{formatCompact(count)}</span>
+            <Star
+              className="size-3.5 shrink-0 fill-amber-deep text-amber-deep"
+              strokeWidth={1.6}
+            />
+            {r}+
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Availability quick toggles                                              */
+/* ----------------------------------------------------------------------- */
+
+/**
+ * "In stock" / "On sale" as one always-visible row of pills at the top of the
+ * rail — two binary toggles never earned a whole accordion section.
+ */
+function QuickToggles({ facets }: { facets: Facets }) {
+  const { get, setParams } = useFilterParams();
+  const toggles = [
+    { param: "instock", label: "In stock", count: facets.inStockCount },
+    { param: "sale", label: "On sale", count: facets.onSaleCount },
+  ];
+  return (
+    <div
+      className="grid grid-cols-2 gap-2 border-b border-border pb-3.5"
+      role="group"
+      aria-label="Availability"
+    >
+      {toggles.map((t) => {
+        const active = get(t.param) === "1";
+        return (
+          <button
+            key={t.param}
+            type="button"
+            aria-pressed={active}
+            onClick={() => setParams({ [t.param]: active ? null : "1" })}
+            className={cn(CHIP_CLS, active ? CHIP_ON : CHIP_OFF)}
+          >
+            <span className="truncate">{t.label}</span>
+            <span className="text-11 font-bold tabular-nums text-faint">
+              {formatCompact(t.count)}
+            </span>
           </button>
         );
       })}
@@ -273,19 +319,19 @@ function BrandFilter({ facets }: { facets: Facets }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search brands"
-            className="h-9 pl-8 text-[13px]"
+            className="h-8 pl-8 text-13"
             aria-label="Search brands"
           />
         </div>
       )}
       {/* ~8 rows tall; longer lists scroll instead of stretching the rail. */}
       <div
-        className="flex max-h-72 flex-col gap-0.5 overflow-y-auto overscroll-contain"
+        className="flex max-h-64 flex-col gap-0.5 overflow-y-auto overscroll-contain"
         role="group"
         aria-label="Brands"
       >
         {filtered.length === 0 ? (
-          <p className="px-2 py-1.5 text-[12.5px] font-semibold text-faint">
+          <p className="px-2 py-1.5 text-13 font-semibold text-faint">
             No brands match &ldquo;{query.trim()}&rdquo;
           </p>
         ) : (
@@ -316,9 +362,14 @@ function ColorOption({ option }: { option: FacetOption }) {
   const selected = getList(key);
 
   return (
-    <div className="flex flex-wrap gap-2.5">
+    // The selected ring overhangs the swatch by ~4px; the pt keeps a
+    // first-row ring clear of the accordion's overflow-hidden top edge.
+    <div className="flex flex-wrap gap-2 pt-1">
       {option.values.map((v) => {
         const isSel = selected.includes(v.value);
+        // Exact carried hex wins; else resolve the colour name; else a neutral
+        // dot badged with the value's initial so it's never an anonymous blob.
+        const hex = v.hex ?? colorNameHex(v.value);
         return (
           <button
             key={v.value}
@@ -328,17 +379,23 @@ function ColorOption({ option }: { option: FacetOption }) {
             aria-pressed={isSel}
             onClick={() => toggleInList(key, v.value)}
             className={cn(
-              "relative flex size-8 items-center justify-center rounded-full border border-border shadow-sm transition-transform hover:scale-105 active:scale-95",
+              "relative flex size-7 items-center justify-center rounded-full border border-border shadow-sm transition-transform hover:scale-105 active:scale-95",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isSel && "ring-2 ring-primary ring-offset-2 ring-offset-card",
             )}
-            style={{ backgroundColor: v.hex ?? NEUTRAL_SWATCH }}
+            style={{ backgroundColor: hex ?? NEUTRAL_SWATCH }}
           >
-            {isSel && (
+            {isSel ? (
               <Check
-                className="size-4 text-white mix-blend-difference"
+                className="size-3.5 text-white mix-blend-difference"
                 strokeWidth={3}
               />
+            ) : (
+              !hex && (
+                <span className="text-11 font-bold text-sub" aria-hidden>
+                  {v.value.charAt(0).toUpperCase()}
+                </span>
+              )
             )}
           </button>
         );
@@ -366,7 +423,7 @@ function TextOption({ option }: { option: FacetOption }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {visible.map((v) => {
           const isSel = selected.includes(v.value);
           return (
@@ -375,15 +432,10 @@ function TextOption({ option }: { option: FacetOption }) {
               type="button"
               aria-pressed={isSel}
               onClick={() => toggleInList(key, v.value)}
-              className={cn(
-                "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition-colors",
-                isSel
-                  ? "border-primary bg-blue-soft text-primary"
-                  : "border-border text-sub hover:border-primary/40 hover:bg-muted",
-              )}
+              className={cn(CHIP_CLS, isSel ? CHIP_ON : CHIP_OFF)}
             >
               <span>{v.value}</span>
-              <span className="text-[11px] font-bold tabular-nums text-faint">
+              <span className="text-11 font-bold tabular-nums text-faint">
                 {formatCompact(v.count)}
               </span>
             </button>
@@ -394,7 +446,7 @@ function TextOption({ option }: { option: FacetOption }) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="self-start text-[12px] font-extrabold text-primary hover:underline"
+          className="self-start text-xs font-extrabold text-primary hover:underline"
         >
           {expanded ? "Show less" : `Show ${overflow.length} more`}
         </button>
@@ -410,7 +462,7 @@ function TextOption({ option }: { option: FacetOption }) {
 /** Pulsing placeholder rows shown while the facet query is in flight. */
 function FiltersSkeleton() {
   return (
-    <div className="flex animate-pulse flex-col gap-6 py-1" aria-hidden>
+    <div className="flex animate-pulse flex-col gap-5 py-1" aria-hidden>
       {[3, 2, 4, 3].map((rows, i) => (
         <div key={i} className="space-y-3">
           <div className="h-3.5 w-24 rounded bg-muted" />
@@ -424,10 +476,7 @@ function FiltersSkeleton() {
 }
 
 function FilterControls({ facets, subcategories }: FilterProps) {
-  const { get, getList, getOptions, setParams } = useFilterParams();
-
-  const inStock = get("instock") === "1";
-  const onSale = get("sale") === "1";
+  const { get, getList, getOptions } = useFilterParams();
 
   const hasBrands = !!facets && facets.brands.length > 0;
   const hasRating = !!facets && facets.ratingCounts.some((r) => r.count > 0);
@@ -438,7 +487,6 @@ function FilterControls({ facets, subcategories }: FilterProps) {
   // sections still show what's active (matters most inside the sheet).
   const selectedOptions = getOptions();
   const priceCount = get("minPrice") || get("maxPrice") ? 1 : 0;
-  const availCount = (inStock ? 1 : 0) + (onSale ? 1 : 0);
   const ratingCount = get("rating") ? 1 : 0;
   const brandCount = getList("brand").length;
 
@@ -447,7 +495,7 @@ function FilterControls({ facets, subcategories }: FilterProps) {
   // toggles something, so sections opened by late-arriving facets aren't lost
   // (a plain defaultValue is captured before the facet query resolves).
   const computedOpen = React.useMemo(() => {
-    const v = ["price", "availability"];
+    const v = ["price"];
     if (hasRating) v.push("rating");
     if (hasBrands) v.push("brand");
     for (const o of options) v.push(`opt-${o.key}`);
@@ -458,14 +506,14 @@ function FilterControls({ facets, subcategories }: FilterProps) {
   return (
     <div className="flex flex-col">
       {subcategories && subcategories.length > 0 && (
-        <section className="border-b border-border pb-4">
-          <h4 className={cn(SECTION_HEADER, "mb-3")}>Subcategories</h4>
+        <section className="mb-3.5 border-b border-border pb-3">
+          <h4 className={cn(SECTION_HEADER, "mb-2")}>Subcategories</h4>
           <div className="flex flex-col gap-0.5">
             {subcategories.map((c) => (
               <Link
                 key={c.id}
                 href={`/category/${c.slug}`}
-                className="rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-sub hover:bg-muted hover:text-primary"
+                className="flex min-h-8 items-center rounded-lg px-2 py-1 text-13 font-semibold text-sub hover:bg-muted hover:text-primary"
               >
                 {c.name}
               </Link>
@@ -477,106 +525,78 @@ function FilterControls({ facets, subcategories }: FilterProps) {
       {!facets ? (
         <FiltersSkeleton />
       ) : (
-        <Accordion
-          type="multiple"
-          value={userOpen ?? computedOpen}
-          onValueChange={setUserOpen}
-        >
-          {hasPrice && (
-            <AccordionItem value="price">
-              <AccordionTrigger>
-                <span>
-                  Price (৳)
-                  <SectionBadge count={priceCount} />
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <PriceFilter facets={facets} />
-              </AccordionContent>
-            </AccordionItem>
-          )}
+        <>
+          <QuickToggles facets={facets} />
 
-          <AccordionItem value="availability">
-            <AccordionTrigger>
-              <span>
-                Availability
-                <SectionBadge count={availCount} />
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-1">
-                <label className={ROW_CLS}>
-                  <Checkbox
-                    className="size-[18px]"
-                    checked={inStock}
-                    onCheckedChange={(c) => setParams({ instock: c ? "1" : null })}
-                  />
-                  <span>In stock only</span>
-                  <span className={COUNT_CLS}>
-                    {formatCompact(facets.inStockCount)}
+          <Accordion
+            type="multiple"
+            value={userOpen ?? computedOpen}
+            onValueChange={setUserOpen}
+            // The card's own padding closes the rail; a trailing rule under
+            // the last section would just read as clutter.
+            className="[&>div:last-child]:border-b-0"
+          >
+            {hasPrice && (
+              <AccordionItem value="price">
+                <AccordionTrigger className={TRIGGER_CLS}>
+                  <span>
+                    Price (৳)
+                    <SectionBadge count={priceCount} />
                   </span>
-                </label>
-                <label className={ROW_CLS}>
-                  <Checkbox
-                    className="size-[18px]"
-                    checked={onSale}
-                    onCheckedChange={(c) => setParams({ sale: c ? "1" : null })}
-                  />
-                  <span>On sale</span>
-                  <span className={COUNT_CLS}>
-                    {formatCompact(facets.onSaleCount)}
+                </AccordionTrigger>
+                <AccordionContent className={CONTENT_CLS}>
+                  <PriceFilter facets={facets} />
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {hasRating && (
+              <AccordionItem value="rating">
+                <AccordionTrigger className={TRIGGER_CLS}>
+                  <span>
+                    Rating
+                    <SectionBadge count={ratingCount} />
                   </span>
-                </label>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+                </AccordionTrigger>
+                <AccordionContent className={CONTENT_CLS}>
+                  <RatingFilter facets={facets} />
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
-          {hasRating && (
-            <AccordionItem value="rating">
-              <AccordionTrigger>
-                <span>
-                  Rating
-                  <SectionBadge count={ratingCount} />
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <RatingFilter facets={facets} />
-              </AccordionContent>
-            </AccordionItem>
-          )}
+            {hasBrands && (
+              <AccordionItem value="brand">
+                <AccordionTrigger className={TRIGGER_CLS}>
+                  <span>
+                    Brand
+                    <SectionBadge count={brandCount} />
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className={CONTENT_CLS}>
+                  <BrandFilter facets={facets} />
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
-          {hasBrands && (
-            <AccordionItem value="brand">
-              <AccordionTrigger>
-                <span>
-                  Brand
-                  <SectionBadge count={brandCount} />
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <BrandFilter facets={facets} />
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {options.map((o) => (
-            <AccordionItem key={o.key} value={`opt-${o.key}`}>
-              <AccordionTrigger>
-                <span>
-                  {o.key}
-                  <SectionBadge count={selectedOptions[o.key]?.length ?? 0} />
-                </span>
-              </AccordionTrigger>
-              <AccordionContent>
-                {o.kind === "color" ? (
-                  <ColorOption option={o} />
-                ) : (
-                  <TextOption option={o} />
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+            {options.map((o) => (
+              <AccordionItem key={o.key} value={`opt-${o.key}`}>
+                <AccordionTrigger className={TRIGGER_CLS}>
+                  <span>
+                    {o.key}
+                    <SectionBadge count={selectedOptions[o.key]?.length ?? 0} />
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className={CONTENT_CLS}>
+                  {o.kind === "color" ? (
+                    <ColorOption option={o} />
+                  ) : (
+                    <TextOption option={o} />
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </>
       )}
     </div>
   );
@@ -591,7 +611,7 @@ export function FilterSidebar(props: FilterProps) {
   return (
     <aside
       className={cn(
-        "hidden h-max rounded-2xl border border-border bg-card p-5 lg:block",
+        "hidden h-max rounded-2xl border border-border bg-card p-4 lg:block",
         // Header (76px) + catbar (52px) + breathing room. The stable gutter
         // keeps content from shifting when the rail starts overflowing.
         "lg:sticky lg:top-36 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto lg:overscroll-contain lg:scrollbar-gutter-stable",
@@ -629,7 +649,7 @@ export function FilterSheet({
           <SlidersHorizontal className="size-4" />
           Filters
           {activeCount > 0 && (
-            <span className="ml-1 flex min-w-[18px] items-center justify-center rounded-full bg-amber px-1 text-[10px] text-blue-deep">
+            <span className="ml-1 flex min-w-[18px] items-center justify-center rounded-full bg-amber px-1 text-2xs text-blue-deep">
               {activeCount}
             </span>
           )}
@@ -641,7 +661,7 @@ export function FilterSheet({
           <SheetTitle>
             Filters
             {activeCount > 0 && (
-              <span className="ml-2 rounded-full bg-blue-soft px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-primary">
+              <span className="ml-2 rounded-full bg-blue-soft px-2 py-0.5 text-11 font-extrabold tabular-nums text-primary">
                 {activeCount}
               </span>
             )}
@@ -651,7 +671,7 @@ export function FilterSheet({
             more.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto overscroll-contain border-t border-border px-5 pb-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain border-t border-border px-5 pb-4 pt-3">
           <FilterControls {...props} />
         </div>
         <SheetFooter className="flex items-center gap-3 pb-[max(env(safe-area-inset-bottom),1rem)]">
