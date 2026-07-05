@@ -33,7 +33,7 @@ export function CampaignPanel({
 
   return (
     <section id={id} className="wrap scroll-mt-[170px] md:scroll-mt-[190px]">
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-blue-deep p-4 shadow-[var(--shadow-card)] sm:p-5">
+      <div className="-mx-4 overflow-hidden bg-gradient-to-br from-primary to-blue-deep p-4 sm:mx-0 sm:rounded-2xl sm:p-5 sm:shadow-[var(--shadow-card)]">
         <div className="grid gap-4 lg:grid-cols-[230px_1fr] lg:gap-5">
           {/* Branded rail */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-col lg:items-stretch lg:justify-center lg:gap-4 lg:py-4">

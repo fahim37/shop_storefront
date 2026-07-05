@@ -126,12 +126,17 @@ export function verifyOtp(
  * POST /auth/refresh — omit body to use the httpOnly cookie. Rotates the
  * refresh token; replaying an old token burns all sessions. `skipRefresh`
  * prevents the http client from recursively trying to refresh on a 401.
+ *
+ * The X-CSRF header is required by the backend: a plain cross-site form/img
+ * can't set a custom header, and a cross-origin `fetch` that tries to would
+ * get blocked by CORS preflight (only our allowlisted origin passes) — so
+ * its mere presence is what defeats CSRF against this cookie-reading route.
  */
 export function refresh(refreshToken?: string): Promise<TokenPair> {
   return http.post<TokenPair>(
     "/auth/refresh",
     refreshToken ? { refreshToken } : {},
-    { skipAuth: true, skipRefresh: true },
+    { skipAuth: true, skipRefresh: true, headers: { "x-csrf": "browser-fetch" } },
   );
 }
 

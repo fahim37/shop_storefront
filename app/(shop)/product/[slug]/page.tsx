@@ -19,6 +19,7 @@ import { BuyPanel } from "@/components/product/buy-panel";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductDetailSections } from "@/components/product/reviews-section";
 import { RecentlyViewedTracker } from "@/components/product/recently-viewed-tracker";
+import { ChatWithSellerButton } from "@/components/product/chat-with-seller-button";
 import { fromRecHit, type CardProduct } from "@/lib/api/card";
 import { formatCompact, formatRating } from "@/lib/format";
 import { renderDescriptionHtml } from "@/lib/sanitize";
@@ -209,11 +210,19 @@ export default async function ProductPage({ params }: PageParams) {
                 {product.vendorName}
               </b>
             </span>
-            <Button asChild variant="outline" size="sm" className="ml-2 shrink-0">
-              <Link href={`/search?q=${encodeURIComponent(product.vendorName)}`}>
-                Visit store
-              </Link>
-            </Button>
+            <div className="ml-2 flex shrink-0 items-center gap-2">
+              <ChatWithSellerButton
+                vendorId={product.vendorId}
+                vendorName={product.vendorName}
+                productId={product.id}
+                productTitle={product.title}
+              />
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/search?q=${encodeURIComponent(product.vendorName)}`}>
+                  Visit store
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>

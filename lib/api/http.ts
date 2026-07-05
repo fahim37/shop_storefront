@@ -1,4 +1,4 @@
-import { CLIENT_API_BASE } from "@/lib/config";
+import { API_BASE_URL } from "@/lib/config";
 import {
   clearAccessToken,
   getAccessToken,
@@ -104,7 +104,7 @@ export function runSingleFlightRefresh(): Promise<boolean> {
 function buildUrl(path: string, params?: RequestOptions["params"]): string {
   const base = path.startsWith("http")
     ? path
-    : `${CLIENT_API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+    : `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
   if (!params) return base;
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

@@ -1,23 +1,17 @@
 /**
  * Centralized runtime configuration.
  *
- * Two API bases:
- *  - {@link API_BASE_URL} — the ABSOLUTE backend URL. Used by Server Components
- *    (`lib/api/server`) and to build media URLs (cross-origin <img> loads are
- *    not CORS-restricted). Inlined at build time (NEXT_PUBLIC_*).
- *  - {@link CLIENT_API_BASE} — the SAME-ORIGIN BFF proxy path the browser uses
- *    for `fetch` (see `rewrites()` in next.config.ts). Routing client requests
- *    through our own origin avoids cross-origin CORS entirely, so the storefront
- *    works against a remote backend without that backend allowlisting us.
+ * {@link API_BASE_URL} — the ABSOLUTE backend URL. Used by both Server
+ * Components (`lib/api/server`) and browser `fetch` calls, and to build media
+ * URLs (cross-origin <img> loads are not CORS-restricted). Inlined at build
+ * time (NEXT_PUBLIC_*). The backend is served over HTTPS and allowlists our
+ * origin via CORS, so no same-origin proxy is needed.
  */
 
 /** Absolute backend base, already ending in `/v1`. */
 export const API_BASE_URL: string =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ??
   "http://62.72.58.29:4000/v1";
-
-/** Same-origin proxy base the browser hits (mapped to API_BASE_URL by rewrites). */
-export const CLIENT_API_BASE = "/bff/v1";
 
 /**
  * Brand logo, served from backend media storage (R2). Generated + uploaded via
