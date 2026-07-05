@@ -421,6 +421,48 @@ h3,
   }
 }
 
+/* -----------------------------------------------------------------------------
+ * Brand scrollbars — a slim blue pill on a transparent track, sitewide (page
+ * scroll, filter rail, sheets, tables). WebKit/Blink take the fully-styled
+ * pseudo-element version (no legacy arrow buttons); the @supports block hands
+ * Firefox the standard two-property equivalent — Chromium skips it because it
+ * does support the ::-webkit-scrollbar selector, and setting scrollbar-color
+ * there would disable the styled version.
+ * -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--primary) 55%, transparent);
+  border: 3px solid transparent; /* inset the pill from the track edges */
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--primary);
+  border-width: 2px; /* pill thickens slightly under the cursor */
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary) 55%, transparent)
+      transparent;
+  }
+}
+
 /* Hide scrollbars on horizontal rails while keeping them scrollable. */
 .no-scrollbar {
   scrollbar-width: none;

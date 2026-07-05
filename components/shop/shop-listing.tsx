@@ -1,6 +1,7 @@
 "use client";
 
 import { PackageSearch } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   ActiveFilterChips,
@@ -75,13 +76,20 @@ export function ShopListing({
     refetch,
     hasNextPage,
     fetchNextPage,
+    isFetching,
     isFetchingNextPage,
+    isPlaceholderData,
   } = useProductsInfinite(params, isDefaultView ? initialPage : undefined);
 
   const { data: facets } = useShopFacets();
 
   const rows = flattenProducts(data?.pages);
   const products = rows.map(fromProductRow);
+
+  // A filter/sort change refetches while the PREVIOUS grid stays on screen
+  // (keepPreviousData) — dim it instead of flashing a skeleton.
+  const updating = isPlaceholderData && isFetching;
+  const showSkeleton = isLoading || (updating && products.length === 0);
 
   const heading = onSale
     ? { title: "Flash sale", subtitle: "Discounted right now" }
@@ -102,24 +110,34 @@ export function ShopListing({
         <div className="flex min-w-0 flex-col gap-4">
           {/* Toolbar: result hint + sort + mobile filters */}
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] font-semibold text-sub">
-              {isLoading
+            <p
+              className="min-w-0 truncate text-[13px] font-semibold text-sub"
+              aria-live="polite"
+            >
+              {showSkeleton
                 ? "Loading products…"
-                : products.length > 0
-                  ? `Showing ${products.length} product${products.length === 1 ? "" : "s"}${
-                      hasNextPage ? "+" : ""
-                    }`
-                  : "No products"}
+                : updating
+                  ? "Updating…"
+                  : products.length > 0
+                    ? `${products.length}${hasNextPage ? "+" : ""} product${
+                        products.length === 1 ? "" : "s"
+                      }`
+                    : "No products"}
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <SortSelect options={LISTING_SORT_OPTIONS} defaultValue="newest" />
-              <FilterSheet facets={facets} />
+              <FilterSheet
+                facets={facets}
+                resultCount={showSkeleton ? undefined : products.length}
+                resultHasMore={hasNextPage}
+                resultLoading={showSkeleton || updating}
+              />
             </div>
           </div>
 
           <ActiveFilterChips facets={facets} />
 
-          {isLoading ? (
+          {showSkeleton ? (
             <ProductGridSkeleton count={9} cols={5} />
           ) : isError ? (
             <EmptyState
@@ -139,7 +157,13 @@ export function ShopListing({
               description="Try removing some filters or widening your price range."
             />
           ) : (
-            <>
+            <div
+              aria-busy={updating}
+              className={cn(
+                "flex flex-col gap-4 transition-opacity duration-200",
+                updating && "pointer-events-none opacity-50",
+              )}
+            >
               <ProductGrid cols={5} products={products} />
               {hasNextPage && (
                 <div className="flex justify-center pt-2">
@@ -148,13 +172,13 @@ export function ShopListing({
                     size="lg"
                     onClick={() => fetchNextPage()}
                     loading={isFetchingNextPage}
-                    disabled={isFetchingNextPage}
+                    disabled={isFetchingNextPage || updating}
                   >
                     {isFetchingNextPage ? "Loading…" : "Load more"}
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Field } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -497,6 +497,12 @@ function ReviewItem({
     <li className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <Avatar className="size-10">
+          {review.reviewerPhotoUrl && (
+            <AvatarImage
+              src={resolveMediaPath(review.reviewerPhotoUrl) ?? undefined}
+              alt=""
+            />
+          )}
           <AvatarFallback>{initials(review.reviewerName)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">

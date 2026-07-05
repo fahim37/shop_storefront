@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Search as SearchIcon, SearchX, Lightbulb } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -57,7 +58,9 @@ function SearchResults() {
     isError,
     hasNextPage,
     fetchNextPage,
+    isFetching,
     isFetchingNextPage,
+    isPlaceholderData,
   } = useSearchInfinite(params, q.length > 0);
 
   // Empty query → friendly prompt (the header search bar drives `q`).
@@ -75,6 +78,11 @@ function SearchResults() {
   const hits = pages.flatMap((p) => p.items);
   const products = hits.map(fromSearchHit);
   const totalLabel = hasNextPage ? `${hits.length}+` : `${hits.length}`;
+
+  // A filter/sort/query change refetches while the PREVIOUS hits stay on
+  // screen (keepPreviousData) — dim them instead of flashing a skeleton.
+  const updating = isPlaceholderData && isFetching;
+  const showSkeleton = isLoading || (updating && products.length === 0);
   // First page carries the analytics id; "" means logging is disabled server-side.
   const searchQueryId = pages[0]?.searchQueryId ?? "";
 
@@ -104,8 +112,8 @@ function SearchResults() {
             Results for &ldquo;{q}&rdquo;
           </h1>
         </div>
-        <p className="text-[13px] font-semibold text-sub">
-          {isLoading
+        <p className="text-[13px] font-semibold text-sub" aria-live="polite">
+          {showSkeleton || updating
             ? "Searching…"
             : `${totalLabel} ${hits.length === 1 ? "result" : "results"} found`}
         </p>
@@ -114,7 +122,7 @@ function SearchResults() {
       {/* Auto-correction notice — the backend snapped a typo'd query to the
           closest catalog vocabulary ("hedphones" → "headphones") and ranked
           exact matches for the corrected term into these results. */}
-      {!isLoading && products.length > 0 && pages[0]?.correctedQuery && (
+      {!showSkeleton && !updating && products.length > 0 && pages[0]?.correctedQuery && (
         <p className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink">
           <Lightbulb className="size-4 shrink-0 text-amber-500" strokeWidth={2.2} />
           <span>
@@ -129,7 +137,7 @@ function SearchResults() {
       {/* "Did you mean" hint — shown when the exact term didn't match but we
           found close (typo/semantic) results anyway, so the smart matching is
           visible instead of silent. The zero-results case is handled below. */}
-      {!isLoading && products.length > 0 && pages[0]?.suggestion && (
+      {!showSkeleton && !updating && products.length > 0 && pages[0]?.suggestion && (
         <Link
           href={`/search?q=${encodeURIComponent(pages[0].suggestion)}`}
           className="flex items-center gap-2 self-start rounded-lg border border-blue-soft bg-blue-soft/40 px-3 py-2 text-[13px] font-semibold text-ink hover:bg-blue-soft"
@@ -147,7 +155,12 @@ function SearchResults() {
 
       {/* Toolbar: filters (mobile) + sort */}
       <div className="flex items-center justify-between gap-3">
-        <FilterSheet facets={facets} />
+        <FilterSheet
+          facets={facets}
+          resultCount={showSkeleton ? undefined : hits.length}
+          resultHasMore={hasNextPage}
+          resultLoading={showSkeleton || updating}
+        />
         <div className="ml-auto">
           <SortSelect options={SEARCH_SORT_OPTIONS} defaultValue="relevance" />
         </div>
@@ -160,7 +173,7 @@ function SearchResults() {
         <FilterSidebar facets={facets} />
 
         <div className="min-w-0">
-          {isLoading ? (
+          {showSkeleton ? (
             <ProductGridSkeleton count={12} cols={4} />
           ) : isError ? (
             <EmptyState
@@ -186,7 +199,13 @@ function SearchResults() {
               }
             />
           ) : (
-            <>
+            <div
+              aria-busy={updating}
+              className={cn(
+                "transition-opacity duration-200",
+                updating && "pointer-events-none opacity-50",
+              )}
+            >
               {/* Best-effort search-click analytics; cards stay keyboard-navigable links. */}
               <div onClickCapture={handleResultsClick}>
                 <ProductGrid products={products} cols={4} />
@@ -198,14 +217,14 @@ function SearchResults() {
                     variant="outline"
                     size="lg"
                     onClick={() => void fetchNextPage()}
-                    disabled={isFetchingNextPage}
+                    disabled={isFetchingNextPage || updating}
                   >
                     {isFetchingNextPage && <Spinner className="size-4" />}
                     {isFetchingNextPage ? "Loading…" : "Load more"}
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

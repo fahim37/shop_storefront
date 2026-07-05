@@ -26,7 +26,25 @@ type LensState = {
   /** Lens size (px) — panel size / ZOOM. */
   lw: number;
   lh: number;
+  /** Zoom-panel width (px) — spans the full info column to the right. */
+  panelW: number;
 };
+
+/**
+ * Width of the zoom panel so it fills the PDP's right (info) column: from the
+ * gallery's right edge + grid gutter to the page content's right edge. Falls
+ * back to the hero width if the layout can't be measured (SSR/odd wrappers).
+ */
+const PDP_GRID_GAP = 40; // matches the top grid's `lg:gap-10`
+function zoomPanelWidth(heroEl: HTMLElement, heroBox: DOMRect): number {
+  const wrap = heroEl.closest<HTMLElement>(".wrap");
+  if (!wrap) return heroBox.width;
+  const padRight = parseFloat(getComputedStyle(wrap).paddingRight) || 0;
+  const contentRight = wrap.getBoundingClientRect().right - padRight;
+  const width = contentRight - heroBox.right - PDP_GRID_GAP;
+  // Guard against a collapsed/negative measurement — keep the hero-width panel.
+  return width > heroBox.width * 0.4 ? width : heroBox.width;
+}
 
 /**
  * PDP image gallery: a thumbnail rail (vertical on desktop, horizontal scroll
@@ -93,9 +111,13 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     Math.min(Math.max(v, min), max);
 
   const moveLens = (e: React.MouseEvent) => {
-    const box = heroRef.current?.getBoundingClientRect();
-    if (!box) return;
-    const lw = box.width / ZOOM;
+    const hero = heroRef.current;
+    const box = hero?.getBoundingClientRect();
+    if (!hero || !box) return;
+    // The panel fills the info column; the lens is its footprint back on the
+    // hero (panel size ÷ ZOOM), so the magnified view matches the lens exactly.
+    const panelW = zoomPanelWidth(hero, box);
+    const lw = panelW / ZOOM;
     const lh = box.height / ZOOM;
     setLens({
       x: clamp(e.clientX - box.left - lw / 2, 0, box.width - lw),
@@ -104,6 +126,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       h: box.height,
       lw,
       lh,
+      panelW,
     });
   };
 
@@ -214,11 +237,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
           )}
         </div>
 
-        {/* Zoom panel — overlays the info column to the right (lg+ only) */}
+        {/* Zoom panel — fills the info column to the right (lg+ only) */}
         {zooming && lens && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-[calc(100%+16px)] z-30 hidden w-full overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-pop)] animate-in fade-in-0 zoom-in-95 duration-150 lg:block"
+            style={{ width: lens.panelW }}
+            className="pointer-events-none absolute inset-y-0 left-[calc(100%+40px)] z-30 hidden overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-pop)] animate-in fade-in-0 zoom-in-95 duration-150 lg:block"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -300,11 +324,14 @@ function MobileGallery({
 
   return (
     <div className="sm:hidden">
-      <div className="relative">
+      {/* Full-bleed hero: negative margins cancel the page's `.wrap` inline
+          padding (1rem) and its top padding (py-3) so the image runs edge to
+          edge and flush to the top, under the floating PdpTopBar chips. */}
+      <div className="relative -mx-4 -mt-3">
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-muted"
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-muted"
         >
           {images.length > 0 ? (
             images.map((img, i) => (

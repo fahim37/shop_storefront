@@ -478,6 +478,8 @@ export interface Review {
   createdAt: string;
   updatedAt: string;
   reviewerName: string | null;
+  /** Reviewer's profile photo (usable URL or /v1 media path); null if none. */
+  reviewerPhotoUrl: string | null;
   media: ReviewMedia[];
   response: ReviewResponse | null;
 }

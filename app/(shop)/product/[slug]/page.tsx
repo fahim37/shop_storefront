@@ -20,7 +20,9 @@ import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductDetailSections } from "@/components/product/reviews-section";
 import { RecentlyViewedTracker } from "@/components/product/recently-viewed-tracker";
 import { ChatWithSellerButton } from "@/components/product/chat-with-seller-button";
+import { PdpTopBar } from "@/components/product/pdp-top-bar";
 import { fromRecHit, type CardProduct } from "@/lib/api/card";
+import { cn } from "@/lib/utils";
 import { formatCompact, formatRating } from "@/lib/format";
 import { renderDescriptionHtml } from "@/lib/sanitize";
 import {
@@ -80,11 +82,37 @@ export async function generateMetadata({
   }
 }
 
+// Each trust item carries its own accent: a soft-tinted icon tile plus a
+// fainter matching card wash, so the strip reads as four distinct assurances.
 const DELIVERY_ITEMS = [
-  { icon: Truck, title: "Deliver to Dhaka", sub: "2–5 days nationwide" },
-  { icon: Wallet, title: "Cash on delivery", sub: "Pay at your door" },
-  { icon: RotateCcw, title: "7-day returns", sub: "Free return pickup" },
-  { icon: ShieldCheck, title: "1-year warranty", sub: "Seller-backed" },
+  {
+    icon: Wallet,
+    title: "Cash on delivery",
+    sub: "Pay at your door",
+    tile: "bg-primary/10 text-primary",
+    card: "border-primary/10 bg-primary/5",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Authentic products",
+    sub: "Verified seller KYC",
+    tile: "bg-amber/20 text-amber-deep",
+    card: "border-amber/25 bg-amber/10",
+  },
+  {
+    icon: Truck,
+    title: "64-district delivery",
+    sub: "2–5 days nationwide",
+    tile: "bg-green/10 text-green",
+    card: "border-green/15 bg-green/5",
+  },
+  {
+    icon: RotateCcw,
+    title: "7-day returns",
+    sub: "Free return pickup",
+    tile: "bg-red/10 text-red",
+    card: "border-red/10 bg-red/5",
+  },
 ];
 
 export default async function ProductPage({ params }: PageParams) {
@@ -126,8 +154,11 @@ export default async function ProductPage({ params }: PageParams) {
   const descriptionHtml = renderDescriptionHtml(product.description);
 
   return (
-    <div className="wrap py-3 pb-10 sm:py-4 sm:pb-16">
-      <Breadcrumbs items={crumbs} className="mb-3 sm:mb-4" />
+    // Mobile bottom padding clears the fixed PdpActionBar; breadcrumbs yield
+    // to the floating PdpTopBar chips, which overlay the gallery Daraz-style.
+    <div className="wrap py-3 pb-32 sm:py-4 md:pb-16">
+      <PdpTopBar title={product.title} />
+      <Breadcrumbs items={crumbs} className="mb-3 max-md:hidden sm:mb-4" />
 
       {/* Top: gallery + info */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-10">
@@ -182,9 +213,19 @@ export default async function ProductPage({ params }: PageParams) {
           {DELIVERY_ITEMS.map((u) => (
             <div
               key={u.title}
-              className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3"
+              className={cn(
+                "flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3",
+                u.card,
+              )}
             >
-              <u.icon className="size-[18px] shrink-0 text-primary sm:size-5" strokeWidth={1.6} />
+              <span
+                className={cn(
+                  "grid size-9 shrink-0 place-items-center rounded-lg sm:size-10",
+                  u.tile,
+                )}
+              >
+                <u.icon className="size-[18px] sm:size-5" strokeWidth={1.9} />
+              </span>
               <span className="min-w-0">
                 <b className="block truncate text-[12px] font-extrabold sm:text-[12.5px]">
                   {u.title}

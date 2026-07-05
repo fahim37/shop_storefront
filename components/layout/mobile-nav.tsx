@@ -3,18 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronRight, Heart, LogOut, Menu, User } from "lucide-react";
 import {
-  Bell,
-  ChevronRight,
-  Grid3x3,
-  Heart,
-  Home,
-  LogOut,
-  Menu,
-  ShoppingCart,
-  User,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  AccountIcon,
+  BellIcon,
+  CartIcon,
+  CategoriesIcon,
+  HomeIcon,
+} from "@/components/icons/nav-icons";
+import { cn, isProductPath } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -110,8 +107,8 @@ export function MobileNav() {
           {/* quick links */}
           <nav className="border-b border-border p-2">
             {[
-              { label: "Home", href: "/", icon: Home },
-              { label: "My orders", href: "/account/orders", icon: ShoppingCart },
+              { label: "Home", href: "/", icon: HomeIcon },
+              { label: "My orders", href: "/account/orders", icon: CartIcon },
               { label: "Wishlist", href: "/account/wishlist", icon: Heart },
             ].map((l) => (
               <Link
@@ -169,11 +166,11 @@ export function MobileNav() {
 }
 
 const TABS = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Categories", href: "/category/electronics", icon: Grid3x3 },
-  { label: "Cart", href: "#cart", icon: ShoppingCart, isCart: true },
-  { label: "Alerts", href: "/account/notifications", icon: Bell, isAlerts: true },
-  { label: "Account", href: "/account", icon: User },
+  { label: "Home", href: "/", icon: HomeIcon },
+  { label: "Categories", href: "/category/electronics", icon: CategoriesIcon },
+  { label: "Cart", href: "#cart", icon: CartIcon, isCart: true },
+  { label: "Alerts", href: "/account/notifications", icon: BellIcon, isAlerts: true },
+  { label: "Account", href: "/account", icon: AccountIcon },
 ];
 
 export function MobileBottomNav() {
@@ -182,6 +179,11 @@ export function MobileBottomNav() {
   const count = useCartCount();
   const { data: unread } = useUnreadCount();
   const unreadCount = unread?.count ?? 0;
+
+  // Product pages replace the tab bar with the PDP's own sticky action bar
+  // (Store / Chat / Add to cart / Buy now) — showing both would stack two
+  // bottom bars.
+  if (isProductPath(pathname)) return null;
 
   // Single active slot drives both the tab tint and the sliding indicator/glow
   // (hidden entirely on routes that aren't in the bar, e.g. product pages).
@@ -199,7 +201,7 @@ export function MobileBottomNav() {
   );
 
   return (
-    <nav className="sticky bottom-0 z-40 overflow-hidden rounded-t-[20px] bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
+    <nav className="sticky bottom-0 z-40 overflow-hidden bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
       {/* soft glow trailing the active tab */}
       <div className={cn(slideCls, "inset-y-0 flex items-center justify-center")} style={slide}>
         <span
@@ -235,7 +237,7 @@ export function MobileBottomNav() {
                     : "text-faint",
                 )}
               >
-                <t.icon className="size-[22px]" strokeWidth={active ? 2.1 : 1.7} />
+                <t.icon className="size-[22px]" />
                 {t.isCart && count > 0 && (
                   <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[10px] font-bold text-white">
                     {count}

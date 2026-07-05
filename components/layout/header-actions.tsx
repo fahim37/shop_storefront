@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, LogOut, Package, ShoppingCart, Star, User } from "lucide-react";
+import { Heart, LogOut, Package, Star } from "lucide-react";
+import { AccountIcon, CartIcon } from "@/components/icons/nav-icons";
 import { Spinner } from "@/components/ui/spinner";
 import {
   DropdownMenu,
@@ -40,7 +41,7 @@ export function AccountMenu() {
         onClick={() => openAuth("login")}
         className="flex items-center gap-2 text-xs font-bold text-ink"
       >
-        <User className="size-6" strokeWidth={1.6} />
+        <AccountIcon className="size-6" />
         <span className="text-left leading-tight">
           <small className="block text-[10.5px] font-semibold text-faint">Hello,</small>
           Sign in
@@ -75,7 +76,7 @@ export function AccountMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/account">
-            <User className="size-4 text-faint" />
+            <AccountIcon className="size-4 text-faint" />
             My account
           </Link>
         </DropdownMenuItem>
@@ -153,7 +154,7 @@ export function CartButton({ className }: { className?: string }) {
       className={cn("group flex items-center gap-2 text-xs font-bold text-ink", className)}
     >
       <span className="relative">
-        <ShoppingCart className="size-6" strokeWidth={1.6} />
+        <CartIcon className="size-6" />
         <CountBadge count={count} className="bg-amber text-blue-deep" />
       </span>
       <span className="hidden text-left leading-tight lg:block">

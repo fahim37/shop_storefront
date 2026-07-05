@@ -89,7 +89,7 @@ quantity, maxQuantity, unitPricePaisa, lineTotalPaisa, livePricePaisa, priceChan
 ## Reviews & Q&A
 
 - `GET /products/:id/reviews?limit` → `{ reviews:[{ id, userId, rating, title, body, recommend, helpfulCount,
-  createdAt, reviewerName, media:[{ url, mediaType, position }], response:{ vendorId, body, createdAt }|null }] }`.
+  createdAt, reviewerName, reviewerPhotoUrl, media:[{ url, mediaType, position }], response:{ vendorId, body, createdAt }|null }] }`.
   No aggregate here — use product.ratingAverage/ratingCount.
 - `POST /products/:id/reviews { productId, subOrderId, rating, title?, body?, recommend?, mediaIds? }` (verified purchase).
 - `POST /reviews/:id/helpful { isHelpful }` → `{ helpfulCount }`.

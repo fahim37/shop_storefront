@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useQuery,
   type UseQueryOptions,
@@ -67,6 +68,9 @@ export function useProductsInfinite(
     initialData: initialPage
       ? { pages: [initialPage], pageParams: [undefined] }
       : undefined,
+    // Filter/sort changes keep the previous grid on screen (dimmed by the
+    // listing) instead of flashing a skeleton; `isPlaceholderData` flags it.
+    placeholderData: keepPreviousData,
   });
 }
 

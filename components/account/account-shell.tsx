@@ -4,17 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
   ChevronLeft,
   Heart,
   KeyRound,
   LogOut,
-  type LucideIcon,
   MapPin,
   Package,
   Star,
-  User,
 } from "lucide-react";
+import { AccountIcon, BellIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,17 +23,17 @@ import { AccountAvatar } from "@/components/account/account-avatar";
 interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
 }
 
 const NAV: NavItem[] = [
-  { label: "Personal information", href: "/account", icon: User, exact: true },
+  { label: "Personal information", href: "/account", icon: AccountIcon, exact: true },
   { label: "Order history", href: "/account/orders", icon: Package },
   { label: "My wishlist", href: "/account/wishlist", icon: Heart },
   { label: "Addresses", href: "/account/addresses", icon: MapPin },
   { label: "My reviews", href: "/account/reviews", icon: Star },
-  { label: "Notifications", href: "/account/notifications", icon: Bell },
+  { label: "Notifications", href: "/account/notifications", icon: BellIcon },
   { label: "Change password", href: "/account/password", icon: KeyRound },
 ];
 
@@ -52,7 +50,7 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
       <div className="wrap py-16">
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-10 text-center">
           <span className="flex size-14 items-center justify-center rounded-full bg-blue-soft text-primary">
-            <User className="size-6" />
+            <AccountIcon className="size-6" />
           </span>
           <h1 className="font-display text-xl font-extrabold">Sign in to your account</h1>
           <p className="text-sm text-muted-foreground">

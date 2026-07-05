@@ -10,13 +10,16 @@ import {
   CategoryMegaMenu,
 } from "@/components/layout/mega-menu";
 import { MobileMenuButton } from "@/components/layout/mobile-nav";
+import { HeaderShell } from "@/components/layout/pdp-chrome";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 bg-primary md:bg-card">
-      {/* main nav — solid brand-blue bar on mobile, white on desktop */}
-      <div className="bg-primary md:border-b md:border-border md:bg-card">
-        <div className="wrap flex h-[52px] items-center gap-3 md:h-[76px] md:gap-7">
+    <HeaderShell>
+      {/* main nav — solid brand-blue bar on mobile, white on desktop.
+          pt-[safe-area-inset-top] pushes the row below the phone status-bar
+          notification icons (the blue fills the inset); a no-op on desktop. */}
+      <div className="bg-primary pt-[env(safe-area-inset-top)] md:border-b md:border-border md:bg-card md:pt-0">
+        <div className="wrap flex h-11 items-center gap-3 md:h-[76px] md:gap-7">
           <MobileMenuButton />
           <Logo className="hidden md:flex" />
           <Logo className="md:hidden" size="sm" light />
@@ -48,6 +51,6 @@ export function SiteHeader() {
           </div>
         </div>
       </div>
-    </header>
+    </HeaderShell>
   );
 }

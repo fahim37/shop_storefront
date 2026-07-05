@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useQuery,
   type UseQueryOptions,
@@ -60,6 +61,9 @@ export function useSearchInfinite(params: SearchParams, enabled = true) {
     queryFn: ({ pageParam }) =>
       http.get<SearchResponse>("/search", { params: searchQuery(params, pageParam) }),
     getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
+    // Keep the previous hits on screen (dimmed) while a filter/sort refetch
+    // runs — no skeleton flash between filter states.
+    placeholderData: keepPreviousData,
   });
 }
 

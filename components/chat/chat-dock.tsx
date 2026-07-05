@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, MessageCircle, X } from "lucide-react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn, isProductPath } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useChatStore } from "@/lib/chat/use-chat-store";
 import { useChatSocket } from "@/lib/chat/use-chat-socket";
@@ -20,6 +21,7 @@ import { ChatThread } from "@/components/chat/chat-thread";
  */
 export function ChatDock() {
   const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
   useChatSocket();
 
   const open = useChatStore((s) => s.open);
@@ -43,6 +45,9 @@ export function ChatDock() {
         className={cn(
           "fixed bottom-20 right-4 z-40 grid size-14 place-items-center rounded-full bg-primary text-white shadow-[var(--shadow-panel)] transition-transform hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6",
           open && "pointer-events-none opacity-0",
+          // Mobile PDP has its own Chat button in the sticky action bar; the
+          // floating launcher would crowd it.
+          isProductPath(pathname) && "max-md:hidden",
         )}
       >
         <MessageCircle className="size-6" strokeWidth={2.2} />

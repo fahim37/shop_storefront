@@ -12,6 +12,7 @@ import { ApiError } from "@/lib/api/http";
 import { formatPaisa } from "@/lib/format";
 import { useAddToCart } from "@/lib/api/cart";
 import { WishlistButton } from "@/components/product/wishlist-button";
+import { PdpActionBar } from "@/components/product/pdp-action-bar";
 import { useUIStore } from "@/lib/store/ui";
 import { visibleOptionEntries, carriedColorHex } from "@/lib/options";
 import type { ProductDetail, ProductVariant } from "@/lib/api/types";
@@ -286,10 +287,17 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
             <Check className="size-4" strokeWidth={3} /> In stock
           </span>
         )}
+        {/* On mobile the CTA row lives in the sticky PdpActionBar, so the
+            wishlist heart rides here instead. */}
+        <WishlistButton
+          productId={detail.product.id}
+          heartClassName="size-5"
+          className="ml-auto size-10 shrink-0 rounded-full border border-border text-sub hover:border-red/40 hover:text-red md:hidden"
+        />
       </div>
 
-      {/* CTAs */}
-      <div className="flex gap-2.5">
+      {/* CTAs — desktop/tablet inline; mobile uses the sticky bottom bar */}
+      <div className="hidden gap-2.5 md:flex">
         {outOfStock ? (
           <Button variant="soft" className="flex-1" disabled>
             <Ban className="size-4" /> Out of stock
@@ -328,6 +336,18 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
           SKU: {activeVariant.sku} · {formatPaisa(activeVariant.pricePaisa)} each
         </p>
       )}
+
+      {/* Mobile sticky CTA bar (fixed, so its place in the tree is cosmetic) */}
+      <PdpActionBar
+        vendorId={detail.product.vendorId}
+        vendorName={detail.product.vendorName}
+        productId={detail.product.id}
+        productTitle={detail.product.title}
+        outOfStock={outOfStock}
+        buyingNow={buyingNow}
+        onAddToCart={addToCart}
+        onBuyNow={buyNow}
+      />
     </div>
   );
 }
