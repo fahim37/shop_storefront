@@ -207,8 +207,10 @@ export default async function ProductPage({ params }: PageParams) {
         </div>
       </div>
 
-      {/* Delivery + vendor strip */}
-      <div className="mt-5 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      {/* Delivery + vendor strip. Flex-col on mobile (grid only at lg): a bare
+          `grid` here is a single `auto`-sized column that grows to its content's
+          max-content and pushes the page wider than the viewport. */}
+      <div className="mt-5 flex flex-col gap-3 sm:mt-8 sm:gap-4 lg:grid lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {DELIVERY_ITEMS.map((u) => (
             <div
