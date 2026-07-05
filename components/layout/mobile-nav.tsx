@@ -259,10 +259,10 @@ export function MobileBottomNav() {
               </span>
             </>
           );
-          // pt-[18px] keeps the badge (rides 7px above the icon, plus its
+          // pt-[13px] keeps the badge (rides 7px above the icon, plus its
           // pulse) clear of the 4px indicator bar at the top edge.
           const cls =
-            "flex flex-1 flex-col items-center gap-1 pb-2 pt-[18px] transition-transform duration-[180ms] ease-out active:scale-[0.92]";
+            "flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-[13px] transition-transform duration-[180ms] ease-out active:scale-[0.92]";
           return t.isCart ? (
             <button key={t.label} type="button" onClick={openCart} className={cls}>
               {content}
