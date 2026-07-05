@@ -240,7 +240,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
   const reviews = pages.flatMap((p) => p.reviews);
   const summary = pages[0];
 
-  // Deep-link target: /products/[slug]?review=<id>#reviews arrives here from the
+  // Deep-link target: /product/[slug]?review=<id>#reviews arrives here from the
   // "seller replied to your review" notification. Read the id on the client
   // (avoids a Suspense boundary for useSearchParams), then auto-load pages until
   // it's loaded and scroll it into view.

@@ -206,7 +206,7 @@ function ReplyForm({ review }: { review: MyReview }) {
 
 function MyReviewCard({ review }: { review: MyReview }) {
   const productHref = review.productSlug
-    ? `/products/${review.productSlug}?review=${review.id}#reviews`
+    ? `/product/${review.productSlug}?review=${review.id}#reviews`
     : undefined;
   const hasConversation = !!review.response || review.replies.length > 0;
 

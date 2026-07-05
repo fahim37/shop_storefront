@@ -47,7 +47,7 @@ export function notificationHref(
     const slug = typeof vars.productSlug === "string" ? vars.productSlug : "";
     const reviewId = typeof vars.reviewId === "string" ? vars.reviewId : "";
     if (slug && reviewId) {
-      return `/products/${slug}?review=${reviewId}#reviews`;
+      return `/product/${slug}?review=${reviewId}#reviews`;
     }
     return "/account/reviews";
   }
