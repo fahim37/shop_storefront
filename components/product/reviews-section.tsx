@@ -5,12 +5,13 @@ import Link from "next/link";
 import {
   CheckCircle2,
   ChevronDown,
+  CornerDownRight,
   HelpCircle,
-  MessageSquare,
   MessageSquareQuote,
   MessagesSquare,
   PencilLine,
   Star,
+  Store,
   ThumbsUp,
   X,
 } from "lucide-react";
@@ -41,6 +42,7 @@ import {
   useAskQuestion,
   useInfiniteProductReviews,
   useProductQuestions,
+  useReplyToReview,
   useReviewHelpful,
 } from "@/lib/api/reviews";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -48,6 +50,7 @@ import type {
   ProductCardRow,
   Question,
   Review,
+  ReviewReplyMessage,
   ReviewSort,
 } from "@/lib/api/types";
 
@@ -236,6 +239,29 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
   const pages = query.data?.pages ?? [];
   const reviews = pages.flatMap((p) => p.reviews);
   const summary = pages[0];
+
+  // Deep-link target: /products/[slug]?review=<id>#reviews arrives here from the
+  // "seller replied to your review" notification. Read the id on the client
+  // (avoids a Suspense boundary for useSearchParams), then auto-load pages until
+  // it's loaded and scroll it into view.
+  const [targetReviewId] = React.useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("review");
+  });
+  const scrolledRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!targetReviewId || scrolledRef.current) return;
+    if (reviews.some((r) => r.id === targetReviewId)) {
+      const el = document.getElementById(`review-${targetReviewId}`);
+      if (el) {
+        scrolledRef.current = true;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } else if (query.hasNextPage && !query.isFetchingNextPage) {
+      void query.fetchNextPage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetReviewId, reviews, query.hasNextPage, query.isFetchingNextPage]);
   const total = summary?.total ?? product.ratingCount;
   const shownCount = starFilter
     ? (summary?.distribution?.[String(starFilter)] ?? reviews.length)
@@ -338,7 +364,12 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
           <>
             <ul className="flex flex-col gap-4 sm:gap-5">
               {reviews.map((rv) => (
-                <ReviewItem key={rv.id} review={rv} productId={product.id} />
+                <ReviewItem
+                  key={rv.id}
+                  review={rv}
+                  productId={product.id}
+                  highlight={rv.id === targetReviewId}
+                />
               ))}
             </ul>
 
@@ -469,13 +500,21 @@ function RatingSummaryCard({
 function ReviewItem({
   review,
   productId,
+  highlight = false,
 }: {
   review: Review;
   productId: string;
+  /** Deep-link target (from the "seller replied" notification) — ring it. */
+  highlight?: boolean;
 }) {
+  const { user } = useAuth();
   const helpful = useReviewHelpful(productId);
   const [bumped, setBumped] = React.useState(false);
   const helpfulCount = review.helpfulCount + (bumped ? 1 : 0);
+
+  // The author can reply back once the seller has responded.
+  const isAuthor = !!user && user.id === review.userId;
+  const canReply = isAuthor && !!review.response;
 
   const markHelpful = () => {
     if (bumped || helpful.isPending) return;
@@ -494,7 +533,13 @@ function ReviewItem({
   };
 
   return (
-    <li className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <li
+      id={`review-${review.id}`}
+      className={cn(
+        "scroll-mt-24 rounded-2xl border bg-card p-4 transition-colors sm:p-5",
+        highlight ? "border-primary/50 ring-2 ring-primary/25" : "border-border",
+      )}
+    >
       <div className="flex items-start gap-3">
         <Avatar className="size-10">
           {review.reviewerPhotoUrl && (
@@ -557,15 +602,12 @@ function ReviewItem({
       )}
 
       {review.response && (
-        <div className="mt-3 rounded-xl border border-border bg-blue-soft/50 p-3">
-          <div className="flex items-center gap-1.5 text-[12px] font-extrabold text-primary">
-            <MessageSquare className="size-3.5" strokeWidth={2.4} /> Seller
-            response
-          </div>
-          <p className="mt-1 text-[13px] leading-relaxed text-sub">
-            {review.response.body}
-          </p>
-        </div>
+        <ReviewConversation
+          review={review}
+          productId={productId}
+          canReply={canReply}
+          reviewerName={review.reviewerName}
+        />
       )}
 
       <button
@@ -583,6 +625,170 @@ function ReviewItem({
         Helpful ({helpfulCount})
       </button>
     </li>
+  );
+}
+
+/**
+ * The seller's reply plus the back-and-forth thread beneath a review. The
+ * seller's first reply comes from `review.response`; every follow-up is a
+ * `review.replies` message. The review's author gets a reply box at the bottom.
+ */
+function ReviewConversation({
+  review,
+  productId,
+  canReply,
+  reviewerName,
+}: {
+  review: Review;
+  productId: string;
+  canReply: boolean;
+  reviewerName: string | null;
+}) {
+  return (
+    <div className="mt-3 space-y-2">
+      {review.response && (
+        <ConversationBubble
+          role="vendor"
+          body={review.response.body}
+          createdAt={review.response.createdAt}
+        />
+      )}
+      {review.replies.map((m) => (
+        <ConversationBubble
+          key={m.id}
+          role={m.authorRole}
+          body={m.body}
+          createdAt={m.createdAt}
+          authorName={m.authorRole === "customer" ? reviewerName : null}
+        />
+      ))}
+      {canReply && <ReviewReplyForm reviewId={review.id} productId={productId} />}
+    </div>
+  );
+}
+
+function ConversationBubble({
+  role,
+  body,
+  createdAt,
+  authorName,
+}: {
+  role: ReviewReplyMessage["authorRole"];
+  body: string;
+  createdAt: string;
+  authorName?: string | null;
+}) {
+  const isVendor = role === "vendor";
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-3",
+        isVendor
+          ? "border-primary/15 bg-blue-soft/50"
+          : "border-border bg-muted/40",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-1.5 text-[12px] font-extrabold",
+          isVendor ? "text-primary" : "text-sub",
+        )}
+      >
+        {isVendor ? (
+          <Store className="size-3.5" strokeWidth={2.4} />
+        ) : (
+          <CornerDownRight className="size-3.5" strokeWidth={2.4} />
+        )}
+        {isVendor ? "Seller" : authorName || "Buyer"}
+        <span className="ml-1 text-[11px] font-semibold text-faint">
+          {formatRelative(createdAt)}
+        </span>
+      </div>
+      <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-sub">
+        {body}
+      </p>
+    </div>
+  );
+}
+
+/** Inline reply box shown to the review author under the seller's response. */
+function ReviewReplyForm({
+  reviewId,
+  productId,
+}: {
+  reviewId: string;
+  productId: string;
+}) {
+  const reply = useReplyToReview(productId);
+  const [open, setOpen] = React.useState(false);
+  const [body, setBody] = React.useState("");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = body.trim();
+    if (trimmed.length < 2) {
+      toast.error("Please write a longer reply.");
+      return;
+    }
+    reply.mutate(
+      { reviewId, body: trimmed },
+      {
+        onSuccess: () => {
+          setBody("");
+          setOpen(false);
+          toast.success("Reply sent", {
+            description: "The seller has been notified.",
+          });
+        },
+        onError: (err) =>
+          toast.error(
+            err instanceof ApiError ? err.message : "Couldn't send your reply.",
+          ),
+      },
+    );
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+      >
+        <CornerDownRight className="size-3.5" strokeWidth={2.4} /> Reply to seller
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-2">
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        maxLength={2000}
+        autoFocus
+        placeholder="Write your reply to the seller…"
+        className="flex w-full resize-none rounded-[var(--radius)] border border-input bg-muted px-3.5 py-2.5 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      />
+      <div className="flex items-center gap-2">
+        <Button type="submit" variant="primary" size="sm" loading={reply.isPending}>
+          {reply.isPending ? "Sending…" : "Send reply"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={reply.isPending}
+          onClick={() => {
+            setOpen(false);
+            setBody("");
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
 

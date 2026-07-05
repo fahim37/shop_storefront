@@ -462,6 +462,21 @@ export interface ReviewResponse {
   updatedAt: string;
 }
 
+/**
+ * A follow-up message in a review conversation — after the seller's first
+ * `response`, the buyer and seller can keep replying. `authorRole` says who
+ * wrote it.
+ */
+export interface ReviewReplyMessage {
+  id: string;
+  reviewId: string;
+  authorRole: "customer" | "vendor";
+  authorUserId: string | null;
+  authorVendorId: string | null;
+  body: string;
+  createdAt: string;
+}
+
 export interface Review {
   id: string;
   userId: string;
@@ -482,6 +497,8 @@ export interface Review {
   reviewerPhotoUrl: string | null;
   media: ReviewMedia[];
   response: ReviewResponse | null;
+  /** Seller reply + follow-up conversation, oldest first. */
+  replies: ReviewReplyMessage[];
 }
 
 /**
@@ -508,6 +525,10 @@ export interface MyReview {
   thumbnailMediaId: string | null;
   /** Photos already attached to this review (shown + removable when editing). */
   media: ReviewMedia[];
+  /** The seller's reply to this review, if any. */
+  response: ReviewResponse | null;
+  /** Follow-up conversation after the seller's reply, oldest first. */
+  replies: ReviewReplyMessage[];
 }
 
 export type ReviewSort = "recent" | "helpful" | "rating_desc" | "rating_asc";

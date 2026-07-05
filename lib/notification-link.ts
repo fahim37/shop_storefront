@@ -39,6 +39,18 @@ export function notificationHref(
         : undefined);
     return orderId ? `/account/orders/${orderId}` : "/account/orders";
   }
+  // Seller replied to the buyer's review → deep-link to that review on the
+  // product page (scrolls to it + opens the conversation). Falls back to the
+  // My reviews page when the payload predates the slug/id vars.
+  if (key === "review.response") {
+    const vars = (n.payload?.vars ?? {}) as Record<string, unknown>;
+    const slug = typeof vars.productSlug === "string" ? vars.productSlug : "";
+    const reviewId = typeof vars.reviewId === "string" ? vars.reviewId : "";
+    if (slug && reviewId) {
+      return `/products/${slug}?review=${reviewId}#reviews`;
+    }
+    return "/account/reviews";
+  }
   if (key.startsWith("review.")) return "/account/reviews";
   if (key === "system.welcome") return "/";
 

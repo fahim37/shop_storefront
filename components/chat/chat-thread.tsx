@@ -7,6 +7,7 @@ import { Package, SendHorizontal, Store, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { cn } from "@/lib/utils";
 import { formatRelative, initials } from "@/lib/format";
 import { emitTyping } from "@/lib/realtime/socket";
@@ -249,7 +250,7 @@ export function ChatThread() {
             </button>
           </div>
         ) : null}
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1.5">
           <textarea
             value={text}
             onChange={(e) => onChange(e.target.value)}
@@ -257,6 +258,13 @@ export function ChatThread() {
             rows={1}
             placeholder="Write a message…"
             className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-[13px] font-medium outline-none focus:border-primary"
+          />
+          <EmojiPicker
+            align="end"
+            side="top"
+            label="Add emoji"
+            className="size-10 shrink-0 rounded-xl"
+            onSelect={(emoji) => onChange(text + emoji)}
           />
           <Button
             type="button"

@@ -13,6 +13,7 @@ import type {
   Question,
   Review,
   ReviewListResponse,
+  ReviewReplyMessage,
   ReviewSort,
 } from "@/lib/api/types";
 
@@ -153,6 +154,26 @@ export function useReviewHelpful(productId: string) {
         isHelpful: vars.isHelpful,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.reviews(productId) }),
+  });
+}
+
+/**
+ * Post the buyer's reply to the seller's response on their own review. Only
+ * allowed once the seller has replied (the backend enforces this). Invalidates
+ * the product's review list and the caller's "My reviews" list so the new
+ * message shows in both places.
+ */
+export function useReplyToReview(productId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { reviewId: string; body: string }) =>
+      http.post<ReviewReplyMessage>(`/reviews/${vars.reviewId}/replies`, {
+        body: vars.body,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.reviews(productId) });
+      void qc.invalidateQueries({ queryKey: qk.myReviews() });
+    },
   });
 }
 

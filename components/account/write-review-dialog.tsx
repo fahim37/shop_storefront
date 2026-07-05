@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { toast } from "@/components/ui/sonner";
 import {
   useAttachReviewMedia,
@@ -198,7 +199,7 @@ export function WriteReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-lg overflow-y-auto p-5 sm:p-6">
         <DialogHeader>
           <DialogTitle className="font-display">
             {isEdit ? "Edit your review" : "Write a review"}
@@ -295,9 +296,20 @@ export function WriteReviewDialog({
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             />
-            <p className="self-end text-xs text-faint">
-              {body.length}/{BODY_MAX}
-            </p>
+            <div className="flex items-center justify-between">
+              <EmojiPicker
+                align="start"
+                side="top"
+                label="Add emoji to your review"
+                className="size-8"
+                onSelect={(emoji) =>
+                  setBody((b) => (b.length + emoji.length <= BODY_MAX ? b + emoji : b))
+                }
+              />
+              <p className="text-xs text-faint">
+                {body.length}/{BODY_MAX}
+              </p>
+            </div>
           </div>
 
           {/* Photos */}
