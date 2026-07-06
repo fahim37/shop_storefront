@@ -282,22 +282,22 @@ export function ProfileOverview() {
             className="pointer-events-none absolute -right-8 -top-10 size-36 rounded-full bg-amber/12"
           />
         </div>
-        <div className="relative -mt-11 px-5 pb-5 sm:px-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="relative px-5 pb-5 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
             <div className="flex items-end gap-4">
               <AccountAvatar
                 fullName={fullName}
                 photoUrl={me.profile?.photoUrl ?? null}
-                className="size-[88px] rounded-full bg-blue-deep font-display text-3xl font-extrabold text-amber ring-4 ring-card"
+                className="-mt-12 size-[84px] rounded-full bg-blue-deep font-display text-3xl font-extrabold text-amber ring-4 ring-card"
               />
-              <div className="pb-1">
-                <p className="font-display text-lg font-extrabold text-ink">
+              <div className="min-w-0 pb-0.5">
+                <p className="truncate font-display text-lg font-extrabold text-ink">
                   {fullName}
                 </p>
                 <p className="mt-0.5 truncate text-13 text-sub">{me.email}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 pb-1">
+            <div className="flex items-center gap-2">
               {fullyVerified && (
                 <Badge variant="success" size="md" className="hidden sm:inline-flex">
                   <BadgeCheck className="size-3.5" />

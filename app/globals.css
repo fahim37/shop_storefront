@@ -275,6 +275,42 @@
   }
 }
 
+/* Mobile nav drawer: staggered row entrance + close-"X" draw-in. The panel
+ * itself slides via tw-animate-css; these only dress its contents, and they
+ * replay on every open because Radix unmounts the sheet when closed.
+ * Rows: --i is set inline per row; min() caps the tail so a long category
+ * list doesn't keep later rows (or the Log out footer) waiting. */
+@keyframes mnav-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+.mnav-item {
+  animation: mnav-in 0.4s var(--ease-out-soft) both;
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms + 80ms);
+}
+
+/* Each bar of the X sweeps a quarter turn into its resting angle (--bar-r)
+ * while growing from nothing; backwards-fill hides it through its inline
+ * stagger delay, and the spring ease adds a tiny settle wobble. */
+@keyframes x-bar-in {
+  from {
+    transform: translate(-50%, -50%) rotate(calc(var(--bar-r) + 90deg)) scaleX(0);
+  }
+}
+.x-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 2px;
+  width: 100%;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(var(--bar-r));
+  animation: x-bar-in 0.45s var(--ease-spring) backwards;
+}
+
 /* Order tracker (account → order detail): animated status stepper. The check
  * draws in via stroke-dashoffset, the current step pulses, and the progress
  * fill carries a sliding shine band (x on desktop, y on the mobile vertical

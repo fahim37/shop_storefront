@@ -14,6 +14,7 @@ import {
 import { cn, isProductPath } from "@/lib/utils";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -58,18 +59,32 @@ export function MobileNav() {
     if (pathname === href) window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Staggered row entrance: --i feeds .mnav-item's animation-delay.
+  const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="left" className="w-[88vw] max-w-sm">
+      <SheetContent side="left" swipeToClose hideClose className="w-[88vw] max-w-sm">
         <SheetHeader>
           <SheetTitle>
             <Logo size="sm" />
           </SheetTitle>
+          <SheetClose
+            aria-label="Close menu"
+            className="group ml-auto flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted/60 text-ink transition-[transform,background-color,border-color] duration-200 ease-out hover:border-primary/40 hover:bg-muted active:scale-[0.85] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {/* two bars draw into an X (see .x-bar); the wrapper spins a
+                quarter turn on hover/press for tactile feedback */}
+            <span className="relative block size-4 transition-transform duration-300 ease-spring group-hover:rotate-90 group-active:rotate-90">
+              <span className="x-bar" style={{ "--bar-r": "45deg", animationDelay: "160ms" } as React.CSSProperties} />
+              <span className="x-bar" style={{ "--bar-r": "-45deg", animationDelay: "240ms" } as React.CSSProperties} />
+            </span>
+          </SheetClose>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
           {/* account */}
-          <div className="border-b border-border p-4">
+          <div className="mnav-item border-b border-border p-4" style={stagger(0)}>
             {status === "authenticated" && user ? (
               <Link
                 href="/account"
@@ -110,12 +125,13 @@ export function MobileNav() {
               { label: "Home", href: "/", icon: HomeIcon },
               { label: "My orders", href: "/account/orders", icon: CartIcon },
               { label: "Wishlist", href: "/account/wishlist", icon: Heart },
-            ].map((l) => (
+            ].map((l, i) => (
               <Link
                 key={l.label}
                 href={l.href}
                 onClick={() => closeAndScroll(l.href)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-ink hover:bg-muted"
+                className="mnav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-ink hover:bg-muted"
+                style={stagger(1 + i)}
               >
                 <l.icon className="size-5 text-faint" />
                 {l.label}
@@ -125,17 +141,21 @@ export function MobileNav() {
 
           {/* categories */}
           <div className="p-2">
-            <p className="px-3 py-2 text-11 font-extrabold uppercase tracking-wide text-faint">
+            <p
+              className="mnav-item px-3 py-2 text-11 font-extrabold uppercase tracking-wide text-faint"
+              style={stagger(4)}
+            >
               Categories
             </p>
-            {roots.map((cat) => {
+            {roots.map((cat, i) => {
               const Icon = categoryIcon(cat.slug);
               return (
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
                   onClick={close}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-ink hover:bg-muted"
+                  className="mnav-item flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-ink hover:bg-muted"
+                  style={stagger(5 + i)}
                 >
                   <Icon className="size-5 text-primary" />
                   {cat.name}
@@ -147,7 +167,7 @@ export function MobileNav() {
         </div>
 
         {status === "authenticated" && (
-          <div className="border-t border-border p-2">
+          <div className="mnav-item border-t border-border p-2" style={stagger(3)}>
             <button
               type="button"
               onClick={() => {
@@ -214,7 +234,7 @@ export function MobileBottomNav() {
     transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
   };
   const slideCls = cn(
-    "pointer-events-none absolute left-0 w-1/5 transition-[transform,opacity] duration-[550ms] [transition-timing-function:cubic-bezier(0.3,1.35,0.4,1)]",
+    "pointer-events-none absolute left-0 w-1/5 transition-[transform,opacity] duration-[260ms] [transition-timing-function:cubic-bezier(0.34,1.12,0.5,1)]",
     activeIndex < 0 && "opacity-0",
   );
 
@@ -223,16 +243,6 @@ export function MobileBottomNav() {
       ref={navRef}
       className="sticky bottom-0 z-40 overflow-hidden border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
     >
-      {/* soft glow trailing the active tab */}
-      <div className={cn(slideCls, "inset-y-0 flex items-center justify-center")} style={slide}>
-        <span
-          className="size-[62px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, color-mix(in oklch, var(--primary) 16%, transparent) 0%, transparent 70%)",
-          }}
-        />
-      </div>
       {/* sliding top indicator */}
       <div className={cn(slideCls, "top-0 flex justify-center")} style={slide}>
         <span
@@ -252,7 +262,7 @@ export function MobileBottomNav() {
             <>
               <span
                 className={cn(
-                  "relative flex transition-[transform,color] duration-[450ms] ease-spring",
+                  "relative flex transition-[transform,color] duration-[280ms] ease-spring",
                   active
                     ? "-translate-y-[3px] scale-[1.12] text-primary"
                     : "text-faint",
@@ -260,19 +270,19 @@ export function MobileBottomNav() {
               >
                 <t.icon className="size-5" />
                 {t.isCart && count > 0 && (
-                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
+                  <span className="absolute -right-[9px] -top-[2px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
                     {count}
                   </span>
                 )}
                 {t.isAlerts && unreadCount > 0 && (
-                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
+                  <span className="absolute -right-[9px] -top-[2px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </span>
               <span
                 className={cn(
-                  "text-11 transition-colors duration-300",
+                  "text-11 transition-colors duration-200",
                   active ? "font-bold text-primary" : "font-medium text-faint",
                 )}
               >
@@ -280,10 +290,11 @@ export function MobileBottomNav() {
               </span>
             </>
           );
-          // pt-[13px] keeps the badge (rides 7px above the icon, plus its
-          // pulse) clear of the 4px indicator bar at the top edge.
+          // Badge sits at -top-[2px] (not higher) so the active tab's
+          // -translate-y-[3px] scale-[1.12] lift can't push it up into the
+          // 4px top indicator bar. pt-[13px] holds the icon's resting height.
           const cls =
-            "flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-[13px] transition-transform duration-[180ms] ease-out active:scale-[0.92]";
+            "flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-[13px] transition-transform duration-[120ms] ease-out active:scale-[0.92]";
           return (
             <Link
               key={t.label}
