@@ -32,6 +32,43 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { Notification, NotificationPrefs } from "@/lib/api/types";
 
 /* -------------------------------------------------------------------------- */
+/* Category classification + date grouping                                    */
+/* -------------------------------------------------------------------------- */
+
+type NotifCategory = "orders" | "replies" | "other";
+type NotifFilter = "all" | "orders" | "replies";
+
+function categoryOf(n: Notification): NotifCategory {
+  const k = n.templateKey;
+  if (
+    k.startsWith("order.") ||
+    k.startsWith("sub_order.") ||
+    k.startsWith("shipment.") ||
+    k.startsWith("payment.") ||
+    k.startsWith("return.")
+  )
+    return "orders";
+  if (k.startsWith("review.")) return "replies";
+  return "other";
+}
+
+const FILTERS: { key: NotifFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "orders", label: "Orders" },
+  { key: "replies", label: "Replies" },
+];
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Page                                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -40,11 +77,11 @@ export default function NotificationsPage() {
   const unread = useUnreadCount();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllRead();
+  const [filter, setFilter] = React.useState<NotifFilter>("all");
 
   // Order/shipment alerts deep-link to a specific order, but the notification
   // payload only carries the orderNumber — resolve it to the order's id so the
-  // row can point at /account/orders/[id]. Recent orders cover the realistic
-  // case; anything older falls back to the orders list.
+  // row can point at /account/orders/[id].
   const orders = useOrders({ limit: 50 });
   const resolveOrderId = React.useMemo(() => {
     const byNumber = new Map<string, string>();
@@ -56,6 +93,11 @@ export default function NotificationsPage() {
     () => list.data?.pages.flatMap((p) => p.data) ?? [],
     [list.data],
   );
+
+  const visible = React.useMemo(() => {
+    if (filter === "all") return notifications;
+    return notifications.filter((n) => categoryOf(n) === filter);
+  }, [notifications, filter]);
 
   const unreadCount = unread.data?.count ?? 0;
 
@@ -72,12 +114,13 @@ export default function NotificationsPage() {
     markAll.mutate(undefined, {
       onSuccess: (res) =>
         toast.success("All notifications marked as read", {
-          description:
-            res.count > 0 ? `${res.count} updated.` : undefined,
+          description: res.count > 0 ? `${res.count} updated.` : undefined,
         }),
       onError: (err) =>
         toast.error(
-          err instanceof ApiError ? err.message : "Could not update notifications.",
+          err instanceof ApiError
+            ? err.message
+            : "Could not update notifications.",
         ),
     });
   };
@@ -108,9 +151,34 @@ export default function NotificationsPage() {
         </Button>
       </div>
 
+      {/* Filter tabs -------------------------------------------------------- */}
+      {!list.isLoading && !list.isError && notifications.length > 0 && (
+        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3.5 py-2 text-13 font-bold transition-colors",
+                  active
+                    ? "border-blue-deep bg-blue-deep text-white"
+                    : "border-border bg-card text-sub hover:bg-muted",
+                )}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* List --------------------------------------------------------------- */}
       <NotificationList
-        items={notifications}
+        items={visible}
+        totalLoaded={notifications.length}
         isLoading={list.isLoading}
         isError={list.isError}
         error={list.error}
@@ -135,6 +203,9 @@ export default function NotificationsPage() {
 
 interface NotificationListProps {
   items: Notification[];
+  /** Raw count before the category filter — distinguishes "empty inbox" from
+   *  "nothing in this filter". */
+  totalLoaded: number;
   isLoading: boolean;
   isError: boolean;
   error: unknown;
@@ -149,6 +220,7 @@ interface NotificationListProps {
 
 function NotificationList({
   items,
+  totalLoaded,
   isLoading,
   isError,
   error,
@@ -191,7 +263,7 @@ function NotificationList({
     );
   }
 
-  if (items.length === 0) {
+  if (totalLoaded === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card">
         <EmptyState
@@ -203,17 +275,43 @@ function NotificationList({
     );
   }
 
-  return (
-    <div className="flex flex-col gap-2.5">
-      {items.map((n) => (
-        <NotificationRow
-          key={n.id}
-          notification={n}
-          onMarkRead={onMarkRead}
-          isMarking={markingId === n.id}
-          resolveOrderId={resolveOrderId}
+  if (items.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card">
+        <EmptyState
+          icon={<Bell className="size-7 text-faint" />}
+          title="Nothing here yet"
+          description="No notifications match this filter."
         />
-      ))}
+      </div>
+    );
+  }
+
+  const today = items.filter((n) => isToday(n.createdAt));
+  const earlier = items.filter((n) => !isToday(n.createdAt));
+
+  const renderGroup = (label: string, group: Notification[]) =>
+    group.length > 0 ? (
+      <section key={label} className="flex flex-col gap-2.5">
+        <h2 className="px-1 text-11 font-extrabold uppercase tracking-wide text-faint">
+          {label}
+        </h2>
+        {group.map((n) => (
+          <NotificationRow
+            key={n.id}
+            notification={n}
+            onMarkRead={onMarkRead}
+            isMarking={markingId === n.id}
+            resolveOrderId={resolveOrderId}
+          />
+        ))}
+      </section>
+    ) : null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {renderGroup("Today", today)}
+      {renderGroup("Earlier", earlier)}
 
       {hasNextPage && (
         <div className="flex justify-center pt-1">
@@ -271,10 +369,7 @@ function NotificationRow({
       {/* unread dot / icon */}
       <span className="mt-0.5 flex shrink-0 items-center justify-center">
         {isUnread ? (
-          <span
-            className="size-2.5 rounded-full bg-primary"
-            aria-label="Unread"
-          />
+          <span className="size-2.5 rounded-full bg-primary" aria-label="Unread" />
         ) : (
           <Bell className="size-4 text-faint" aria-hidden />
         )}
@@ -298,9 +393,7 @@ function NotificationRow({
           </time>
         </div>
 
-        {body && (
-          <p className="mt-1 break-words text-sm text-sub">{body}</p>
-        )}
+        {body && <p className="mt-1 break-words text-sm text-sub">{body}</p>}
 
         {isMarking && (
           <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-faint">
@@ -370,9 +463,7 @@ function PreferencesCard() {
   const update = useUpdateNotificationPrefs();
 
   // Track which row is mid-flight so only that toggle shows a busy state.
-  const [pendingKey, setPendingKey] = React.useState<PrefRow["key"] | null>(
-    null,
-  );
+  const [pendingKey, setPendingKey] = React.useState<PrefRow["key"] | null>(null);
 
   const data = prefs.data;
 
@@ -395,14 +486,12 @@ function PreferencesCard() {
   };
 
   return (
-    <Card>
+    <Card className="shadow-[var(--shadow-card)]">
       <CardHeader>
         <CardTitle className="font-display text-base font-extrabold">
           Preferences
         </CardTitle>
-        <p className="text-sm text-sub">
-          Choose how GCL keeps you up to date.
-        </p>
+        <p className="text-sm text-sub">Choose how GCL keeps you up to date.</p>
       </CardHeader>
 
       <CardContent>
@@ -428,11 +517,7 @@ function PreferencesCard() {
                 ? prefs.error.message
                 : "We couldn’t load your preferences."}
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void prefs.refetch()}
-            >
+            <Button variant="outline" size="sm" onClick={() => void prefs.refetch()}>
               Try again
             </Button>
           </div>
@@ -461,9 +546,7 @@ function PreferencesCard() {
                       id={id}
                       checked={data[row.key]}
                       disabled={busy}
-                      onCheckedChange={(c) =>
-                        handleToggle(row.key, c === true)
-                      }
+                      onCheckedChange={(c) => handleToggle(row.key, c === true)}
                     />
                   </span>
                 </label>

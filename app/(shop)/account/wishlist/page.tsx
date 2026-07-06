@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Heart, Store, X } from "lucide-react";
+import { Heart, Store } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MediaImage } from "@/components/ui/media-image";
 import { Price } from "@/components/ui/price";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -18,18 +17,19 @@ export default function WishlistPage() {
 
   if (isLoading) {
     return (
-      <Card className="overflow-hidden rounded-2xl shadow-[var(--shadow-card)]">
-        <CardHeader className="border-b border-border">
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <ul>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <WishlistRowSkeleton key={i} />
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <div className="space-y-1">
+          <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+            My wishlist
+          </h1>
+          <p className="text-sm text-sub">Products you&apos;ve saved for later.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <WishlistCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -43,7 +43,7 @@ export default function WishlistPage() {
         title="Your wishlist is empty"
         description="Tap the heart on any product to save it here for later."
         action={
-          <Button asChild>
+          <Button asChild variant="accent">
             <Link href="/">Start shopping</Link>
           </Button>
         }
@@ -52,125 +52,117 @@ export default function WishlistPage() {
   }
 
   return (
-    <Card className="overflow-hidden rounded-2xl shadow-[var(--shadow-card)]">
-      <CardHeader className="border-b border-border">
-        <CardTitle className="text-lg">My wishlist ({items.length})</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ul>
-          <AnimatePresence initial={false}>
-            {items.map((item) => (
-              <WishlistRow key={item.productId} item={item} />
-            ))}
-          </AnimatePresence>
-        </ul>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-4">
+      <div className="space-y-1">
+        <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+          My wishlist{" "}
+          <span className="text-sub">({items.length})</span>
+        </h1>
+        <p className="text-sm text-sub">Products you&apos;ve saved for later.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+        <AnimatePresence initial={false}>
+          {items.map((item) => (
+            <WishlistCard key={item.productId} item={item} />
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
 
-function WishlistRowSkeleton() {
+function WishlistCardSkeleton() {
   return (
-    <li className="flex flex-col gap-4 border-b border-border px-5 py-4 last:border-b-0 sm:flex-row sm:items-center">
-      <Skeleton className="size-[84px] shrink-0 rounded-xl" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Skeleton className="h-4 w-3/5" />
-        <Skeleton className="h-3 w-32" />
-        <Skeleton className="h-5 w-20 rounded-md" />
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+      <Skeleton className="aspect-square w-full rounded-none" />
+      <div className="space-y-2 p-3">
+        <Skeleton className="h-3.5 w-full" />
+        <Skeleton className="h-3.5 w-2/3" />
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-9 w-full rounded-md" />
       </div>
-      <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-center">
-        <Skeleton className="h-5 w-16" />
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-28 rounded-md" />
-          <Skeleton className="size-9 rounded-md" />
-        </div>
-      </div>
-    </li>
+    </div>
   );
 }
 
-function WishlistRow({ item }: { item: WishlistItem }) {
+function WishlistCard({ item }: { item: WishlistItem }) {
   const remove = useRemoveWishlist();
   const reduce = useReducedMotion();
   const inStock = item.minPricePaisa !== null;
   const productHref = `/product/${item.productSlug}`;
+  const removing = remove.isPending && remove.variables === item.productId;
 
   return (
-    <motion.li
+    <motion.div
       layout
       initial={false}
-      exit={
-        reduce
-          ? { opacity: 0 }
-          : { opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }
-      }
-      transition={{ duration: 0.22, ease: "easeInOut" }}
-      className="flex flex-col gap-4 overflow-hidden border-b border-border px-5 py-4 last:border-b-0 sm:flex-row sm:items-center">
-      <Link
-        href={productHref}
-        className="size-[84px] shrink-0 overflow-hidden rounded-xl border border-border"
-      >
-        <MediaImage
-          mediaId={item.thumbnailMediaId}
-          variant="thumbnail"
-          alt={item.productTitle}
-        />
-      </Link>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+      exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-pop)]"
+    >
+      <div className="relative">
         <Link
           href={productHref}
-          className="line-clamp-2 text-sm font-bold transition-colors hover:text-primary"
+          className="block aspect-square overflow-hidden bg-muted"
+        >
+          <MediaImage
+            mediaId={item.thumbnailMediaId}
+            variant="card"
+            alt={item.productTitle}
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </Link>
+
+        {!inStock && (
+          <span className="absolute left-2 top-2 rounded-md bg-navy px-2 py-0.5 text-2xs font-extrabold text-white">
+            Out of stock
+          </span>
+        )}
+
+        <button
+          type="button"
+          aria-label={`Remove ${item.productTitle} from wishlist`}
+          disabled={removing}
+          onClick={() => remove.mutate(item.productId)}
+          className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-card/95 text-red shadow-[var(--shadow-card)] backdrop-blur transition-transform hover:scale-110 active:scale-95 disabled:opacity-60"
+        >
+          {removing ? (
+            <span className="size-4 animate-spin rounded-full border-2 border-red border-t-transparent" />
+          ) : (
+            <Heart className="size-4 fill-current" />
+          )}
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col p-3">
+        <Link
+          href={productHref}
+          className="line-clamp-2 min-h-[2.4em] text-13 font-bold leading-snug text-ink transition-colors hover:text-primary"
         >
           {item.productTitle}
         </Link>
 
         {item.vendorName && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-faint">
-            <Store className="size-3.5 text-primary" />
-            {item.vendorName}
+          <span className="mt-1 inline-flex items-center gap-1 truncate text-11 font-bold text-faint">
+            <Store className="size-3 shrink-0 text-primary" />
+            <span className="truncate">{item.vendorName}</span>
           </span>
         )}
 
-        <span
-          className={cn(
-            "inline-flex w-max items-center gap-1.5 rounded-md px-2 py-0.5 text-11 font-extrabold",
-            inStock ? "bg-green-soft text-green" : "bg-red/10 text-red",
-          )}
-        >
-          <span
-            className={cn(
-              "size-1.5 rounded-full",
-              inStock ? "bg-green" : "bg-red",
-            )}
-          />
-          {inStock ? "In stock" : "Out of stock"}
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-center">
-        <Price pricePaisa={item.minPricePaisa} size="md" />
-
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={productHref}>
-              View product
-              <ArrowRight className="size-4" strokeWidth={2.4} />
-            </Link>
-          </Button>
-          <Button
-            type="button"
-            variant="soft"
-            size="icon-sm"
-            aria-label={`Remove ${item.productTitle} from wishlist`}
-            loading={remove.isPending && remove.variables === item.productId}
-            onClick={() => remove.mutate(item.productId)}
-            className="text-faint hover:text-red"
-          >
-            <X className="size-4" />
-          </Button>
+        <div className="mt-2">
+          <Price pricePaisa={item.minPricePaisa} size="md" />
         </div>
+
+        <Button
+          asChild
+          variant="primary"
+          size="sm"
+          className={cn("mt-3 w-full", !inStock && "opacity-90")}
+        >
+          <Link href={productHref}>{inStock ? "View product" : "See details"}</Link>
+        </Button>
       </div>
-    </motion.li>
+    </motion.div>
   );
 }

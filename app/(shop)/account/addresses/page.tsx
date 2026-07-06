@@ -27,7 +27,7 @@ import type { Address } from "@/lib/api/types";
 
 function labelIcon(label: string | null): LucideIcon {
   const l = (label ?? "").toLowerCase();
-  if (l === "office") return Store;
+  if (l === "office" || l === "work") return Store;
   if (l === "home") return Home;
   return MapPin;
 }
@@ -42,6 +42,7 @@ function AddressCard({
   const del = useDeleteAddress();
   const setDefault = useSetDefaultAddress();
   const Icon = labelIcon(address.label);
+  const isDefault = address.isDefault;
 
   const locationLine = [
     address.streetAddress,
@@ -55,12 +56,7 @@ function AddressCard({
 
   async function handleDelete() {
     if (del.isPending) return;
-    if (
-      !window.confirm(
-        "Delete this address? This action cannot be undone.",
-      )
-    )
-      return;
+    if (!window.confirm("Delete this address? This action cannot be undone.")) return;
     try {
       await del.mutateAsync(address.id);
       toast.success("Address deleted");
@@ -72,7 +68,7 @@ function AddressCard({
   }
 
   async function handleSetDefault() {
-    if (setDefault.isPending || address.isDefault) return;
+    if (setDefault.isPending || isDefault) return;
     try {
       await setDefault.mutateAsync(address.id);
       toast.success("Default address updated");
@@ -87,26 +83,27 @@ function AddressCard({
     <div
       className={cn(
         "flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)] transition-colors",
-        address.isDefault ? "border-primary" : "border-border",
+        isDefault ? "border-2 border-primary" : "border-border",
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-full bg-blue-soft text-primary">
-            {React.createElement(Icon, { className: "size-[18px]" })}
-          </span>
-          <Badge variant="muted" size="sm">
-            {address.label ?? "Address"}
-          </Badge>
-          {address.isDefault && (
-            <Badge variant="primary" size="sm">
-              Default
-            </Badge>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-11 font-extrabold",
+            isDefault ? "bg-blue-soft text-primary" : "bg-muted text-sub",
           )}
-        </div>
+        >
+          {React.createElement(Icon, { className: "size-3.5" })}
+          {address.label ?? "Address"}
+        </span>
+        {isDefault && (
+          <Badge variant="accent" size="md">
+            Default
+          </Badge>
+        )}
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate font-display text-sm font-extrabold text-ink">
           {address.recipientName ?? "—"}
           {address.recipientPhone && (
@@ -116,12 +113,10 @@ function AddressCard({
             </span>
           )}
         </p>
-        <p className="mt-1 text-13 leading-relaxed text-sub">
-          {locationLine}
-        </p>
+        <p className="mt-1 text-13 leading-relaxed text-sub">{locationLine}</p>
       </div>
 
-      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border pt-3">
+      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-line pt-3">
         <Button
           variant="soft"
           size="sm"
@@ -131,7 +126,7 @@ function AddressCard({
           <Pencil className="size-3.5" />
           Edit
         </Button>
-        {!address.isDefault && (
+        {!isDefault && (
           <Button
             variant="outline"
             size="sm"
@@ -160,20 +155,35 @@ function AddressCardSkeleton() {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-2">
-        <Skeleton className="size-9 rounded-full" />
-        <Skeleton className="h-5 w-16 rounded-md" />
+        <Skeleton className="h-6 w-20 rounded-full" />
       </div>
       <div className="space-y-2">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-2/3" />
       </div>
-      <div className="mt-auto flex items-center gap-2 border-t border-border pt-3">
+      <div className="mt-auto flex items-center gap-2 border-t border-line pt-3">
         <Skeleton className="h-10 w-16 rounded-md" />
         <Skeleton className="h-10 w-24 rounded-md" />
         <Skeleton className="ml-auto h-10 w-20 rounded-md" />
       </div>
     </div>
+  );
+}
+
+function AddAddressTile({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[168px] flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-border bg-card/40 p-5 text-center transition-colors hover:border-primary/50 hover:bg-blue-soft/40"
+    >
+      <span className="flex size-11 items-center justify-center rounded-full bg-blue-soft text-primary">
+        <Plus className="size-5" strokeWidth={2.4} />
+      </span>
+      <span className="text-sm font-extrabold text-ink">Add a new address</span>
+      <span className="text-xs text-sub">Save time at checkout</span>
+    </button>
   );
 }
 
@@ -192,7 +202,7 @@ export default function AddressesPage() {
     setDialogOpen(true);
   };
 
-  // Keep the default address first, then most-recent edits.
+  // Keep the default address first.
   const sorted = React.useMemo(() => {
     if (!addresses) return [];
     return [...addresses].sort((a, b) => {
@@ -205,16 +215,16 @@ export default function AddressesPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-extrabold text-ink">
-            Address book
+          <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+            Addresses
           </h1>
-          <p className="text-sm text-sub">
+          <p className="mt-1 text-sm text-sub">
             Manage where your orders are delivered.
           </p>
         </div>
         <Button variant="primary" onClick={openCreate} className="gap-1.5">
           <Plus className="size-4" />
-          Add new address
+          Add address
         </Button>
       </div>
 
@@ -251,12 +261,9 @@ export default function AddressesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {sorted.map((address) => (
-              <AddressCard
-                key={address.id}
-                address={address}
-                onEdit={openEdit}
-              />
+              <AddressCard key={address.id} address={address} onEdit={openEdit} />
             ))}
+            <AddAddressTile onClick={openCreate} />
           </div>
         )}
       </div>

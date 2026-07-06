@@ -5,28 +5,19 @@ import Link from "next/link";
 import {
   BadgeCheck,
   CalendarDays,
+  KeyRound,
   Mail,
-  MapPin,
   Phone,
-  Plus,
   User,
+  VenusAndMars,
 } from "lucide-react";
-import {
-  useAddresses,
-  useMe,
-  useUpdateProfile,
-} from "@/lib/api/account";
+import { useMe, useUpdateProfile } from "@/lib/api/account";
 import { ApiError } from "@/lib/api/http";
 import { formatDate } from "@/lib/format";
-import type { Address, Me } from "@/lib/api/types";
+import type { Me } from "@/lib/api/types";
+import { AccountAvatar } from "@/components/account/account-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -82,10 +73,10 @@ function InfoRow({
         <Icon className="size-4" />
       </span>
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-faint">
+        <p className="text-11 font-extrabold uppercase tracking-wide text-faint">
           {label}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-2">
+        <div className="mt-1 flex flex-wrap items-center gap-2">
           <p className="break-words text-sm font-bold text-ink">{value}</p>
           {verified ? (
             <Badge variant="success" size="sm">
@@ -149,7 +140,7 @@ function EditProfileDialog({ me }: { me: Me }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <Button variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
+      <Button variant="soft" size="sm" onClick={() => handleOpenChange(true)}>
         Edit profile
       </Button>
       <DialogContent>
@@ -174,10 +165,7 @@ function EditProfileDialog({ me }: { me: Me }) {
           </Field>
 
           <Field id="gender" label="Gender">
-            <Select
-              value={gender || undefined}
-              onValueChange={setGender}
-            >
+            <Select value={gender || undefined} onValueChange={setGender}>
               <SelectTrigger id="gender" className="w-full">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
@@ -221,89 +209,6 @@ function EditProfileDialog({ me }: { me: Me }) {
 }
 
 /* --------------------------------------------------------------------- */
-/* Address summary                                                       */
-/* --------------------------------------------------------------------- */
-
-function AddressMiniCard({ address }: { address: Address }) {
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {address.label ? (
-          <Badge variant="primary" size="sm">
-            {address.label}
-          </Badge>
-        ) : null}
-        {address.isDefault ? (
-          <Badge variant="accent" size="sm">
-            Default
-          </Badge>
-        ) : null}
-      </div>
-      {address.recipientName ? (
-        <p className="text-sm font-bold text-ink">{address.recipientName}</p>
-      ) : null}
-      <p className="text-sm leading-relaxed text-sub">
-        {address.streetAddress}
-        <br />
-        {[address.upazila, address.district].filter(Boolean).join(", ")}
-        {address.postcode ? ` - ${address.postcode}` : ""}
-      </p>
-    </div>
-  );
-}
-
-function AddressBookCard() {
-  const { data: addresses, isLoading, isError } = useAddresses();
-
-  return (
-    <Card className="shadow-[var(--shadow-card)]">
-      <CardHeader className="flex-row items-center justify-between gap-3">
-        <CardTitle>Address book</CardTitle>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/account/addresses">Manage addresses</Link>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-          </div>
-        ) : isError ? (
-          <p className="py-4 text-sm text-sub">
-            We couldn&apos;t load your addresses. Please try again.
-          </p>
-        ) : !addresses || addresses.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface px-4 py-8 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-blue-soft text-primary">
-              <MapPin className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-ink">No addresses yet</p>
-              <p className="mt-0.5 text-sm text-sub">
-                Add a delivery address to check out faster.
-              </p>
-            </div>
-            <Button asChild variant="primary" size="sm">
-              <Link href="/account/addresses">
-                <Plus className="size-4" />
-                Add address
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {addresses.slice(0, 2).map((address) => (
-              <AddressMiniCard key={address.id} address={address} />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/* --------------------------------------------------------------------- */
 /* Loading skeleton                                                      */
 /* --------------------------------------------------------------------- */
 
@@ -321,40 +226,23 @@ function InfoRowSkeleton() {
 
 function PersonalInfoSkeleton() {
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="shadow-[var(--shadow-card)]">
-        <CardHeader className="flex-row items-center justify-between gap-3">
-          <Skeleton className="h-6 w-44" />
-          <Skeleton className="h-10 w-28 rounded-md" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <InfoRowSkeleton key={i} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-[var(--shadow-card)]">
-        <CardHeader className="flex-row items-center justify-between gap-3">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-10 w-36 rounded-md" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4">
+      <Skeleton className="h-7 w-52" />
+      <Skeleton className="h-40 rounded-2xl" />
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <InfoRowSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+      <Skeleton className="h-20 rounded-2xl" />
     </div>
   );
 }
 
 /* --------------------------------------------------------------------- */
-/* Personal information + address book (rendered at /account/profile on  */
-/* mobile and directly at /account on desktop)                           */
+/* Personal information (rendered at /account/profile)                   */
 /* --------------------------------------------------------------------- */
 
 export function ProfileOverview() {
@@ -366,7 +254,7 @@ export function ProfileOverview() {
 
   if (isError || !me) {
     return (
-      <div className="rounded-xl border border-border bg-card p-8 text-center">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
         <p className="text-sm font-bold text-ink">
           We couldn&apos;t load your account
         </p>
@@ -377,51 +265,99 @@ export function ProfileOverview() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <Card className="shadow-[var(--shadow-card)]">
-        <CardHeader className="flex-row items-center justify-between gap-3">
-          <CardTitle>Personal information</CardTitle>
-          <EditProfileDialog me={me} />
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <InfoRow
-              icon={User}
-              label="Full name"
-              value={me.profile?.fullName?.trim() || "—"}
-            />
-            <InfoRow
-              icon={Mail}
-              label="Email"
-              value={me.email}
-              verified={me.isEmailVerified}
-            />
-            <InfoRow
-              icon={Phone}
-              label="Phone"
-              value={me.phone || "—"}
-              verified={me.isPhoneVerified}
-            />
-            <InfoRow
-              icon={User}
-              label="Gender"
-              value={genderLabel(me.profile?.gender)}
-            />
-            <InfoRow
-              icon={CalendarDays}
-              label="Date of birth"
-              value={
-                me.profile?.dateOfBirth
-                  ? formatDate(me.profile.dateOfBirth)
-                  : "—"
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+  const fullName = me.profile?.fullName?.trim() || "Your account";
+  const fullyVerified = me.isEmailVerified && me.isPhoneVerified;
 
-      <AddressBookCard />
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+        Personal information
+      </h1>
+
+      {/* Profile card ---------------------------------------------------- */}
+      <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+        <div className="relative h-24 bg-linear-to-br from-navy via-blue-deep to-[oklch(0.32_0.11_262)]">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-8 -top-10 size-36 rounded-full bg-amber/12"
+          />
+        </div>
+        <div className="relative -mt-11 px-5 pb-5 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="flex items-end gap-4">
+              <AccountAvatar
+                fullName={fullName}
+                photoUrl={me.profile?.photoUrl ?? null}
+                className="size-[88px] rounded-full bg-blue-deep font-display text-3xl font-extrabold text-amber ring-4 ring-card"
+              />
+              <div className="pb-1">
+                <p className="font-display text-lg font-extrabold text-ink">
+                  {fullName}
+                </p>
+                <p className="mt-0.5 truncate text-13 text-sub">{me.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pb-1">
+              {fullyVerified && (
+                <Badge variant="success" size="md" className="hidden sm:inline-flex">
+                  <BadgeCheck className="size-3.5" />
+                  Verified
+                </Badge>
+              )}
+              <EditProfileDialog me={me} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Details grid ---------------------------------------------------- */}
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-6">
+          <InfoRow icon={User} label="Full name" value={fullName} />
+          <InfoRow
+            icon={Mail}
+            label="Email"
+            value={me.email}
+            verified={me.isEmailVerified}
+          />
+          <InfoRow
+            icon={Phone}
+            label="Phone"
+            value={me.phone || "—"}
+            verified={me.isPhoneVerified}
+          />
+          <InfoRow
+            icon={VenusAndMars}
+            label="Gender"
+            value={genderLabel(me.profile?.gender)}
+          />
+          <InfoRow
+            icon={CalendarDays}
+            label="Date of birth"
+            value={
+              me.profile?.dateOfBirth ? formatDate(me.profile.dateOfBirth) : "—"
+            }
+          />
+        </div>
+      </section>
+
+      {/* Password & security -------------------------------------------- */}
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-soft text-primary">
+            <KeyRound className="size-5" />
+          </span>
+          <div>
+            <p className="text-sm font-extrabold text-ink">Password &amp; security</p>
+            <p className="mt-0.5 text-13 text-sub">
+              Reset your password through a secure email link.
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="soft" size="sm">
+          <Link href="/account/password">Change password</Link>
+        </Button>
+      </section>
     </div>
   );
 }

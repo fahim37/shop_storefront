@@ -221,7 +221,7 @@ export function MobileBottomNav() {
   return (
     <nav
       ref={navRef}
-      className="sticky bottom-0 z-40 overflow-hidden bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden"
+      className="sticky bottom-0 z-40 overflow-hidden border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
     >
       {/* soft glow trailing the active tab */}
       <div className={cn(slideCls, "inset-y-0 flex items-center justify-center")} style={slide}>
@@ -258,14 +258,14 @@ export function MobileBottomNav() {
                     : "text-faint",
                 )}
               >
-                <t.icon className="size-[22px]" />
+                <t.icon className="size-5" />
                 {t.isCart && count > 0 && (
                   <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
                     {count}
                   </span>
                 )}
                 {t.isAlerts && unreadCount > 0 && (
-                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-red px-1 text-2xs font-bold text-white">
+                  <span className="absolute -right-[9px] -top-[7px] flex h-4 min-w-4 animate-badge-pulse items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-2xs font-bold text-white">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}

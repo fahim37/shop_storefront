@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, PackageX, PencilLine, Star, Truck } from "lucide-react";
+import { ArrowLeft, MapPin, PackageX, PencilLine, Star, Truck } from "lucide-react";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/lib/api/orders";
+import { useAddresses } from "@/lib/api/account";
 import { useMyReviews } from "@/lib/api/reviews";
 import {
   SUBORDER_STATUS,
@@ -40,6 +41,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type {
+  Address,
   HydratedSubOrder,
   MyReview,
   OrderItem,
@@ -152,13 +154,21 @@ function OrderDetail({
     return map;
   }, [myReviews]);
 
+  // Best-effort delivery address: resolve the order's shipping address from the
+  // user's saved addresses. Omitted gracefully if it's since been deleted.
+  const { data: addresses } = useAddresses();
+  const shippingAddress = React.useMemo(
+    () => (addresses ?? []).find((a) => a.id === order.shippingAddressId) ?? null,
+    [addresses, order.shippingAddressId],
+  );
+
   return (
     <div className="space-y-6">
       {/* Back + header */}
       <div className="space-y-4">
         <Link
           href="/account/orders"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-sub transition-colors hover:text-primary"
+          className="hidden w-fit items-center gap-1.5 text-sm font-semibold text-sub transition-colors hover:text-primary lg:inline-flex"
         >
           <ArrowLeft className="size-4" />
           Back to orders
@@ -218,8 +228,16 @@ function OrderDetail({
         ))}
       </div>
 
-      {/* Order summary */}
-      <OrderSummary order={order} />
+      {/* Order summary + delivery address */}
+      <div
+        className={cn(
+          "grid gap-4",
+          shippingAddress && "lg:grid-cols-2 lg:items-start",
+        )}
+      >
+        <OrderSummary order={order} />
+        {shippingAddress && <DeliveryAddressCard address={shippingAddress} />}
+      </div>
 
       {/* Cancel */}
       {firstSubOrder && !isCancelled && canCustomerCancel(firstSubOrder.status) && (
@@ -495,6 +513,39 @@ function formatEventType(eventType: string): string {
 /* ------------------------------------------------------------------ */
 /* Order summary                                                       */
 /* ------------------------------------------------------------------ */
+
+function DeliveryAddressCard({ address }: { address: Address }) {
+  const line = [
+    address.streetAddress,
+    address.unionName,
+    address.upazila,
+    address.district,
+    address.postcode,
+  ]
+    .filter((p): p is string => !!p && p.trim().length > 0)
+    .join(", ");
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
+      <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-extrabold text-ink">
+        <MapPin className="size-4 text-primary" />
+        Delivery address
+      </h2>
+      {address.label ? (
+        <span className="mb-1.5 inline-flex rounded-full bg-muted px-2 py-0.5 text-2xs font-bold text-sub">
+          {address.label}
+        </span>
+      ) : null}
+      <p className="text-sm font-bold text-ink">
+        {address.recipientName ?? "—"}
+        {address.recipientPhone && (
+          <span className="font-medium text-sub"> · {address.recipientPhone}</span>
+        )}
+      </p>
+      <p className="mt-1 text-13 leading-relaxed text-sub">{line}</p>
+    </div>
+  );
+}
 
 function OrderSummary({ order }: { order: OrderView }) {
   const hasDiscount = order.discountPaisa && order.discountPaisa !== "0";

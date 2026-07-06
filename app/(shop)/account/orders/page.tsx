@@ -28,11 +28,50 @@ import {
 import { cn } from "@/lib/utils";
 import type { OrderListItem } from "@/lib/api/types";
 
+/** Coarse tab buckets over the derived order status. */
+type OrderFilter = "all" | "active" | "delivered" | "cancelled";
+
+const FILTERS: { key: OrderFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+/** Which tab bucket an order falls in (partitions the list exactly once). */
+function bucketOf(order: OrderListItem): Exclude<OrderFilter, "all"> {
+  const s = deriveOrderListStatus(order);
+  if (s === "delivered") return "delivered";
+  if (s === "cancelled") return "cancelled";
+  return "active"; // placed + processing
+}
+
 export default function OrdersPage() {
-  const { data: orders, isLoading, isError } = useOrders({ limit: 20 });
+  const { data: orders, isLoading, isError } = useOrders({ limit: 50 });
+  const [filter, setFilter] = React.useState<OrderFilter>("all");
+
+  const counts = React.useMemo(() => {
+    const c: Record<OrderFilter, number> = {
+      all: 0,
+      active: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+    for (const o of orders ?? []) {
+      c.all += 1;
+      c[bucketOf(o)] += 1;
+    }
+    return c;
+  }, [orders]);
+
+  const visible = React.useMemo(() => {
+    const list = orders ?? [];
+    if (filter === "all") return list;
+    return list.filter((o) => bucketOf(o) === filter);
+  }, [orders, filter]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="font-display text-xl font-extrabold text-ink sm:text-2xl">
           Order history
@@ -41,6 +80,36 @@ export default function OrdersPage() {
           Track, review and re-order from your past purchases.
         </p>
       </div>
+
+      {/* Filter tabs */}
+      {!isLoading && !isError && (orders?.length ?? 0) > 0 && (
+        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            const count = counts[f.key];
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3.5 py-2 text-13 font-bold transition-colors",
+                  active
+                    ? "border-blue-deep bg-blue-deep text-white"
+                    : "border-border bg-card text-sub hover:bg-muted",
+                )}
+              >
+                {f.label}
+                {count > 0 && (
+                  <span className={cn("ml-1.5", active ? "text-white/70" : "text-faint")}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {isLoading ? (
         <ul className="space-y-4">
@@ -67,9 +136,20 @@ export default function OrdersPage() {
             </Button>
           }
         />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={<PackageOpen className="size-6" />}
+          title={`No ${filter} orders`}
+          description="Try a different filter to see more of your orders."
+          action={
+            <Button variant="soft" size="md" onClick={() => setFilter("all")}>
+              Show all orders
+            </Button>
+          }
+        />
       ) : (
         <ul className="space-y-4">
-          {orders.map((order) => (
+          {visible.map((order) => (
             <li key={order.id}>
               <OrderGroupCard order={order} />
             </li>
