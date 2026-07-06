@@ -59,6 +59,15 @@ export default function NotificationsPage() {
 
   const unreadCount = unread.data?.count ?? 0;
 
+  // Opening this page reads the inbox, so reset the badge counter once the
+  // unread count is known — same mutation as the manual button, just silent.
+  const autoMarkedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoMarkedRef.current || !unread.isSuccess || unreadCount === 0) return;
+    autoMarkedRef.current = true;
+    markAll.mutate();
+  }, [unread.isSuccess, unreadCount, markAll]);
+
   const handleMarkAll = () => {
     markAll.mutate(undefined, {
       onSuccess: (res) =>

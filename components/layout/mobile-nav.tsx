@@ -168,29 +168,47 @@ export function MobileNav() {
 const TABS = [
   { label: "Home", href: "/", icon: HomeIcon },
   { label: "Categories", href: "/category/electronics", icon: CategoriesIcon },
-  { label: "Cart", href: "#cart", icon: CartIcon, isCart: true },
+  { label: "Cart", href: "/cart", icon: CartIcon, isCart: true },
   { label: "Alerts", href: "/account/notifications", icon: BellIcon, isAlerts: true },
   { label: "Account", href: "/account", icon: AccountIcon },
 ];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const openCart = useUIStore((s) => s.openCartDrawer);
   const count = useCartCount();
   const { data: unread } = useUnreadCount();
   const unreadCount = unread?.count ?? 0;
+  const navRef = React.useRef<HTMLElement | null>(null);
 
   // Product pages replace the tab bar with the PDP's own sticky action bar
   // (Store / Chat / Add to cart / Buy now) — showing both would stack two
   // bottom bars.
-  if (isProductPath(pathname)) return null;
+  const hidden = isProductPath(pathname);
+
+  // Publish the bar's rendered height as --bottom-nav-h so in-page sticky
+  // elements (the cart page's checkout bar) can rest just above it. Measured
+  // rather than hardcoded so safe-area insets and font metrics stay covered.
+  React.useEffect(() => {
+    const el = navRef.current;
+    if (hidden || !el) return;
+    const root = document.documentElement;
+    const update = () =>
+      root.style.setProperty("--bottom-nav-h", `${el.offsetHeight}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--bottom-nav-h");
+    };
+  }, [hidden]);
+
+  if (hidden) return null;
 
   // Single active slot drives both the tab tint and the sliding indicator/glow
   // (hidden entirely on routes that aren't in the bar, e.g. product pages).
-  const activeIndex = TABS.findIndex(
-    (t) =>
-      !t.isCart &&
-      (t.href === "/" ? pathname === "/" : pathname.startsWith(t.href)),
+  const activeIndex = TABS.findIndex((t) =>
+    t.href === "/" ? pathname === "/" : pathname.startsWith(t.href),
   );
   const slide = {
     transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
@@ -201,7 +219,10 @@ export function MobileBottomNav() {
   );
 
   return (
-    <nav className="sticky bottom-0 z-40 overflow-hidden bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
+    <nav
+      ref={navRef}
+      className="sticky bottom-0 z-40 overflow-hidden bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden"
+    >
       {/* soft glow trailing the active tab */}
       <div className={cn(slideCls, "inset-y-0 flex items-center justify-center")} style={slide}>
         <span
@@ -263,11 +284,7 @@ export function MobileBottomNav() {
           // pulse) clear of the 4px indicator bar at the top edge.
           const cls =
             "flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-[13px] transition-transform duration-[180ms] ease-out active:scale-[0.92]";
-          return t.isCart ? (
-            <button key={t.label} type="button" onClick={openCart} className={cls}>
-              {content}
-            </button>
-          ) : (
+          return (
             <Link
               key={t.label}
               href={t.href}

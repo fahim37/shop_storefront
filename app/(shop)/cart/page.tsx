@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  ShoppingBag,
   Store,
   Tag,
   Trash2,
@@ -29,16 +30,27 @@ import {
   cartErrorMessage,
   useApplyCoupon,
   useCart,
+  useCartCount,
   useCartItemQuantity,
   useRemoveCartItem,
   useRemoveCoupon,
 } from "@/lib/api/cart";
 import { useCartRecommendations } from "@/lib/api/search";
+import type { CartLine } from "@/lib/api/types";
 
+/**
+ * Full cart page. Reached from the mobile bottom tab bar and the drawer's
+ * "View cart"; the slide-in CartDrawer stays the quick view. Both render the
+ * same TanStack Query snapshot (`qk.cart()`), so they can never disagree.
+ *
+ * Mobile-first: store-grouped cards, line controls under the info column, and
+ * a sticky checkout bar that rides above the bottom tab bar (offset by the
+ * measured `--bottom-nav-h`). Desktop keeps the two-column layout with a
+ * sticky order summary.
+ */
 export default function CartPage() {
   const { cart, isLoading } = useCart();
-  const setQuantity = useCartItemQuantity();
-  const remove = useRemoveCartItem();
+  const count = useCartCount();
   const recs = useCartRecommendations(cart.items.length > 0);
 
   if (isLoading) {
@@ -50,13 +62,24 @@ export default function CartPage() {
   }
 
   return (
-    <div className="wrap py-4">
-      <Breadcrumbs items={[{ label: "Cart" }]} className="mb-4" />
+    <div className="wrap py-4 md:py-5">
+      <Breadcrumbs items={[{ label: "Cart" }]} className="mb-4 max-md:hidden" />
+
+      {/* Mobile page header — the bottom tab bar lands here, so the page gets
+          a proper title instead of the desktop breadcrumb trail. */}
+      <div className="mb-3 flex items-center justify-between md:hidden">
+        <h1 className="font-display text-xl font-extrabold">My cart</h1>
+        {count > 0 && (
+          <span className="rounded-full bg-blue-soft px-2.5 py-1 text-11 font-extrabold text-primary">
+            {count} item{count === 1 ? "" : "s"}
+          </span>
+        )}
+      </div>
 
       {cart.items.length === 0 ? (
         <EmptyState
           className="my-10"
-          icon={<Truck className="size-6" />}
+          icon={<ShoppingBag className="size-6" />}
           title="Your cart is empty"
           description="Add products and they'll show up here, grouped by store."
           action={
@@ -66,13 +89,16 @@ export default function CartPage() {
           }
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-          {/* lines */}
-          <div className="flex min-w-0 flex-col gap-4">
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <>
+          <div className="grid items-start gap-4 lg:grid-cols-[1fr_340px] lg:gap-6">
+            {/* lines, one card per store */}
+            <div className="flex min-w-0 flex-col gap-3 md:gap-4">
               {cart.vendorGroups.map((group, gi) => (
-                <div key={group.vendorId}>
-                  <div className="flex items-center gap-2.5 border-y border-border bg-muted px-5 py-3 text-13 font-extrabold first:border-t-0">
+                <div
+                  key={group.vendorId}
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]"
+                >
+                  <div className="flex items-center gap-2.5 border-b border-border bg-muted px-4 py-3 text-13 font-extrabold sm:px-5">
                     <Store className="size-4 text-primary" />
                     Store {gi + 1}
                     <span className="ml-auto text-xs font-bold text-faint">
@@ -80,85 +106,139 @@ export default function CartPage() {
                     </span>
                   </div>
                   {group.items.map((line) => (
-                    <div
-                      key={line.itemId}
-                      className="flex items-center gap-4 border-b border-[oklch(0.96_0.005_258)] px-5 py-4 last:border-b-0"
-                    >
-                      <Link
-                        href={`/product/${line.productSlug}`}
-                        className="size-[72px] shrink-0 overflow-hidden rounded-lg"
-                      >
-                        <MediaImage mediaId={line.imageMediaId} variant="thumbnail" alt={line.productTitle} />
-                      </Link>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <Link
-                          href={`/product/${line.productSlug}`}
-                          className="line-clamp-1 text-sm font-bold hover:text-primary"
-                        >
-                          {line.productTitle}
-                        </Link>
-                        {visibleOptionEntries(line.optionValues).length > 0 && (
-                          <span className="flex flex-wrap gap-1.5 text-xs font-bold text-faint">
-                            {visibleOptionEntries(line.optionValues).map(([k, v]) => (
-                              <span key={k} className="rounded bg-muted px-1.5 py-0.5">
-                                {v}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                        {line.priceChanged && (
-                          <span className="text-11 font-extrabold text-red">
-                            Price changed to {formatPaisa(line.livePricePaisa)}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => remove.mutate(line.itemId)}
-                          className="mt-0.5 inline-flex items-center gap-1 self-start text-xs font-bold text-faint hover:text-red"
-                        >
-                          <Trash2 className="size-3.5" /> Remove
-                        </button>
-                      </div>
-                      <QuantityStepper
-                        value={line.quantity}
-                        max={line.maxQuantity}
-                        onChange={(q) =>
-                          setQuantity(line.itemId, q, (err) =>
-                            toast.error(cartErrorMessage(err)),
-                          )
-                        }
-                      />
-                      <div className="w-24 shrink-0 text-right">
-                        <b className="font-display text-15 font-extrabold text-primary">
-                          {formatPaisa(line.lineTotalPaisa)}
-                        </b>
-                      </div>
-                    </div>
+                    <CartLineRow key={line.itemId} line={line} />
                   ))}
                 </div>
               ))}
+
+              {cart.vendorGroups.length > 1 && (
+                <div className="flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 text-13 font-bold text-sub">
+                  <Truck className="size-4 shrink-0 text-primary" />
+                  Items from {cart.vendorGroups.length} stores will arrive as{" "}
+                  {cart.vendorGroups.length} deliveries under one order.
+                </div>
+              )}
             </div>
 
-            {cart.vendorGroups.length > 1 && (
-              <div className="flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 text-13 font-bold text-sub">
-                <Truck className="size-4 text-primary" />
-                Items from {cart.vendorGroups.length} stores will arrive as{" "}
-                {cart.vendorGroups.length} deliveries under one order.
-              </div>
-            )}
-
-            {recs.data && recs.data.items.length > 0 && (
-              <section className="mt-2">
-                <SectionHeader title="You may also like" subtitle="Goes well with your cart" />
-                <ProductGrid products={recs.data.items.slice(0, 4).map(fromRecHit)} cols={4} />
-              </section>
-            )}
+            {/* summary */}
+            <CartSummary />
           </div>
 
-          {/* summary */}
-          <CartSummary />
-        </div>
+          {recs.data && recs.data.items.length > 0 && (
+            <section className="mt-6 md:mt-8">
+              <SectionHeader title="You may also like" subtitle="Goes well with your cart" />
+              <ProductGrid
+                products={recs.data.items.slice(0, 6).map(fromRecHit)}
+                cols={5}
+                flushRows
+              />
+            </section>
+          )}
+
+          {/* Mobile sticky checkout bar. Last element in the page wrapper so
+              it stays pinned (just above the bottom tab bar) until the shopper
+              reaches the end of the page, where it settles into the flow. */}
+          <MobileCheckoutBar />
+        </>
       )}
+    </div>
+  );
+}
+
+function CartLineRow({ line }: { line: CartLine }) {
+  const setQuantity = useCartItemQuantity();
+  const remove = useRemoveCartItem();
+
+  return (
+    <div className="flex gap-3 border-b border-[oklch(0.96_0.005_258)] px-4 py-4 last:border-b-0 sm:gap-4 sm:px-5">
+      <Link
+        href={`/product/${line.productSlug}`}
+        className="size-20 shrink-0 overflow-hidden rounded-xl border border-[oklch(0.96_0.005_258)] sm:size-24"
+      >
+        <MediaImage mediaId={line.imageMediaId} variant="thumbnail" alt={line.productTitle} />
+      </Link>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={`/product/${line.productSlug}`}
+            className="line-clamp-2 text-13 font-bold leading-snug hover:text-primary sm:text-sm"
+          >
+            {line.productTitle}
+          </Link>
+          <button
+            type="button"
+            onClick={() => remove.mutate(line.itemId)}
+            aria-label={`Remove ${line.productTitle}`}
+            className="-mr-1 -mt-1 grid size-8 shrink-0 place-items-center rounded-full text-faint transition-[color,background-color,transform] duration-150 hover:bg-red/10 hover:text-red active:scale-90"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
+
+        {visibleOptionEntries(line.optionValues).length > 0 && (
+          <span className="flex flex-wrap gap-1.5 text-11 font-bold text-faint">
+            {visibleOptionEntries(line.optionValues).map(([k, v]) => (
+              <span key={k} className="rounded bg-muted px-1.5 py-0.5">
+                {v}
+              </span>
+            ))}
+          </span>
+        )}
+
+        {line.priceChanged && (
+          <span className="text-11 font-extrabold text-red">
+            Price changed to {formatPaisa(line.livePricePaisa)}
+          </span>
+        )}
+
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1.5">
+          <span className="flex min-w-0 flex-col">
+            <b className="font-display text-15 font-extrabold text-primary sm:text-base">
+              {formatPaisa(line.lineTotalPaisa)}
+            </b>
+            {line.quantity > 1 && (
+              <span className="text-11 font-semibold text-faint">
+                {formatPaisa(line.unitPricePaisa)} each
+              </span>
+            )}
+          </span>
+          <QuantityStepper
+            size="sm"
+            value={line.quantity}
+            max={line.maxQuantity}
+            onChange={(q) =>
+              setQuantity(line.itemId, q, (err) => toast.error(cartErrorMessage(err)))
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Grand total + checkout CTA pinned above the mobile bottom tab bar. */
+function MobileCheckoutBar() {
+  const { cart } = useCart();
+  const count = useCartCount();
+
+  return (
+    <div className="sticky bottom-[calc(var(--bottom-nav-h,56px)+12px)] z-30 mt-4 md:hidden">
+      <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/95 py-2.5 pl-4 pr-2.5 shadow-[var(--shadow-pop)] backdrop-blur-lg">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-11 font-bold text-faint">
+            Total · {count} item{count === 1 ? "" : "s"}
+          </span>
+          <b className="font-display text-lg font-extrabold leading-tight text-primary">
+            {formatPaisa(cart.grandTotalPaisa)}
+          </b>
+        </span>
+        <Button asChild variant="accent" size="lg" className="shrink-0">
+          <Link href="/checkout">
+            Checkout <ArrowRight className="size-4" strokeWidth={2.4} />
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -204,7 +284,7 @@ function CartSummary() {
   };
 
   return (
-    <div className="h-max rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-44">
+    <div className="h-max rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5 lg:sticky lg:top-44">
       <h3 className="font-display text-base font-extrabold">Order summary</h3>
       <div className="mt-4 flex flex-col gap-3 text-13">
         <Row label={`Subtotal (${cart.items.length} item${cart.items.length === 1 ? "" : "s"})`}>
@@ -250,7 +330,8 @@ function CartSummary() {
         </span>
       </div>
 
-      <Button asChild variant="accent" fullWidth size="lg" className="mt-4">
+      {/* On mobile the sticky checkout bar owns this CTA. */}
+      <Button asChild variant="accent" fullWidth size="lg" className="mt-4 max-md:hidden">
         <Link href="/checkout">
           Proceed to checkout <ArrowRight className="size-4" strokeWidth={2.4} />
         </Link>
