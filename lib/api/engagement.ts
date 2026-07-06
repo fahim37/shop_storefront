@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/lib/api/http";
 import { qk } from "@/lib/api/query-keys";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { WishlistItem } from "@/lib/api/types";
+import type { FollowedStore, WishlistItem } from "@/lib/api/types";
 
 /* ---- Wishlist ---- */
 
@@ -119,4 +119,70 @@ export function trackProductView(productId: string): void {
   void http
     .post(`/me/recently-viewed/${productId}`, undefined, { skipRefresh: true })
     .catch(() => {});
+}
+
+/* ---- Followed stores ---- */
+
+export function useFollowedStores() {
+  const { isAuthenticated } = useAuth();
+  return useQuery({
+    queryKey: qk.followedStores(),
+    queryFn: () => http.get<FollowedStore[]>("/follow"),
+    enabled: isAuthenticated,
+  });
+}
+
+/**
+ * Follow/unfollow toggle for a store, optimistic in both directions so the
+ * store-page button flips instantly. Guests get the auth modal first.
+ */
+export function useToggleFollowStore(vendorId: string) {
+  const qc = useQueryClient();
+  const { requireAuth } = useAuth();
+  const { data } = useFollowedStores();
+  const isFollowing = (data ?? []).some((f) => f.vendorId === vendorId);
+
+  const setLocal = (next: boolean) => {
+    qc.setQueryData<FollowedStore[]>(qk.followedStores(), (prev) => {
+      const list = prev ?? [];
+      if (next) {
+        if (list.some((f) => f.vendorId === vendorId)) return list;
+        const optimistic: FollowedStore = {
+          userId: "",
+          vendorId,
+          followedAt: new Date().toISOString(),
+          notificationsEnabled: true,
+          storeName: "",
+          storeSlug: "",
+          storeLogoUrl: null,
+          ratingAverage: null,
+        };
+        return [...list, optimistic];
+      }
+      return list.filter((f) => f.vendorId !== vendorId);
+    });
+  };
+
+  const follow = useMutation({
+    mutationFn: () => http.post(`/follow/${vendorId}`, {}),
+    onMutate: () => setLocal(true),
+    onError: () => setLocal(false),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.followedStores() }),
+  });
+  const unfollow = useMutation({
+    mutationFn: () => http.delete(`/follow/${vendorId}`),
+    onMutate: () => setLocal(false),
+    onError: () => setLocal(true),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.followedStores() }),
+  });
+
+  return {
+    isFollowing,
+    pending: follow.isPending || unfollow.isPending,
+    toggle: () =>
+      requireAuth(() => {
+        if (isFollowing) unfollow.mutate();
+        else follow.mutate();
+      }),
+  };
 }

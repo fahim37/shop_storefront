@@ -261,7 +261,13 @@ export default async function ProductPage({ params }: PageParams) {
                 productTitle={product.title}
               />
               <Button asChild variant="outline" size="sm">
-                <Link href={`/search?q=${encodeURIComponent(product.vendorName)}`}>
+                <Link
+                  href={
+                    product.vendorSlug
+                      ? `/store/${product.vendorSlug}`
+                      : `/search?q=${encodeURIComponent(product.vendorName)}`
+                  }
+                >
                   Visit store
                 </Link>
               </Button>

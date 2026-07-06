@@ -15,6 +15,7 @@ import type {
   ProductCardRow,
   ProductDetail,
   RecResponse,
+  StorePagePayload,
 } from "@/lib/api/types";
 
 /**
@@ -157,4 +158,30 @@ export function getHomeRecommendations() {
 
 export function getCmsPage(slug: string) {
   return serverGet<CmsPage>(`/pages/${slug}`, { tags: [`page:${slug}`] });
+}
+
+/**
+ * Public vendor store page: profile header data + the published designer
+ * document. Invalidated on publish / profile edits via the `store:<slug>`
+ * tag (see store_backend revalidate.service).
+ */
+export function getStorePage(slug: string) {
+  return serverGet<StorePagePayload>(`/store-pages/${slug}`, {
+    tags: [`store:${slug}`],
+  });
+}
+
+/**
+ * One vendor's published products for store-page product sections.
+ * Cached under the shared `products` tag like every other card fetch.
+ */
+export function getVendorProductsPage(params: {
+  vendorId: string;
+  sort?: string;
+  limit?: number;
+}) {
+  return serverGetList<ProductCardRow>("/products", {
+    params,
+    tags: ["products"],
+  });
 }

@@ -72,6 +72,7 @@ export const qk = {
 
   // engagement
   wishlist: () => ["wishlist"] as const,
+  followedStores: () => ["followed-stores"] as const,
 
   // account
   me: () => ["me"] as const,

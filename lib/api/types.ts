@@ -45,6 +45,7 @@ export interface ProductCardRow {
   minPricePaisa: string | null;
   brandName: string | null;
   vendorName: string | null;
+  vendorSlug: string | null;
 }
 
 export interface ProductVariant {
@@ -878,4 +879,186 @@ export interface CmsPage {
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Vendor store pages (the vendor-designed store website)                   */
+/* ----------------------------------------------------------------------- */
+/*
+ * TypeScript mirror of the backend contract in
+ * store_backend/src/modules/storePage/storePage.dto.ts — change it there
+ * first, then keep this (and the vendor app's lib/store-page/types.ts) in
+ * sync. Documents are validated server-side; the storefront can trust these
+ * shapes.
+ */
+
+export interface StoreTheme {
+  accent: string;
+  background: string;
+  foreground: string;
+  font: "sans" | "serif" | "mono";
+  radius: "none" | "sm" | "md" | "xl";
+  buttonStyle: "solid" | "outline" | "soft";
+  headerBanner: boolean;
+}
+
+export interface StoreSectionStyle {
+  paddingTop: number;
+  paddingBottom: number;
+  background: "page" | "surface" | "accent" | "custom";
+  customBackground?: string;
+  fullBleed: boolean;
+}
+
+export interface StoreButton {
+  id: string;
+  label: string;
+  href: string;
+  variant: "primary" | "ghost";
+}
+
+interface StoreSectionBase {
+  id: string;
+  hidden: boolean;
+  style: StoreSectionStyle;
+}
+
+export interface StoreHeroSection extends StoreSectionBase {
+  type: "hero";
+  heading: string;
+  subheading: string;
+  align: "left" | "center" | "right";
+  height: number;
+  imageMediaId: string | null;
+  overlay: number;
+  textTone: "auto" | "light" | "dark";
+  buttons: StoreButton[];
+}
+
+export interface StoreBannerSection extends StoreSectionBase {
+  type: "banner";
+  heading: string;
+  subheading: string;
+  align: "left" | "center" | "right";
+  height: number;
+  imageMediaId: string | null;
+  overlay: number;
+  textTone: "auto" | "light" | "dark";
+  button: StoreButton | null;
+}
+
+export interface StoreRichTextSection extends StoreSectionBase {
+  type: "rich_text";
+  html: string;
+  maxWidth: "narrow" | "normal" | "full";
+  align: "left" | "center" | "right";
+}
+
+export interface StoreImageWithTextSection extends StoreSectionBase {
+  type: "image_with_text";
+  imageMediaId: string | null;
+  imageSide: "left" | "right";
+  imageSpan: number;
+  heading: string;
+  html: string;
+  button: StoreButton | null;
+}
+
+export interface StoreGalleryItem {
+  id: string;
+  imageMediaId: string;
+  caption: string;
+  href: string | null;
+}
+
+export interface StoreGallerySection extends StoreSectionBase {
+  type: "gallery";
+  title: string;
+  items: StoreGalleryItem[];
+  columns: number;
+  gap: "sm" | "md" | "lg";
+  aspect: "square" | "portrait" | "landscape" | "auto";
+}
+
+export interface StoreProductsSection extends StoreSectionBase {
+  type: "products";
+  title: string;
+  subtitle: string;
+  source: "newest" | "best_selling" | "manual";
+  productIds: string[];
+  layout: "grid" | "carousel";
+  columns: number;
+  limit: number;
+}
+
+export interface StoreVideoSection extends StoreSectionBase {
+  type: "video";
+  url: string;
+  title: string;
+  maxWidth: "narrow" | "normal" | "full";
+}
+
+export interface StoreDividerSection extends StoreSectionBase {
+  type: "divider";
+  height: number;
+  line: boolean;
+}
+
+export interface StoreInfoSection extends StoreSectionBase {
+  type: "store_info";
+  heading: string;
+  showAbout: boolean;
+  showReturnPolicy: boolean;
+  showContact: boolean;
+}
+
+export interface StoreFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export interface StoreFaqSection extends StoreSectionBase {
+  type: "faq";
+  heading: string;
+  items: StoreFaqItem[];
+}
+
+export type StoreSection =
+  | StoreHeroSection
+  | StoreBannerSection
+  | StoreRichTextSection
+  | StoreImageWithTextSection
+  | StoreGallerySection
+  | StoreProductsSection
+  | StoreVideoSection
+  | StoreDividerSection
+  | StoreInfoSection
+  | StoreFaqSection;
+
+export interface StorePageDocument {
+  version: 1;
+  theme: StoreTheme;
+  sections: StoreSection[];
+}
+
+/** Public payload of GET /store-pages/:slug. */
+export interface StorePagePayload {
+  vendor: {
+    id: string;
+    storeName: string;
+    storeSlug: string;
+    storeLogoUrl: string | null;
+    storeBannerUrl: string | null;
+    tagline: string | null;
+    about: string | null;
+    returnPolicy: string | null;
+    ratingAverage: string | null;
+    vacationMode: boolean;
+    joinedAt: string;
+    followerCount: number;
+    productCount: number;
+  };
+  page: StorePageDocument | null;
+  publishedAt: string | null;
 }
