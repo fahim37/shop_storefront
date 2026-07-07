@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ChatDock } from "@/components/chat/chat-dock";
+import { AssistantDock } from "@/components/assistant/assistant-dock";
 import { useCartMergeOnAuth } from "@/lib/api/cart";
 
 /** Folds a guest cart into the user cart once authenticated. Renders nothing. */
@@ -40,6 +41,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <CartMergeBridge />
           {children}
           <ChatDock />
+          <AssistantDock />
           <AuthModal />
           <Toaster />
         </TooltipProvider>

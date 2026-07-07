@@ -37,12 +37,35 @@ export function PdpActionBar({
   const { requireAuth, isAuthenticated } = useAuth();
   const startWithVendor = useChatStore((s) => s.startWithVendor);
   const unread = useUnreadTotal(isAuthenticated);
+  const barRef = React.useRef<HTMLDivElement | null>(null);
+
+  // On product pages the global bottom nav unmounts and this bar owns the
+  // bottom edge — publish its height as --bottom-nav-h (same contract as
+  // MobileBottomNav) so floating elements (assistant FAB, sticky bars) can
+  // rest above it.
+  React.useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const update = () =>
+      root.style.setProperty("--bottom-nav-h", `${el.offsetHeight}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--bottom-nav-h");
+    };
+  }, []);
 
   const iconTab =
     "flex w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg py-1 text-2xs font-bold text-sub transition-transform duration-150 active:scale-90";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden">
+    <div
+      ref={barRef}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgba(15,23,42,0.10)] backdrop-blur-lg md:hidden"
+    >
       <div className="flex items-stretch gap-2 px-3 py-2.5">
         {vendorName && (
           <Link
