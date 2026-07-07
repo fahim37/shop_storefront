@@ -12,6 +12,7 @@ import {
   MapPin,
   Package,
   Star,
+  Store,
 } from "lucide-react";
 import { AccountIcon, BellIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const NAV: NavItem[] = [
   { label: "Personal information", href: "/account/profile", icon: AccountIcon },
   { label: "Order history", href: "/account/orders", icon: Package },
   { label: "My wishlist", href: "/account/wishlist", icon: Heart },
+  { label: "Followed stores", href: "/account/followed-stores", icon: Store },
   { label: "Addresses", href: "/account/addresses", icon: MapPin },
   { label: "My reviews", href: "/account/reviews", icon: Star },
   { label: "Notifications", href: "/account/notifications", icon: BellIcon },

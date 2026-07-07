@@ -276,9 +276,18 @@ function SubOrderSection({
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-surface/60 px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <p className="truncate font-display text-sm font-extrabold text-ink">
-            {sub.vendorName ?? "Store"}
-          </p>
+          {sub.vendorSlug ? (
+            <Link
+              href={`/store/${sub.vendorSlug}`}
+              className="truncate font-display text-sm font-extrabold text-ink hover:text-primary hover:underline"
+            >
+              {sub.vendorName ?? "Store"}
+            </Link>
+          ) : (
+            <p className="truncate font-display text-sm font-extrabold text-ink">
+              {sub.vendorName ?? "Store"}
+            </p>
+          )}
           <p className="text-xs text-faint">{sub.subOrderNumber}</p>
         </div>
         <span

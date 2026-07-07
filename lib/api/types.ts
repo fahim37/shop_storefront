@@ -90,6 +90,7 @@ export interface RecHit {
   thumbnailMediaId: string | null;
   pricePaisa: string;
   ratingAverage: number;
+  vendorSlug: string | null;
 }
 
 export interface RecResponse {
@@ -176,6 +177,7 @@ export interface SearchHit {
   pricePaisa: string;
   ratingAverage: number;
   vendorId: string;
+  vendorSlug: string | null;
   categoryId: string;
   brandId: string | null;
   score: number;
@@ -380,6 +382,7 @@ export interface OrderItem {
 export interface HydratedSubOrder extends SubOrder {
   items: OrderItem[];
   vendorName: string | null;
+  vendorSlug: string | null;
 }
 
 export interface OrderView extends Order {
@@ -390,6 +393,7 @@ export interface OrderSummary {
   itemCount: number;
   subOrderCount: number;
   vendorNames: string[];
+  vendors: Array<{ name: string; slug: string | null }>;
   firstThumbnailMediaId: string | null;
   /** Sub-order `status` values for this order (list rows only). */
   subOrderStatuses: SubOrderStatus[];
@@ -597,6 +601,7 @@ export interface WishlistItem {
   minPricePaisa: string | null;
   brandName: string | null;
   vendorName: string | null;
+  vendorSlug: string | null;
 }
 
 export interface FollowedStore {
@@ -622,6 +627,7 @@ export interface RecentlyViewedItem {
   minPricePaisa: string | null;
   brandName: string | null;
   vendorName: string | null;
+  vendorSlug: string | null;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -899,7 +905,21 @@ export interface StoreTheme {
   font: "sans" | "serif" | "mono";
   radius: "none" | "sm" | "md" | "xl";
   buttonStyle: "solid" | "outline" | "soft";
+  /** Legacy pre-`header` flag — only read when `document.header` is absent. */
   headerBanner: boolean;
+  backgroundImageMediaId: string | null;
+  /** Readability veil (% of page color) over the background image. */
+  backgroundOverlay: number;
+}
+
+export interface StoreHeader {
+  background: "banner" | "custom" | "gradient";
+  imageMediaId: string | null;
+  overlay: number;
+  height: "compact" | "normal" | "tall";
+  align: "left" | "center";
+  showTagline: boolean;
+  showStats: boolean;
 }
 
 export interface StoreSectionStyle {
@@ -908,6 +928,8 @@ export interface StoreSectionStyle {
   background: "page" | "surface" | "accent" | "custom";
   customBackground?: string;
   fullBleed: boolean;
+  hideOnMobile: boolean;
+  hideOnDesktop: boolean;
 }
 
 export interface StoreButton {
@@ -1024,6 +1046,75 @@ export interface StoreFaqSection extends StoreSectionBase {
   items: StoreFaqItem[];
 }
 
+export interface StoreTestimonialItem {
+  id: string;
+  name: string;
+  quote: string;
+  rating: number | null;
+}
+
+export interface StoreTestimonialsSection extends StoreSectionBase {
+  type: "testimonials";
+  heading: string;
+  items: StoreTestimonialItem[];
+}
+
+export interface StoreCountdownSection extends StoreSectionBase {
+  type: "countdown";
+  heading: string;
+  subheading: string;
+  endsAt: string;
+  expiredText: string;
+  button: StoreButton | null;
+}
+
+export type StoreSocialPlatform =
+  | "facebook"
+  | "instagram"
+  | "tiktok"
+  | "youtube"
+  | "whatsapp"
+  | "x"
+  | "website";
+
+export interface StoreSocialLink {
+  id: string;
+  platform: StoreSocialPlatform;
+  url: string;
+  label: string;
+}
+
+export interface StoreSocialLinksSection extends StoreSectionBase {
+  type: "social_links";
+  heading: string;
+  links: StoreSocialLink[];
+}
+
+export type StoreFeatureIcon =
+  | "truck"
+  | "shield"
+  | "medal"
+  | "sparkles"
+  | "refresh"
+  | "headphones"
+  | "gift"
+  | "leaf"
+  | "zap"
+  | "heart";
+
+export interface StoreFeatureItem {
+  id: string;
+  icon: StoreFeatureIcon;
+  title: string;
+  text: string;
+}
+
+export interface StoreFeaturesSection extends StoreSectionBase {
+  type: "features";
+  heading: string;
+  items: StoreFeatureItem[];
+}
+
 export type StoreSection =
   | StoreHeroSection
   | StoreBannerSection
@@ -1034,11 +1125,17 @@ export type StoreSection =
   | StoreVideoSection
   | StoreDividerSection
   | StoreInfoSection
-  | StoreFaqSection;
+  | StoreFaqSection
+  | StoreTestimonialsSection
+  | StoreCountdownSection
+  | StoreSocialLinksSection
+  | StoreFeaturesSection;
 
 export interface StorePageDocument {
   version: 1;
   theme: StoreTheme;
+  /** Absent on documents published before header customization shipped. */
+  header?: StoreHeader;
   sections: StoreSection[];
 }
 

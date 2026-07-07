@@ -144,10 +144,20 @@ function WishlistCard({ item }: { item: WishlistItem }) {
         </Link>
 
         {item.vendorName && (
-          <span className="mt-1 inline-flex items-center gap-1 truncate text-11 font-bold text-faint">
-            <Store className="size-3 shrink-0 text-primary" />
-            <span className="truncate">{item.vendorName}</span>
-          </span>
+          item.vendorSlug ? (
+            <Link
+              href={`/store/${item.vendorSlug}`}
+              className="mt-1 inline-flex items-center gap-1 truncate text-11 font-bold text-faint hover:text-primary hover:underline"
+            >
+              <Store className="size-3 shrink-0 text-primary" />
+              <span className="truncate">{item.vendorName}</span>
+            </Link>
+          ) : (
+            <span className="mt-1 inline-flex items-center gap-1 truncate text-11 font-bold text-faint">
+              <Store className="size-3 shrink-0 text-primary" />
+              <span className="truncate">{item.vendorName}</span>
+            </span>
+          )
         )}
 
         <div className="mt-2">

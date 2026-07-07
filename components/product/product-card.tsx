@@ -78,10 +78,21 @@ export function ProductCard({
         </div>
 
         {product.vendorName ? (
-          <span className="flex items-center gap-1 text-11 text-faint">
-            <Store className="size-3" strokeWidth={2} />
-            <span className="line-clamp-1">{product.vendorName}</span>
-          </span>
+          product.vendorSlug ? (
+            <Link
+              href={`/store/${product.vendorSlug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-11 text-faint hover:text-primary hover:underline"
+            >
+              <Store className="size-3 shrink-0" strokeWidth={2} />
+              <span className="line-clamp-1">{product.vendorName}</span>
+            </Link>
+          ) : (
+            <span className="flex items-center gap-1 text-11 text-faint">
+              <Store className="size-3 shrink-0" strokeWidth={2} />
+              <span className="line-clamp-1">{product.vendorName}</span>
+            </span>
+          )
         ) : null}
 
         <div className="mt-auto pt-1">

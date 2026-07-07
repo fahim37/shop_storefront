@@ -6,6 +6,27 @@
  */
 import * as React from "react";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import {
+  Facebook,
+  Gift,
+  Globe,
+  Headphones,
+  Heart,
+  Instagram,
+  Leaf,
+  Medal,
+  MessageCircle,
+  Music2,
+  RefreshCcw,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Truck,
+  Twitter,
+  Youtube,
+  Zap,
+} from "lucide-react";
 
 import { mediaUrl } from "@/lib/media";
 import { sanitizeRichText } from "@/lib/sanitize";
@@ -15,6 +36,8 @@ import type {
   StoreButton,
   StoreDividerSection,
   StoreFaqSection,
+  StoreFeatureIcon,
+  StoreFeaturesSection,
   StoreGallerySection,
   StoreHeroSection,
   StoreImageWithTextSection,
@@ -22,6 +45,9 @@ import type {
   StorePagePayload,
   StoreRichTextSection,
   StoreSectionStyle,
+  StoreSocialLinksSection,
+  StoreSocialPlatform,
+  StoreTestimonialsSection,
   StoreTheme,
   StoreVideoSection,
 } from "@/lib/api/types";
@@ -62,6 +88,10 @@ export function SectionShell({
   return (
     <section
       id={id}
+      className={cn(
+        style.hideOnMobile && "max-md:hidden",
+        style.hideOnDesktop && "md:hidden",
+      )}
       style={{
         paddingTop: style.paddingTop,
         paddingBottom: style.paddingBottom,
@@ -484,6 +514,166 @@ function InfoPanel({ title, children }: { title: string; children: React.ReactNo
     >
       <h4 className="mb-2 text-11 font-bold tracking-wide uppercase opacity-60">{title}</h4>
       {children}
+    </div>
+  );
+}
+
+/* ----------------------------- testimonials -------------------------------- */
+
+function StarsRow({ rating }: { rating: number }) {
+  return (
+    <span className="flex gap-0.5" style={{ color: "var(--sp-accent)" }} aria-label={`${rating} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star key={i} className={cn("size-3.5", i < rating ? "fill-current" : "opacity-25")} />
+      ))}
+    </span>
+  );
+}
+
+export function TestimonialsBlock({ section }: { section: StoreTestimonialsSection }) {
+  const items = section.items.filter((i) => i.quote.trim().length > 0);
+  if (items.length === 0) return null;
+  return (
+    <div>
+      {section.heading ? (
+        <h3 className="mb-5 text-2xl font-bold tracking-tight">{section.heading}</h3>
+      ) : null}
+      <div
+        className={cn(
+          "grid gap-4",
+          items.length === 1 ? "grid-cols-1" : items.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3",
+        )}
+      >
+        {items.map((item) => (
+          <figure
+            key={item.id}
+            className="flex flex-col gap-3 p-5"
+            style={{
+              borderRadius: "var(--sp-radius)",
+              background: "color-mix(in srgb, var(--sp-fg) 4%, var(--sp-bg))",
+              border: "1px solid color-mix(in srgb, var(--sp-fg) 10%, transparent)",
+            }}
+          >
+            {item.rating ? <StarsRow rating={item.rating} /> : null}
+            <blockquote className="text-sm leading-relaxed">{item.quote}</blockquote>
+            {item.name ? (
+              <figcaption className="text-13 font-bold opacity-70">{item.name}</figcaption>
+            ) : null}
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------- social links -------------------------------- */
+
+const SOCIAL_ICONS: Record<StoreSocialPlatform, LucideIcon> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  tiktok: Music2,
+  youtube: Youtube,
+  whatsapp: MessageCircle,
+  x: Twitter,
+  website: Globe,
+};
+
+const SOCIAL_LABELS: Record<StoreSocialPlatform, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  whatsapp: "WhatsApp",
+  x: "X (Twitter)",
+  website: "Website",
+};
+
+export function SocialLinksBlock({ section }: { section: StoreSocialLinksSection }) {
+  if (section.links.length === 0) return null;
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      {section.heading ? (
+        <h3 className="text-2xl font-bold tracking-tight">{section.heading}</h3>
+      ) : null}
+      <div className="flex flex-wrap justify-center gap-2.5">
+        {section.links.map((link) => {
+          const Icon = SOCIAL_ICONS[link.platform];
+          return (
+            <SmartLink
+              key={link.id}
+              href={link.url}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-transform duration-150 hover:scale-[1.03]"
+              style={{
+                borderRadius: "calc(var(--sp-radius) * 0.75)",
+                border: "1px solid color-mix(in srgb, var(--sp-fg) 18%, transparent)",
+                background: "color-mix(in srgb, var(--sp-fg) 4%, var(--sp-bg))",
+              }}
+            >
+              <Icon className="size-4" style={{ color: "var(--sp-accent)" }} />
+              {link.label || SOCIAL_LABELS[link.platform]}
+            </SmartLink>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------- features --------------------------------- */
+
+const FEATURE_ICONS: Record<StoreFeatureIcon, LucideIcon> = {
+  truck: Truck,
+  shield: ShieldCheck,
+  medal: Medal,
+  sparkles: Sparkles,
+  refresh: RefreshCcw,
+  headphones: Headphones,
+  gift: Gift,
+  leaf: Leaf,
+  zap: Zap,
+  heart: Heart,
+};
+
+export function FeaturesBlock({ section }: { section: StoreFeaturesSection }) {
+  const items = section.items.filter((i) => i.title.trim().length > 0);
+  if (items.length === 0) return null;
+  return (
+    <div>
+      {section.heading ? (
+        <h3 className="mb-6 text-center text-2xl font-bold tracking-tight">{section.heading}</h3>
+      ) : null}
+      <div
+        className={cn(
+          "grid gap-5",
+          items.length <= 2
+            ? "sm:grid-cols-2"
+            : items.length === 4
+              ? "grid-cols-2 sm:grid-cols-4"
+              : "grid-cols-2 sm:grid-cols-3",
+        )}
+      >
+        {items.map((item) => {
+          const Icon = FEATURE_ICONS[item.icon];
+          return (
+            <div key={item.id} className="flex flex-col items-center gap-2 text-center">
+              <span
+                className="flex size-12 items-center justify-center"
+                style={{
+                  borderRadius: "var(--sp-radius)",
+                  background: "color-mix(in srgb, var(--sp-accent) 12%, transparent)",
+                  color: "var(--sp-accent)",
+                }}
+              >
+                <Icon className="size-5.5" strokeWidth={1.8} />
+              </span>
+              <p className="text-15 font-bold">{item.title}</p>
+              {item.text ? (
+                <p className="text-13 leading-snug opacity-70">{item.text}</p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

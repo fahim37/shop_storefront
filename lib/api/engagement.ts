@@ -52,6 +52,7 @@ export function useAddWishlist() {
         minPricePaisa: null,
         brandName: null,
         vendorName: null,
+        vendorSlug: null,
       };
       qc.setQueryData<WishlistItem[]>(qk.wishlist(), (old) => {
         const list = old ?? [];

@@ -18,6 +18,7 @@ import { useUnreadTotal } from "@/lib/chat/queries";
 export function PdpActionBar({
   vendorId,
   vendorName,
+  vendorSlug,
   productId,
   productTitle,
   outOfStock,
@@ -27,6 +28,7 @@ export function PdpActionBar({
 }: {
   vendorId: string;
   vendorName: string | null;
+  vendorSlug: string | null;
   productId: string;
   productTitle: string;
   outOfStock: boolean;
@@ -46,7 +48,11 @@ export function PdpActionBar({
       <div className="flex items-stretch gap-2 px-3 py-2.5">
         {vendorName && (
           <Link
-            href={`/search?q=${encodeURIComponent(vendorName)}`}
+            href={
+              vendorSlug
+                ? `/store/${vendorSlug}`
+                : `/search?q=${encodeURIComponent(vendorName)}`
+            }
             className={iconTab}
           >
             <Store className="size-[22px] text-faint" strokeWidth={1.8} />
