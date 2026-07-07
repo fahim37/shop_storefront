@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { RotateCcw, Sparkles, X } from "lucide-react";
+import { RotateCcw, Sparkles } from "lucide-react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { CloseButton } from "@/components/ui/close-button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
@@ -60,7 +61,7 @@ function AssistantFab() {
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Open shopping assistant"
-      className="fixed right-4 z-40 grid size-13 place-items-center rounded-full bg-primary text-white shadow-[var(--shadow-pop)] transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6"
+      className="fixed right-4 z-40 grid size-13 place-items-center rounded-full bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-pop)] ring-1 ring-white/20 transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6"
     >
       <Sparkles className="size-6" />
     </button>
@@ -86,31 +87,39 @@ export function AssistantDock() {
           className={isDesktop ? "p-0 sm:max-w-md" : "h-[85dvh] p-0"}
         >
           <div className="flex h-full flex-col">
-            {/* Header */}
-            <div className="flex items-center gap-2 border-b border-border bg-navy px-3 py-3 text-white">
-              <SheetTitle className="flex items-center gap-2 text-base font-extrabold text-white">
-                <Sparkles className="size-5" /> Shopping Assistant
+            {/* Header — brand blue (not navy) with a soft radial glow */}
+            <div className="relative flex items-center gap-3 overflow-hidden bg-linear-to-r from-blue-strong via-blue to-[oklch(0.58_0.19_255)] px-3.5 py-3 text-white">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-white/10"
+              />
+              <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/20">
+                <Sparkles className="size-4.5" />
+              </span>
+              <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
+                Shopping Assistant
+                <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
+                  <span className="size-1.5 rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)]" />
+                  Online — ask anything
+                </span>
               </SheetTitle>
-              <div className="ml-auto flex items-center gap-0.5">
+              <div className="relative ml-auto flex items-center gap-1.5">
                 {hasMessages ? (
                   <button
                     type="button"
                     onClick={reset}
                     aria-label="Start a new chat"
                     title="New chat"
-                    className="rounded-full p-1.5 hover:bg-white/10"
+                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-[transform,background-color,border-color] duration-200 ease-out hover:border-white/30 hover:bg-white/20 active:scale-[0.85] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                   >
-                    <RotateCcw className="size-4.5" />
+                    <RotateCcw className="size-4" />
                   </button>
                 ) : null}
-                <button
-                  type="button"
+                <CloseButton
+                  tone="overlay"
                   onClick={() => setOpen(false)}
                   aria-label="Close assistant"
-                  className="rounded-full p-1.5 hover:bg-white/10"
-                >
-                  <X className="size-5" />
-                </button>
+                />
               </div>
             </div>
 

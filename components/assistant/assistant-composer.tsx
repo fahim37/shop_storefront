@@ -33,8 +33,8 @@ export function AssistantComposer() {
   };
 
   return (
-    <div className="border-t border-border bg-card px-2.5 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-      <div className="flex items-end gap-1.5">
+    <div className="border-t border-line bg-card px-2.5 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-end gap-1.5 rounded-[22px] border border-border bg-surface p-1.5 pl-4 transition-[border-color,box-shadow] focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -42,7 +42,7 @@ export function AssistantComposer() {
           rows={1}
           placeholder="Ask me anything…"
           aria-label="Message the shopping assistant"
-          className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-13 font-medium outline-none focus:border-primary"
+          className="max-h-28 min-h-8 flex-1 resize-none self-center bg-transparent py-1 text-13 font-medium outline-none placeholder:text-faint"
         />
         {isStreaming ? (
           <Button
@@ -51,9 +51,9 @@ export function AssistantComposer() {
             variant="soft"
             onClick={stop}
             aria-label="Stop generating"
-            className="size-10 shrink-0 rounded-xl"
+            className="size-9 shrink-0 rounded-full"
           >
-            <Square className="size-4 fill-current" />
+            <Square className="size-3.5 fill-current" />
           </Button>
         ) : (
           <Button
@@ -62,7 +62,7 @@ export function AssistantComposer() {
             onClick={submit}
             disabled={!text.trim()}
             aria-label="Send message"
-            className="size-10 shrink-0 rounded-xl"
+            className="size-9 shrink-0 rounded-full bg-linear-to-br from-blue to-blue-strong transition-transform hover:scale-105 active:scale-95 disabled:from-transparent disabled:to-transparent disabled:bg-muted disabled:text-faint"
           >
             <SendHorizontal className="size-4" />
           </Button>

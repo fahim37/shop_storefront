@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Store, Trash2, X } from "lucide-react";
+import { ShoppingBag, Store, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -9,6 +9,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  closeButtonClass,
+  CloseButtonIcon,
+} from "@/components/ui/close-button";
 import { Button } from "@/components/ui/button";
 import { MediaImage } from "@/components/ui/media-image";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -39,6 +43,7 @@ export function CartDrawer() {
       <SheetContent
         side="right"
         hideClose
+        swipeToClose
         className="w-[85%] max-w-sm sm:w-full sm:max-w-md"
       >
         <SheetHeader>
@@ -46,9 +51,9 @@ export function CartDrawer() {
           <SheetTitle>Your cart{count ? ` (${count})` : ""}</SheetTitle>
           <SheetClose
             aria-label="Close cart"
-            className="ml-auto grid size-9 place-items-center rounded-full text-faint transition-[transform,background-color,color] duration-200 ease-out hover:rotate-90 hover:bg-muted hover:text-ink active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={closeButtonClass({ className: "ml-auto" })}
           >
-            <X className="size-5" />
+            <CloseButtonIcon />
           </SheetClose>
         </SheetHeader>
 

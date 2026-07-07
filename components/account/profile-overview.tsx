@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -180,12 +181,13 @@ function EditProfileDialog({ me }: { me: Me }) {
           </Field>
 
           <Field id="dateOfBirth" label="Date of birth">
-            <Input
+            <DatePicker
               id="dateOfBirth"
-              type="date"
               value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
+              onChange={setDateOfBirth}
+              placeholder="Select your date of birth"
+              max={new Date()}
+              defaultMonth={new Date(2000, 0)}
             />
           </Field>
 

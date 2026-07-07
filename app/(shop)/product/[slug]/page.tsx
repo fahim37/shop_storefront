@@ -232,7 +232,8 @@ export default async function ProductPage({ params }: PageParams) {
                 <u.icon className="size-[18px] sm:size-5" strokeWidth={1.9} />
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-xs font-extrabold sm:text-13">
+                {/* titles wrap (max 2 lines) — mid-word ellipsis reads broken on 390px */}
+                <b className="line-clamp-2 text-xs font-extrabold leading-tight sm:text-13">
                   {u.title}
                 </b>
                 <span className="block truncate text-11 font-semibold text-faint">

@@ -36,7 +36,8 @@ export function UspStrip({ items }: { items: HomepageUspItem[] }) {
                 <Icon className="size-4 lg:size-5" strokeWidth={2} />
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-xs font-extrabold text-ink lg:text-13">
+                {/* titles wrap (max 2 lines) — mid-word ellipsis reads broken on 390px */}
+                <b className="line-clamp-2 text-xs font-extrabold leading-tight text-ink lg:text-13">
                   {u.title}
                 </b>
                 {u.subtitle && (

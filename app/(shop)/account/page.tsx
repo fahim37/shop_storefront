@@ -512,6 +512,9 @@ function NotificationPreviewSkeleton() {
 /* Quick access + mobile menu                                                 */
 /* -------------------------------------------------------------------------- */
 
+// Exactly 6 tiles: flush 3×2 on mobile and one 6-across row on lg — an
+// incomplete last row reads as a broken/floating card. Profile is deliberately
+// absent (it lives in the mobile settings list below and the desktop sidebar).
 const QUICK_TILES: {
   href: string;
   label: string;
@@ -524,7 +527,6 @@ const QUICK_TILES: {
   { href: "/account/reviews", label: "Reviews", icon: Star, tone: "amber" },
   { href: "/account/addresses", label: "Addresses", icon: MapPin, tone: "primary" },
   { href: "/account/notifications", label: "Alerts", icon: Bell, tone: "green" },
-  { href: "/account/profile", label: "Profile", icon: UserRound, tone: "navy" },
 ];
 
 const TONE_CLASS: Record<string, string> = {

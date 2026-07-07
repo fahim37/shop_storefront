@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { CloseButton } from "@/components/ui/close-button";
 import { cn } from "@/lib/utils";
 import { mediaUrl } from "@/lib/media";
 import { MediaImage } from "@/components/ui/media-image";
@@ -476,14 +477,11 @@ export function ProductLightbox({
         <span className="text-13 font-bold tabular-nums">
           {index + 1} / {count}
         </span>
-        <button
-          type="button"
+        <CloseButton
+          tone="overlay"
           onClick={onClose}
           aria-label="Close viewer"
-          className="rounded-full p-2 transition-colors hover:bg-white/10"
-        >
-          <X className="size-5" />
-        </button>
+        />
       </div>
 
       {/* stage */}

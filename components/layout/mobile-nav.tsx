@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { closeButtonClass } from "@/components/ui/close-button";
 import { Logo } from "@/components/layout/logo";
 import { categoryIcon } from "@/lib/category-icons";
 import { useCategoryTree } from "@/lib/api/catalog";
@@ -71,7 +72,7 @@ export function MobileNav() {
           </SheetTitle>
           <SheetClose
             aria-label="Close menu"
-            className="group ml-auto flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted/60 text-ink transition-[transform,background-color,border-color] duration-200 ease-out hover:border-primary/40 hover:bg-muted active:scale-[0.85] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={closeButtonClass({ className: "ml-auto" })}
           >
             {/* two bars draw into an X (see .x-bar); the wrapper spins a
                 quarter turn on hover/press for tactile feedback */}
