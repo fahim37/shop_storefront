@@ -47,6 +47,7 @@ export function fromSearchHit(h: SearchHit): CardProduct {
     thumbnailMediaId: h.thumbnailMediaId,
     pricePaisa: h.pricePaisa,
     ratingAverage: h.ratingAverage,
+    vendorName: h.vendorName,
     vendorSlug: h.vendorSlug,
   };
 }
@@ -59,6 +60,7 @@ export function fromRecHit(h: RecHit): CardProduct {
     thumbnailMediaId: h.thumbnailMediaId,
     pricePaisa: h.pricePaisa,
     ratingAverage: h.ratingAverage,
+    vendorName: h.vendorName,
     vendorSlug: h.vendorSlug,
   };
 }

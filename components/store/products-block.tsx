@@ -30,7 +30,8 @@ export function ProductsBlock({
         <div className="no-scrollbar -mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:gap-4">
           {products.map((p) => (
             <div key={p.id} className="w-40 shrink-0 snap-start sm:w-48">
-              <ProductCard product={p} />
+              {/* Inside the vendor's own page the store row is redundant. */}
+              <ProductCard product={p} showVendor={false} />
             </div>
           ))}
         </div>
@@ -46,7 +47,7 @@ export function ProductsBlock({
           id={`p-${section.id.replace(/[^a-zA-Z0-9_-]/g, "")}`}
         >
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={p} showVendor={false} />
           ))}
         </div>
       )}

@@ -90,6 +90,7 @@ export interface RecHit {
   thumbnailMediaId: string | null;
   pricePaisa: string;
   ratingAverage: number;
+  vendorName: string | null;
   vendorSlug: string | null;
 }
 
@@ -177,6 +178,7 @@ export interface SearchHit {
   pricePaisa: string;
   ratingAverage: number;
   vendorId: string;
+  vendorName: string | null;
   vendorSlug: string | null;
   categoryId: string;
   brandId: string | null;
