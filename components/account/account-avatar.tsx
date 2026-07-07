@@ -11,7 +11,7 @@ import { initials } from "@/lib/format";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
-/** Clickable initials/photo circle used on the account page(s) to change the profile photo. */
+/** Clickable initials/photo circle  used on the account page(s) to change the profile photo. */
 export function AccountAvatar({
   fullName,
   photoUrl,
