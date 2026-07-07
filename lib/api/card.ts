@@ -21,6 +21,7 @@ export interface CardProduct {
   ratingCount?: number;
   salesCount?: number;
   vendorName?: string | null;
+  vendorSlug?: string | null;
 }
 
 export function fromProductRow(p: ProductCardRow): CardProduct {
@@ -34,6 +35,7 @@ export function fromProductRow(p: ProductCardRow): CardProduct {
     ratingCount: p.ratingCount,
     salesCount: p.salesCount,
     vendorName: p.vendorName,
+    vendorSlug: p.vendorSlug,
   };
 }
 
@@ -45,6 +47,8 @@ export function fromSearchHit(h: SearchHit): CardProduct {
     thumbnailMediaId: h.thumbnailMediaId,
     pricePaisa: h.pricePaisa,
     ratingAverage: h.ratingAverage,
+    vendorName: h.vendorName,
+    vendorSlug: h.vendorSlug,
   };
 }
 
@@ -56,6 +60,8 @@ export function fromRecHit(h: RecHit): CardProduct {
     thumbnailMediaId: h.thumbnailMediaId,
     pricePaisa: h.pricePaisa,
     ratingAverage: h.ratingAverage,
+    vendorName: h.vendorName,
+    vendorSlug: h.vendorSlug,
   };
 }
 
@@ -67,6 +73,7 @@ export function fromWishlist(w: WishlistItem): CardProduct {
     thumbnailMediaId: w.thumbnailMediaId,
     pricePaisa: w.minPricePaisa,
     vendorName: w.vendorName,
+    vendorSlug: w.vendorSlug,
   };
 }
 
@@ -78,5 +85,6 @@ export function fromRecentlyViewed(r: RecentlyViewedItem): CardProduct {
     thumbnailMediaId: r.thumbnailMediaId,
     pricePaisa: r.minPricePaisa,
     vendorName: r.vendorName,
+    vendorSlug: r.vendorSlug,
   };
 }

@@ -13,6 +13,7 @@ import {
   Package,
   ShoppingBag,
   Star,
+  Store,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -519,6 +520,7 @@ const QUICK_TILES: {
 }[] = [
   { href: "/account/orders", label: "Orders", icon: Package, tone: "primary" },
   { href: "/account/wishlist", label: "Wishlist", icon: Heart, tone: "red" },
+  { href: "/account/followed-stores", label: "Stores", icon: Store, tone: "navy" },
   { href: "/account/reviews", label: "Reviews", icon: Star, tone: "amber" },
   { href: "/account/addresses", label: "Addresses", icon: MapPin, tone: "primary" },
   { href: "/account/notifications", label: "Alerts", icon: Bell, tone: "green" },

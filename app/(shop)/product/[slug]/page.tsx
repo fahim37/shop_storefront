@@ -193,10 +193,13 @@ export default async function ProductPage({ params }: PageParams) {
                 {formatRating(product.ratingAverage)}
               </span>
             </span>
-            <span className="text-faint">
+            <a
+              href="#reviews"
+              className="text-faint underline-offset-2 hover:text-primary hover:underline"
+            >
               ({product.ratingCount}{" "}
               {product.ratingCount === 1 ? "rating" : "ratings"})
-            </span>
+            </a>
             <span className="text-[oklch(0.8_0.01_255)]">·</span>
             <span className="text-faint">
               {formatCompact(product.salesCount)} sold

@@ -322,6 +322,7 @@ export function BuyPanel({ detail }: { detail: ProductDetail }) {
       <PdpActionBar
         vendorId={detail.product.vendorId}
         vendorName={detail.product.vendorName}
+        vendorSlug={detail.product.vendorSlug}
         productId={detail.product.id}
         productTitle={detail.product.title}
         outOfStock={outOfStock}

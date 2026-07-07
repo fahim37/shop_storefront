@@ -15,17 +15,22 @@ import type {
   StoreSection,
 } from "@/lib/api/types";
 import type { CardProduct } from "@/lib/api/card";
+import { mediaUrl } from "@/lib/media";
 import { StoreHeader } from "@/components/store/store-header";
 import { ProductsBlock } from "@/components/store/products-block";
+import { CountdownBlock } from "@/components/store/countdown-block";
 import {
   DividerBlock,
   FaqBlock,
+  FeaturesBlock,
   GalleryBlock,
   HeroBannerBlock,
   ImageWithTextBlock,
   RichTextBlock,
   SectionShell,
+  SocialLinksBlock,
   StoreInfoBlock,
+  TestimonialsBlock,
   VideoBlock,
 } from "@/components/store/store-blocks";
 import { themeVars } from "@/components/store/store-theme";
@@ -44,6 +49,17 @@ export function defaultDocumentFor(
       radius: "md",
       buttonStyle: "solid",
       headerBanner: true,
+      backgroundImageMediaId: null,
+      backgroundOverlay: 85,
+    },
+    header: {
+      background: "banner",
+      imageMediaId: null,
+      overlay: 30,
+      height: "normal",
+      align: "left",
+      showTagline: true,
+      showStats: true,
     },
     sections: [
       {
@@ -55,6 +71,8 @@ export function defaultDocumentFor(
           paddingBottom: 0,
           background: "page",
           fullBleed: true,
+          hideOnMobile: false,
+          hideOnDesktop: false,
         },
         heading: vendor.storeName,
         subheading: vendor.tagline ?? "",
@@ -74,6 +92,8 @@ export function defaultDocumentFor(
           paddingBottom: 48,
           background: "page",
           fullBleed: false,
+          hideOnMobile: false,
+          hideOnDesktop: false,
         },
         title: "Our products",
         subtitle: "",
@@ -92,6 +112,8 @@ export function defaultDocumentFor(
           paddingBottom: 48,
           background: "surface",
           fullBleed: false,
+          hideOnMobile: false,
+          hideOnDesktop: false,
         },
         heading: "About the store",
         showAbout: true,
@@ -174,6 +196,30 @@ function renderSection(
           <FaqBlock section={section} />
         </SectionShell>
       );
+    case "testimonials":
+      return (
+        <SectionShell key={section.id} style={section.style}>
+          <TestimonialsBlock section={section} />
+        </SectionShell>
+      );
+    case "countdown":
+      return (
+        <SectionShell key={section.id} style={section.style}>
+          <CountdownBlock section={section} theme={theme} />
+        </SectionShell>
+      );
+    case "social_links":
+      return (
+        <SectionShell key={section.id} style={section.style}>
+          <SocialLinksBlock section={section} />
+        </SectionShell>
+      );
+    case "features":
+      return (
+        <SectionShell key={section.id} style={section.style}>
+          <FeaturesBlock section={section} />
+        </SectionShell>
+      );
     default:
       return null;
   }
@@ -189,10 +235,39 @@ export function StorePageRenderer({
   productsBySection: Record<string, CardProduct[]>;
 }) {
   const visible = document.sections.filter((s) => !s.hidden);
+  const theme = document.theme;
+  const pageBg = mediaUrl(theme.backgroundImageMediaId, "hero");
   return (
-    <div style={themeVars(document.theme)}>
-      <StoreHeader vendor={payload.vendor} theme={document.theme} />
-      {visible.map((s) => renderSection(s, payload, document, productsBySection))}
+    <div
+      style={{
+        ...themeVars(theme),
+        ...(pageBg
+          ? {
+              backgroundImage: `url(${pageBg})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundAttachment: "fixed",
+            }
+          : {}),
+      }}
+    >
+      {/* readability veil over the page background image */}
+      <div
+        style={
+          pageBg
+            ? {
+                background: `color-mix(in srgb, var(--sp-bg) ${theme.backgroundOverlay}%, transparent)`,
+              }
+            : undefined
+        }
+      >
+        <StoreHeader
+          vendor={payload.vendor}
+          theme={theme}
+          header={document.header}
+        />
+        {visible.map((s) => renderSection(s, payload, document, productsBySection))}
+      </div>
     </div>
   );
 }

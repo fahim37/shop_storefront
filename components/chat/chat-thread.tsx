@@ -40,7 +40,7 @@ function ThreadHeader({
         <p className="truncate text-sm font-extrabold text-ink">{name ?? "Store"}</p>
         {slug ? (
           <Link
-            href={`/search?q=${encodeURIComponent(name ?? slug)}`}
+            href={`/store/${slug}`}
             className="flex items-center gap-1 text-11 font-semibold text-sub hover:text-primary"
           >
             <Store className="size-3" /> Visit store

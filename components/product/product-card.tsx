@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { discountPercent, formatCompact, formatRating } from "@/lib/format";
@@ -18,10 +19,14 @@ export type { CardProduct } from "@/lib/api/card";
 export function ProductCard({
   product,
   className,
+  showVendor = true,
 }: {
   product: CardProduct;
   className?: string;
+  /** Hide the store row (e.g. inside that vendor's own store page). */
+  showVendor?: boolean;
 }) {
+  const router = useRouter();
   const pct = discountPercent(product.pricePaisa, product.comparePaisa);
   const href = `/product/${product.slug}`;
 
@@ -77,11 +82,34 @@ export function ProductCard({
           ) : null}
         </div>
 
-        {product.vendorName ? (
-          <span className="flex items-center gap-1 text-11 text-faint">
-            <Store className="size-3" strokeWidth={2} />
-            <span className="line-clamp-1">{product.vendorName}</span>
-          </span>
+        {showVendor && product.vendorName ? (
+          product.vendorSlug ? (
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/store/${product.vendorSlug}`);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push(`/store/${product.vendorSlug}`);
+                }
+              }}
+              className="flex items-center gap-1 text-11 text-faint hover:text-primary hover:underline"
+            >
+              <Store className="size-3 shrink-0" strokeWidth={2} />
+              <span className="line-clamp-1">{product.vendorName}</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-11 text-faint">
+              <Store className="size-3 shrink-0" strokeWidth={2} />
+              <span className="line-clamp-1">{product.vendorName}</span>
+            </span>
+          )
         ) : null}
 
         <div className="mt-auto pt-1">

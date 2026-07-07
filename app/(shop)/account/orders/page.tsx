@@ -212,7 +212,7 @@ function minTrackingStep(order: OrderListItem): number | null {
 
 function OrderGroupCard({ order }: { order: OrderListItem }) {
   const detailHref = `/account/orders/${order.id}`;
-  const vendorNames = order.summary.vendorNames.filter(Boolean);
+  const vendors = order.summary.vendors.filter((v) => v.name);
   const status = deriveOrderListStatus(order);
   const statusBadge = ORDER_LIST_STATUS_BADGE[status];
   const step = status === "processing" ? minTrackingStep(order) : null;
@@ -259,9 +259,24 @@ function OrderGroupCard({ order }: { order: OrderListItem }) {
               ? ` · ${order.summary.subOrderCount} shipments`
               : ""}
           </p>
-          {vendorNames.length > 0 && (
+          {vendors.length > 0 && (
             <p className="mt-0.5 truncate text-sm text-sub">
-              {vendorNames.join(", ")}
+              {vendors.map((v, i) => (
+                <React.Fragment key={`${v.name}-${i}`}>
+                  {i > 0 ? ", " : ""}
+                  {v.slug ? (
+                    <Link
+                      href={`/store/${v.slug}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {v.name}
+                    </Link>
+                  ) : (
+                    v.name
+                  )}
+                </React.Fragment>
+              ))}
             </p>
           )}
 
