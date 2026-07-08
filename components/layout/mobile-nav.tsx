@@ -242,7 +242,14 @@ export function MobileBottomNav() {
   return (
     <nav
       ref={navRef}
-      className="sticky bottom-0 z-40 overflow-hidden border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
+      // Top hairline set as an explicit inline border (literal `solid`) rather
+      // than Tailwind's `border-t border-border`. The utility routes the style
+      // through `border-top-style: var(--tw-border-style)`, and that custom
+      // property can fail to resolve to `solid` in the minified prod bundle —
+      // giving a 1px, correctly-coloured, but style:none (invisible) border.
+      // Renders in dev, vanishes on Vercel. Inline `solid` sidesteps it.
+      style={{ borderTop: "1px solid var(--border)" }}
+      className="sticky bottom-0 z-40 overflow-hidden bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden"
     >
       {/* sliding top indicator */}
       <div className={cn(slideCls, "top-0 flex justify-center")} style={slide}>
