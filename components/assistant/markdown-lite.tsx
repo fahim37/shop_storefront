@@ -8,11 +8,12 @@ import Link from "next/link";
  *   - paragraphs (blank-line separated)
  *   - "- " bullet lists
  *   - **bold**
+ *   - `inline code` (order numbers, coupon codes)
  *   - [label](/relative/path) links — internal paths render as <Link>;
  *     anything else (external/js:) renders as plain text, by policy.
  */
 
-const INLINE_RE = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+const INLINE_RE = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|`([^`\n]+)`/g;
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
@@ -43,6 +44,15 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
         // External or malformed target — render the label only.
         nodes.push(match[2]);
       }
+    } else if (match[4] !== undefined) {
+      nodes.push(
+        <code
+          key={`${keyPrefix}-c${i}`}
+          className="rounded bg-muted px-1 py-0.5 font-mono text-12 font-semibold text-ink"
+        >
+          {match[4]}
+        </code>,
+      );
     }
     last = idx + match[0].length;
     i += 1;

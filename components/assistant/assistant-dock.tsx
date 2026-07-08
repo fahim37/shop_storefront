@@ -77,6 +77,24 @@ export function AssistantDock() {
   const reset = useAssistantStore((s) => s.reset);
   const hasMessages = useAssistantStore((s) => s.messages.length > 0);
 
+  // The dock is a modal Sheet, so a link clicked inside it (product card,
+  // order row, markdown link, action chip) navigates the page UNDERNEATH the
+  // overlay. Close the dock on any internal-link click so the customer lands
+  // on the page they asked for; modifier/middle clicks (new tab) keep it
+  // open. The thread lives in the store, so reopening resumes the chat.
+  const closeOnNavigate = React.useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // No e.defaultPrevented guard: Next's <Link> preventDefaults every
+      // internal click as part of client-side routing, so it's always true
+      // here. Modifier/middle clicks open a new tab — keep the dock then.
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as HTMLElement).closest("a[href]");
+      if (anchor?.getAttribute("href")?.startsWith("/")) setOpen(false);
+    },
+    [setOpen],
+  );
+
   return (
     <>
       <AssistantFab />
@@ -123,8 +141,9 @@ export function AssistantDock() {
               </div>
             </div>
 
-            {/* Body */}
-            <div className="flex min-h-0 flex-1 flex-col">
+            {/* Body — closeOnNavigate is click delegation on child links,
+                not an interaction of this container itself */}
+            <div className="flex min-h-0 flex-1 flex-col" onClick={closeOnNavigate}>
               <AssistantThread />
               <AssistantComposer />
             </div>
