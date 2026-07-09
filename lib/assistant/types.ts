@@ -17,6 +17,13 @@ export interface RichProductCard {
   ratingAverage?: number | string | null;
 }
 
+/** "What's inside" preview line on an order card (max 3 per order). */
+export interface RichOrderItemPreview {
+  title: string;
+  quantity: number;
+  thumbnailMediaId: string | null;
+}
+
 export interface RichOrderSummary {
   orderId: string;
   orderNumber: string;
@@ -25,6 +32,8 @@ export interface RichOrderSummary {
   totalPaisa: string;
   placedAt: string;
   itemCount?: number;
+  /** First few items (title + qty + thumbnail) so the card shows contents. */
+  items?: RichOrderItemPreview[];
 }
 
 export type RichAction =

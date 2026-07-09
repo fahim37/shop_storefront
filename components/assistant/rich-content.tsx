@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type {
   RichAction,
   RichContent,
+  RichOrderItemPreview,
   RichOrderSummary,
   RichProductCard,
 } from "@/lib/assistant/types";
@@ -63,15 +64,59 @@ function ProductCardMini({ product }: { product: RichProductCard }) {
   );
 }
 
+/** Overlapping stack of up to 3 item thumbnails — "what's inside" at a glance. */
+function OrderItemThumbs({ items }: { items: RichOrderItemPreview[] }) {
+  return (
+    <div className="flex shrink-0 -space-x-2.5">
+      {items.slice(0, 3).map((item, i) => (
+        <div
+          key={i}
+          className="relative size-10 overflow-hidden rounded-lg border-2 border-card bg-muted shadow-sm"
+          style={{ zIndex: items.length - i }}
+        >
+          <MediaImage
+            mediaId={item.thumbnailMediaId}
+            variant="thumbnail"
+            alt={item.title}
+            className="size-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** "Blender ×2, Cotton T-Shirt +3 more" — compact contents line. */
+function orderItemsLine(order: RichOrderSummary): string | null {
+  const items = order.items;
+  if (!items?.length) return null;
+  const names = items.map((it) =>
+    it.quantity > 1 ? `${it.title} ×${it.quantity}` : it.title,
+  );
+  const shownQty = items.reduce((n, it) => n + it.quantity, 0);
+  const more = (order.itemCount ?? shownQty) - shownQty;
+  return names.join(", ") + (more > 0 ? ` +${more} more` : "");
+}
+
 function OrderSummaryRow({ order }: { order: RichOrderSummary }) {
+  const itemsText = orderItemsLine(order);
   return (
     <Link
       href={`/account/orders/${order.orderId}`}
       className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 transition-colors hover:border-primary"
     >
-      <Package className="size-4 shrink-0 text-primary" />
+      {order.items?.length ? (
+        <OrderItemThumbs items={order.items} />
+      ) : (
+        <Package className="size-4 shrink-0 text-primary" />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-13 font-bold text-ink">#{order.orderNumber}</p>
+        {itemsText ? (
+          <p className="truncate text-11 font-medium text-ink/75" title={itemsText}>
+            {itemsText}
+          </p>
+        ) : null}
         <p className="text-11 font-medium text-sub">
           {order.itemCount ? `${order.itemCount} item${order.itemCount > 1 ? "s" : ""} · ` : ""}
           {formatRelative(order.placedAt)}
