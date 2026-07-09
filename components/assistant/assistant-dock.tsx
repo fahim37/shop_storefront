@@ -61,9 +61,15 @@ function AssistantFab() {
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Open shopping assistant"
-      className="fixed right-4 z-40 grid size-13 place-items-center rounded-full bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-pop)] ring-1 ring-white/20 transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6"
+      className="group fixed right-4 z-40 grid size-13 animate-pop place-items-center rounded-full bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-pop)] ring-1 ring-white/20 transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6 motion-reduce:animate-none"
     >
-      <Sparkles className="size-6" />
+      {/* Soft attention ring — one slow ping every few seconds, honours
+          prefers-reduced-motion. */}
+      <span
+        aria-hidden
+        className="absolute inset-0 -z-10 animate-ping rounded-full bg-blue/40 [animation-duration:3.2s] group-hover:hidden motion-reduce:hidden"
+      />
+      <Sparkles className="size-6 transition-transform duration-200 group-hover:rotate-12" />
     </button>
   );
 }
@@ -117,7 +123,7 @@ export function AssistantDock() {
               <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
                 Shopping Assistant
                 <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
-                  <span className="size-1.5 rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)]" />
+                  <span className="size-1.5 animate-badge-pulse rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)] motion-reduce:animate-none" />
                   Online — ask anything
                 </span>
               </SheetTitle>

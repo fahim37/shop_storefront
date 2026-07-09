@@ -36,9 +36,10 @@ export function confirmAssistantAction(
   conversationId: string,
   confirmId: string,
   decision: "confirm" | "cancel",
+  reasonCode?: string,
 ): Promise<ConfirmResponse> {
   return http.post<ConfirmResponse>(
     `/chat/conversations/${conversationId}/confirm`,
-    { confirmId, decision },
+    { confirmId, decision, ...(reasonCode ? { reasonCode } : {}) },
   );
 }

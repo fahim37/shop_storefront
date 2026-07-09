@@ -16,6 +16,11 @@ import {
 } from "@/lib/order-status";
 import { OrderTracker } from "@/components/account/order-tracker";
 import { WriteReviewDialog } from "@/components/account/write-review-dialog";
+import {
+  CANCEL_REASONS,
+  cancelReasonText,
+  type CancelReasonCode,
+} from "@/lib/orders/cancel-reasons";
 import { formatDate, formatDateTime, formatPaisa } from "@/lib/format";
 import { ApiError } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
@@ -624,19 +629,22 @@ function CancelOrderControl({
   orderNumber: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [reason, setReason] = React.useState("");
+  const [reasonCode, setReasonCode] = React.useState<CancelReasonCode | null>(null);
+  const [otherText, setOtherText] = React.useState("");
   const cancelOrder = useCancelOrder();
 
   function handleCancel() {
+    if (!reasonCode) return;
     cancelOrder.mutate(
-      { id: orderId, reason: reason.trim() },
+      { id: orderId, reason: cancelReasonText(reasonCode, otherText) },
       {
         onSuccess: () => {
           toast.success("Order cancelled", {
             description: `${orderNumber} has been cancelled.`,
           });
           setOpen(false);
-          setReason("");
+          setReasonCode(null);
+          setOtherText("");
         },
         onError: (err) => {
           toast.error(
@@ -672,25 +680,43 @@ function CancelOrderControl({
           <DialogHeader>
             <DialogTitle>Cancel order {orderNumber}?</DialogTitle>
             <DialogDescription>
-              This can’t be undone. Let us know why you’re cancelling (optional).
+              This can’t be undone. Please tell us why you’re cancelling.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-1.5">
-            <label
-              htmlFor="cancel-reason"
-              className="text-sm font-semibold text-ink"
-            >
-              Reason
-            </label>
-            <textarea
-              id="cancel-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              placeholder="e.g. Ordered by mistake, found a better price…"
-              className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-primary focus:ring-2 focus:ring-ring"
-            />
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-ink">Reason</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CANCEL_REASONS.map((r) => {
+                const selected = reasonCode === r.code;
+                return (
+                  <button
+                    key={r.code}
+                    type="button"
+                    onClick={() => setReasonCode(selected ? null : r.code)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95",
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                        : "border-border bg-card text-sub hover:border-primary hover:text-ink",
+                    )}
+                  >
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
+            {reasonCode === "other" ? (
+              <textarea
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+                rows={2}
+                maxLength={100}
+                placeholder="Tell us a bit more (optional)…"
+                className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-primary focus:ring-2 focus:ring-ring"
+              />
+            ) : null}
           </div>
 
           <DialogFooter>
@@ -706,6 +732,7 @@ function CancelOrderControl({
               variant="destructive"
               size="md"
               loading={cancelOrder.isPending}
+              disabled={!reasonCode}
               onClick={handleCancel}
             >
               Cancel order

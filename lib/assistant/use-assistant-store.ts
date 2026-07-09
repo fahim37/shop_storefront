@@ -75,7 +75,11 @@ interface AssistantState {
   hydrate: () => Promise<void>;
   send: (text: string) => Promise<void>;
   stop: () => void;
-  confirmAction: (confirmId: string, decision: "confirm" | "cancel") => Promise<void>;
+  confirmAction: (
+    confirmId: string,
+    decision: "confirm" | "cancel",
+    reasonCode?: string,
+  ) => Promise<void>;
   /** Start a brand-new conversation (new-chat button). */
   reset: () => void;
   /** Auth flips: drop the stored conversation (it belongs to the other identity). */
@@ -257,13 +261,18 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
       abortController?.abort();
     },
 
-    confirmAction: async (confirmId, decision) => {
+    confirmAction: async (confirmId, decision, reasonCode) => {
       const { conversationId, consumedConfirmIds } = get();
       if (!conversationId || consumedConfirmIds.includes(confirmId)) return;
       // Disable the buttons immediately — the token is single-use server-side.
       set({ consumedConfirmIds: [...consumedConfirmIds, confirmId] });
       try {
-        const res = await confirmAssistantAction(conversationId, confirmId, decision);
+        const res = await confirmAssistantAction(
+          conversationId,
+          confirmId,
+          decision,
+          reasonCode,
+        );
         set((s) => ({
           messages: [
             ...s.messages,

@@ -36,6 +36,12 @@ export interface RichOrderSummary {
   items?: RichOrderItemPreview[];
 }
 
+/** One questionnaire choice offered with a confirm action. */
+export interface RichConfirmReason {
+  code: string;
+  label: string;
+}
+
 export type RichAction =
   | { type: "link"; label: string; href: string }
   | { type: "signin"; label: string }
@@ -46,6 +52,8 @@ export type RichAction =
       action: "cancel_order" | "initiate_return";
       summary: string;
       expiresAt: string;
+      /** When present, the widget asks "why?" and posts the chosen code. */
+      reasonOptions?: RichConfirmReason[];
     };
 
 export interface RichContent {

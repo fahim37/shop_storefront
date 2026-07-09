@@ -26,13 +26,20 @@ import type {
  * here is backend-authored, so hrefs/prices/ids are trustworthy.
  */
 
-function ProductCardMini({ product }: { product: RichProductCard }) {
+function ProductCardMini({
+  product,
+  index = 0,
+}: {
+  product: RichProductCard;
+  index?: number;
+}) {
   const rating =
     product.ratingAverage != null ? Number(product.ratingAverage) : null;
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="flex w-60 shrink-0 items-center gap-2.5 rounded-xl border border-border bg-card p-2 transition-colors hover:border-primary"
+      style={{ animationDelay: `${index * 60}ms` }}
+      className="flex w-60 shrink-0 animate-pop items-center gap-2.5 rounded-xl border border-border bg-card p-2 transition-all duration-150 hover:-translate-y-0.5 hover:border-primary hover:shadow-[var(--shadow-card)] motion-reduce:animate-none"
     >
       <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
         <MediaImage
@@ -98,12 +105,19 @@ function orderItemsLine(order: RichOrderSummary): string | null {
   return names.join(", ") + (more > 0 ? ` +${more} more` : "");
 }
 
-function OrderSummaryRow({ order }: { order: RichOrderSummary }) {
+function OrderSummaryRow({
+  order,
+  index = 0,
+}: {
+  order: RichOrderSummary;
+  index?: number;
+}) {
   const itemsText = orderItemsLine(order);
   return (
     <Link
       href={`/account/orders/${order.orderId}`}
-      className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 transition-colors hover:border-primary"
+      style={{ animationDelay: `${index * 60}ms` }}
+      className="flex animate-fade-up items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2 transition-all duration-150 hover:-translate-y-0.5 hover:border-primary hover:shadow-[var(--shadow-card)] motion-reduce:animate-none"
     >
       {order.items?.length ? (
         <OrderItemThumbs items={order.items} />
@@ -143,10 +157,85 @@ function OrderSummaryRow({ order }: { order: RichOrderSummary }) {
   );
 }
 
-function ActionButtons({ actions }: { actions: RichAction[] }) {
-  const { requireAuth } = useAuth();
+/**
+ * Two-phase confirm — single-use, disabled once pressed. Expiry is enforced
+ * server-side (10-min Redis TTL): a stale press 404s and the store appends
+ * an "expired" reply. When the backend attaches `reasonOptions` (order
+ * cancellation), a why-questionnaire gates the Confirm button — the chosen
+ * reason is stored on the order and shows up in the admin dashboard.
+ */
+function ConfirmActionBlock({
+  action,
+}: {
+  action: Extract<RichAction, { type: "confirm" }>;
+}) {
   const confirmAction = useAssistantStore((s) => s.confirmAction);
   const consumed = useAssistantStore((s) => s.consumedConfirmIds);
+  const [reasonCode, setReasonCode] = React.useState<string | null>(null);
+
+  const used = consumed.includes(action.confirmId);
+  const needsReason = Boolean(action.reasonOptions?.length);
+  const confirmDisabled = used || (needsReason && !reasonCode);
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <p className="text-11 font-semibold text-sub">{action.summary}</p>
+      {needsReason ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-11 font-bold text-ink">Mind telling us why?</p>
+          <div className="flex flex-wrap gap-1">
+            {action.reasonOptions!.map((r) => {
+              const selected = reasonCode === r.code;
+              return (
+                <button
+                  key={r.code}
+                  type="button"
+                  disabled={used}
+                  onClick={() => setReasonCode(selected ? null : r.code)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-11 font-semibold transition-all duration-150 active:scale-95 disabled:opacity-50",
+                    selected
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-border bg-card text-sub hover:border-primary hover:text-ink",
+                  )}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+      <div className="flex gap-1.5">
+        <Button
+          variant="destructive"
+          size="sm"
+          className="rounded-full"
+          disabled={confirmDisabled}
+          title={confirmDisabled && !used ? "Pick a reason first" : undefined}
+          onClick={() =>
+            void confirmAction(action.confirmId, "confirm", reasonCode ?? undefined)
+          }
+        >
+          <Check className="size-3.5" /> {action.label}
+        </Button>
+        <Button
+          variant="soft"
+          size="sm"
+          className="rounded-full"
+          disabled={used}
+          onClick={() => void confirmAction(action.confirmId, "cancel")}
+        >
+          <X className="size-3.5" /> No, don&apos;t
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ActionButtons({ actions }: { actions: RichAction[] }) {
+  const { requireAuth } = useAuth();
 
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -173,35 +262,7 @@ function ActionButtons({ actions }: { actions: RichAction[] }) {
             </Button>
           );
         }
-        // Two-phase confirm — single-use, disabled once pressed. Expiry is
-        // enforced server-side (10-min Redis TTL): a stale press 404s and
-        // the store appends an "expired" reply.
-        const used = consumed.includes(action.confirmId);
-        return (
-          <div key={i} className="flex w-full flex-col gap-1.5">
-            <p className="text-11 font-semibold text-sub">{action.summary}</p>
-            <div className="flex gap-1.5">
-              <Button
-                variant="destructive"
-                size="sm"
-                className="rounded-full"
-                disabled={used}
-                onClick={() => void confirmAction(action.confirmId, "confirm")}
-              >
-                <Check className="size-3.5" /> {action.label}
-              </Button>
-              <Button
-                variant="soft"
-                size="sm"
-                className="rounded-full"
-                disabled={used}
-                onClick={() => void confirmAction(action.confirmId, "cancel")}
-              >
-                <X className="size-3.5" /> No, don&apos;t
-              </Button>
-            </div>
-          </div>
-        );
+        return <ConfirmActionBlock key={action.confirmId} action={action} />;
       })}
     </div>
   );
@@ -217,15 +278,15 @@ export function RichContentBlock({ rich }: { rich: RichContent }) {
     <div className="mt-1.5 flex w-full max-w-full flex-col gap-2">
       {hasProducts ? (
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {rich.products!.map((p) => (
-            <ProductCardMini key={p.productId} product={p} />
+          {rich.products!.map((p, i) => (
+            <ProductCardMini key={p.productId} product={p} index={i} />
           ))}
         </div>
       ) : null}
       {hasOrders ? (
         <div className="flex flex-col gap-1.5">
-          {rich.orders!.map((o) => (
-            <OrderSummaryRow key={o.orderId} order={o} />
+          {rich.orders!.map((o, i) => (
+            <OrderSummaryRow key={o.orderId} order={o} index={i} />
           ))}
         </div>
       ) : null}
