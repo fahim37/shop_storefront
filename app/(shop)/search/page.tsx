@@ -87,20 +87,19 @@ function SearchResults() {
   const searchQueryId = pages[0]?.searchQueryId ?? "";
 
   // Best-effort click analytics: fire-and-forget on capture so it never blocks
-  // navigation. We can't add props to the shared ProductCard, so we resolve the
-  // clicked hit from the product link's `/product/<slug>` href. `recordSearchClick`
-  // is a no-op when `searchQueryId` is "".
+  // navigation. The clicked card is resolved via the `data-product-id` the
+  // shared ProductCard stamps on its root link — stable even if the card's
+  // href shape changes. `recordSearchClick` is a no-op when `searchQueryId` is "".
   const handleResultsClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!searchQueryId) return;
     const anchor = (e.target as HTMLElement).closest<HTMLAnchorElement>(
-      'a[href^="/product/"]',
+      "a[data-product-id]",
     );
-    if (!anchor) return;
-    const slug = anchor.getAttribute("href")?.replace("/product/", "");
-    if (!slug) return;
-    const index = hits.findIndex((h) => h.slug === slug);
+    const productId = anchor?.getAttribute("data-product-id");
+    if (!productId) return;
+    const index = hits.findIndex((h) => h.productId === productId);
     if (index < 0) return;
-    recordSearchClick(searchQueryId, hits[index].productId, index);
+    recordSearchClick(searchQueryId, productId, index);
   };
 
   return (

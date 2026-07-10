@@ -203,6 +203,9 @@ export interface AutocompleteItem {
   title: string;
   slug: string;
   thumbnailMediaId: string | null;
+  /** Cheapest active variant price (paisa string) — null when no variant. */
+  minPricePaisa: string | null;
+  brandName: string | null;
 }
 
 export interface AutocompleteResponse {

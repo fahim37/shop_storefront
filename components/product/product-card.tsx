@@ -34,6 +34,7 @@ export function ProductCard({
     <Link
       href={href}
       aria-label={product.title}
+      data-product-id={product.id}
       className={cn(
         "group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-[var(--shadow-card)]",
         className,
