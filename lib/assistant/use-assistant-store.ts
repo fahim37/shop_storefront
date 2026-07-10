@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/api/http";
 import { uuid } from "@/lib/cart/cart-session";
 
 import { confirmAssistantAction, getAssistantConversation } from "./api";
-import { streamAssistantTurn } from "./stream";
+import { streamAssistantTurn, warmAssistantAuth } from "./stream";
 import type { AssistantMessage, RichContent } from "./types";
 
 /* ----------------------------------------------------------------------------
@@ -47,6 +47,52 @@ function storeConversationId(id: string | null): void {
   }
 }
 
+/**
+ * Local transcript snapshot so reopening the dock paints instantly instead of
+ * hiding history behind a spinner while GET /chat/conversations/:id resolves.
+ * Server truth still replaces it in the background. Bounded, keyed to the
+ * conversation id, and dropped whenever the stored conversation is dropped.
+ */
+const SNAPSHOT_KEY = "gcl.assistant.snapshot";
+const SNAPSHOT_LIMIT = 30;
+
+function readSnapshot(conversationId: string): AssistantMessage[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SNAPSHOT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      conversationId?: string;
+      messages?: AssistantMessage[];
+    };
+    if (parsed.conversationId !== conversationId || !Array.isArray(parsed.messages)) {
+      return null;
+    }
+    return parsed.messages;
+  } catch {
+    return null;
+  }
+}
+
+function writeSnapshot(
+  conversationId: string | null,
+  messages: AssistantMessage[],
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!conversationId) {
+      window.localStorage.removeItem(SNAPSHOT_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      SNAPSHOT_KEY,
+      JSON.stringify({ conversationId, messages: messages.slice(-SNAPSHOT_LIMIT) }),
+    );
+  } catch {
+    /* storage unavailable/full — reopening just pays the fetch again */
+  }
+}
+
 /** Abort handle + rAF token batch live outside React state. */
 let abortController: AbortController | null = null;
 let pendingTokens: string[] = [];
@@ -59,6 +105,13 @@ interface AssistantState {
   messages: AssistantMessage[];
   /** In-progress assistant bubble (token deltas). */
   streamText: string;
+  /**
+   * True while streamText is pre-tool prose kept on screen during a tool run
+   * (rendered dimmed). The next round's first token replaces it — clearing it
+   * outright made already-read text vanish into a spinner, which read as a
+   * stall.
+   */
+  streamStale: boolean;
   /** Rich attachments received mid-stream (rendered under the live bubble). */
   streamRich: RichContent | null;
   /** "Searching products…" style progress line, when a tool is running. */
@@ -103,7 +156,14 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
     if (pendingTokens.length === 0) return;
     const chunk = pendingTokens.join("");
     pendingTokens = [];
-    set((s) => ({ streamText: s.streamText + chunk, statusLabel: null }));
+    // A fresh round's tokens REPLACE stale pre-tool prose (kept visible while
+    // the tool ran), preserving the contract that the accumulated stream
+    // equals the final `done` text.
+    set((s) => ({
+      streamText: s.streamStale ? chunk : s.streamText + chunk,
+      streamStale: false,
+      statusLabel: null,
+    }));
   };
 
   const queueToken = (delta: string): void => {
@@ -121,6 +181,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
     set({
       isStreaming: true,
       streamText: "",
+      streamStale: false,
       streamRich: null,
       statusLabel: null,
       error: null,
@@ -136,10 +197,15 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
             storeConversationId(conversationId);
             set({ conversationId });
           },
-          // The model went to work — pre-tool prose was transient thinking.
+          // The model went to work — keep any pre-tool prose on screen
+          // (dimmed) instead of blanking it into a spinner; the next round's
+          // tokens replace it (see flushTokens).
           onStatus: ({ label }) => {
             pendingTokens = [];
-            set({ statusLabel: label, streamText: "" });
+            set((s) => ({
+              statusLabel: label,
+              streamStale: s.streamText.length > 0,
+            }));
           },
           onToken: queueToken,
           onRich: (rich) => set({ streamRich: rich }),
@@ -152,22 +218,27 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
           makeMessage("assistant", done.assistantMessage, done.richContent),
         ],
         streamText: "",
+        streamStale: false,
         streamRich: null,
         statusLabel: null,
         isStreaming: false,
       }));
+      writeSnapshot(get().conversationId, get().messages);
     } catch (err) {
       flushTokens();
       if (err instanceof DOMException && err.name === "AbortError") {
-        // Stop button: keep whatever streamed as a truncated bubble.
+        // Stop button: keep whatever streamed as a truncated bubble (stale
+        // pre-tool prose is discarded — it was never going to be the answer).
         set((s) => ({
           isStreaming: false,
           statusLabel: null,
           streamText: "",
+          streamStale: false,
           streamRich: null,
-          messages: s.streamText
-            ? [...s.messages, makeMessage("assistant", `${s.streamText} …`)]
-            : s.messages,
+          messages:
+            s.streamText && !s.streamStale
+              ? [...s.messages, makeMessage("assistant", `${s.streamText} …`)]
+              : s.messages,
         }));
         return;
       }
@@ -186,6 +257,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
         isStreaming: false,
         statusLabel: null,
         streamText: "",
+        streamStale: false,
         streamRich: null,
         error:
           err instanceof Error
@@ -202,6 +274,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
     conversationId: null,
     messages: [],
     streamText: "",
+    streamStale: false,
     streamRich: null,
     statusLabel: null,
     isStreaming: false,
@@ -212,7 +285,11 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
 
     setOpen: (open) => {
       set({ open });
-      if (open && !get().hydrated && !get().isHydrating) void get().hydrate();
+      if (!open) return;
+      // Refresh a nearly-expired token while the user is still typing, so the
+      // first message doesn't pay a 401 → refresh → re-POST round trip.
+      warmAssistantAuth();
+      if (!get().hydrated && !get().isHydrating) void get().hydrate();
     },
 
     hydrate: async () => {
@@ -221,7 +298,16 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
         set({ hydrated: true });
         return;
       }
-      set({ isHydrating: true });
+      // Paint instantly from the local snapshot when one exists; the server
+      // fetch below replaces it in the background. The full-screen spinner
+      // only shows on a genuinely cold open (stored id, no snapshot).
+      const snapshot = readSnapshot(stored);
+      if (snapshot && snapshot.length > 0) {
+        set({ conversationId: stored, messages: snapshot, hydrated: true });
+      } else {
+        set({ isHydrating: true });
+      }
+      const seededCount = get().messages.length;
       try {
         const res = await getAssistantConversation(stored);
         const messages: AssistantMessage[] = res.items
@@ -237,16 +323,34 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
             richContent: row.richContent ?? null,
             createdAt: row.createdAt,
           }));
+        // Don't clobber a turn the user started while we were fetching.
+        if (get().isStreaming || get().messages.length !== seededCount) {
+          writeSnapshot(stored, messages);
+          set({ hydrated: true, isHydrating: false });
+          return;
+        }
         set({
           conversationId: stored,
           messages,
           hydrated: true,
           isHydrating: false,
         });
+        writeSnapshot(stored, messages);
       } catch {
         // Gone (guest token rotated, deleted, cross-identity) — start fresh.
         storeConversationId(null);
-        set({ conversationId: null, hydrated: true, isHydrating: false });
+        writeSnapshot(null, []);
+        if (get().isStreaming || get().messages.length !== seededCount) {
+          // A turn is already running on a fresh thread — leave its bubbles.
+          set({ hydrated: true, isHydrating: false });
+          return;
+        }
+        set({
+          conversationId: null,
+          messages: [],
+          hydrated: true,
+          isHydrating: false,
+        });
       }
     },
 
@@ -254,6 +358,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
       const trimmed = text.trim();
       if (!trimmed || get().isStreaming) return;
       set((s) => ({ messages: [...s.messages, makeMessage("user", trimmed)] }));
+      writeSnapshot(get().conversationId, get().messages);
       await runTurn(trimmed, false);
     },
 
@@ -293,16 +398,19 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
           ],
         }));
       }
+      writeSnapshot(get().conversationId, get().messages);
     },
 
     reset: () => {
       abortController?.abort();
       storeConversationId(null);
+      writeSnapshot(null, []);
       pendingTokens = [];
       set({
         conversationId: null,
         messages: [],
         streamText: "",
+        streamStale: false,
         streamRich: null,
         statusLabel: null,
         isStreaming: false,
@@ -318,6 +426,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
       // thread belongs to the account — clear it entirely.
       abortController?.abort();
       storeConversationId(null);
+      writeSnapshot(null, []);
       if (isAuthenticated) {
         set({ conversationId: null });
       } else {

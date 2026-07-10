@@ -74,6 +74,7 @@ function TypingDots() {
 /** The in-flight assistant bubble: streamed tokens + a pulsing caret. */
 function StreamingBubble() {
   const streamText = useAssistantStore((s) => s.streamText);
+  const streamStale = useAssistantStore((s) => s.streamStale);
   const streamRich = useAssistantStore((s) => s.streamRich);
   const statusLabel = useAssistantStore((s) => s.statusLabel);
 
@@ -83,8 +84,22 @@ function StreamingBubble() {
       <div className="flex min-w-0 flex-1 flex-col items-start">
         {streamText ? (
           <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-line bg-card px-3.5 py-2 text-13 font-medium leading-relaxed text-ink shadow-xs">
-            <MarkdownLite text={streamText} />
-            <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full bg-primary align-middle" />
+            {/* While a tool runs, the pre-tool prose stays visible but dimmed
+                with the progress line beneath — blanking it read as a stall. */}
+            <div className={streamStale ? "opacity-55 transition-opacity" : undefined}>
+              <MarkdownLite text={streamText} streaming />
+              {!streamStale ? (
+                <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full bg-primary align-middle" />
+              ) : null}
+            </div>
+            {streamStale ? (
+              <div className="mt-1.5 flex items-center gap-2">
+                <Spinner className="size-3.5 text-primary" />
+                <span className="text-11 font-semibold text-sub">
+                  {statusLabel ?? "Working on it…"}
+                </span>
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-md border border-line bg-card px-3.5 py-2.5 shadow-xs">
@@ -113,7 +128,10 @@ export function AssistantThread() {
   const error = useAssistantStore((s) => s.error);
   const send = useAssistantStore((s) => s.send);
 
-  const bottomRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  // Whether the view is pinned to the bottom — scrolling up unpins so a long
+  // streaming reply doesn't yank the customer back down every frame.
+  const pinnedRef = React.useRef(true);
   const last = messages[messages.length - 1];
 
   // The last thing the customer said — offered back as a one-tap retry when
@@ -123,9 +141,19 @@ export function AssistantThread() {
     [messages],
   );
 
-  // Follow the stream: new message, fresh tokens, or a status flip.
+  const onScroll = React.useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+  }, []);
+
+  // Follow the stream: new message, fresh tokens, or a status flip. A direct
+  // scrollTop write is cheaper than scrollIntoView (no scroll-anchoring work)
+  // and skipped entirely while the customer reads scrolled-up history.
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    const el = containerRef.current;
+    if (!el || !pinnedRef.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [last?.id, streamText, statusLabel, isStreaming]);
 
   if (isHydrating) {
@@ -137,7 +165,11 @@ export function AssistantThread() {
   }
 
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto bg-surface px-3 py-3.5">
+    <div
+      ref={containerRef}
+      onScroll={onScroll}
+      className="flex-1 space-y-3 overflow-y-auto bg-surface px-3 py-3.5"
+    >
       {messages.length === 0 && !isStreaming ? (
         <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
           <div className="grid size-14 animate-pop place-items-center rounded-2xl bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-card)] motion-reduce:animate-none">
@@ -191,7 +223,6 @@ export function AssistantThread() {
           ) : null}
         </>
       )}
-      <div ref={bottomRef} />
     </div>
   );
 }

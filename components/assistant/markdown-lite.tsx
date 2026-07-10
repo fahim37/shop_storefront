@@ -85,8 +85,12 @@ function toBlocks(text: string): Block[] {
   return blocks;
 }
 
-export function MarkdownLite({ text }: { text: string }) {
-  const blocks = React.useMemo(() => toBlocks(text), [text]);
+const MarkdownBlocks = React.memo(function MarkdownBlocks({
+  text,
+}: {
+  text: string;
+}) {
+  const blocks = toBlocks(text);
   return (
     <>
       {blocks.map((block, bi) =>
@@ -102,6 +106,31 @@ export function MarkdownLite({ text }: { text: string }) {
           </p>
         ),
       )}
+    </>
+  );
+});
+
+/**
+ * `streaming` splits the text at the last completed paragraph so the stable
+ * prefix (a memoized subtree) stops re-parsing on every token flush — only the
+ * still-growing tail re-tokenizes per frame. Splitting on the blank line keeps
+ * the output identical to a single parse: a paragraph break ends a block (and
+ * a list) in toBlocks either way, and inline parsing is per-line.
+ */
+export function MarkdownLite({
+  text,
+  streaming = false,
+}: {
+  text: string;
+  streaming?: boolean;
+}) {
+  if (!streaming) return <MarkdownBlocks text={text} />;
+  const splitAt = text.lastIndexOf("\n\n");
+  if (splitAt === -1) return <MarkdownBlocks text={text} />;
+  return (
+    <>
+      <MarkdownBlocks text={text.slice(0, splitAt)} />
+      <MarkdownBlocks text={text.slice(splitAt + 2)} />
     </>
   );
 }

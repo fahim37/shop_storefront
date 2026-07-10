@@ -32,6 +32,35 @@ export function assistantAuthHeaders(): Record<string, string> {
   return { "x-guest-id": ensureCartSessionToken() };
 }
 
+/** How close to `exp` a token counts as expiring (refresh clock skew pad). */
+const TOKEN_EXPIRY_PAD_MS = 30_000;
+
+/** Best-effort JWT `exp` check — malformed/opaque tokens report not-expiring. */
+function tokenExpiringSoon(token: string): boolean {
+  const payload = token.split(".")[1];
+  if (!payload) return false;
+  try {
+    const decoded = JSON.parse(
+      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { exp?: number };
+    if (typeof decoded.exp !== "number") return false;
+    return decoded.exp * 1000 - Date.now() < TOKEN_EXPIRY_PAD_MS;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Pre-empt the 401 → refresh → re-POST round trip: if the in-memory access
+ * token is about to expire, kick the shared single-flight refresh now (e.g.
+ * while the user is still typing). Fire-and-forget; the 401 retry path in
+ * startRequest stays as the safety net.
+ */
+export function warmAssistantAuth(): void {
+  const token = getAccessToken();
+  if (token && tokenExpiringSoon(token)) void runSingleFlightRefresh();
+}
+
 /**
  * Run one streamed turn. Resolves with the `done` payload after the stream
  * ends, or throws ApiError (HTTP error before the stream) / DOMException
@@ -41,6 +70,10 @@ export function assistantAuthHeaders(): Record<string, string> {
 export async function streamAssistantTurn(
   opts: StreamTurnOptions,
 ): Promise<TurnDoneEvent> {
+  // A token known to be expiring gets refreshed BEFORE the request instead of
+  // burning a 401 + full re-POST before the first streamed token.
+  const token = getAccessToken();
+  if (token && tokenExpiringSoon(token)) await runSingleFlightRefresh();
   const response = await startRequest(opts, false);
   return consumeStream(response, opts);
 }
