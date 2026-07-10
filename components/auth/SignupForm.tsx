@@ -57,7 +57,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <form method="post" onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <FormError message={formError} />
 
         <Field id="signup-fullName" label="Full name" error={errors.fullName?.message}>

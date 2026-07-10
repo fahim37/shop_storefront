@@ -70,7 +70,7 @@ export function OtpForm({ identifier, onSuccess, onSkip }: OtpFormProps) {
   };
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <FormError message={error} />
       {info ? (
         <p role="status" className="text-sm text-muted-foreground">

@@ -447,6 +447,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Text-field insertion caret: force the dark foreground (ink) color so the
+ * blinking cursor stays visible inside inputs (was near-white/invisible). */
+input,
+textarea,
+select {
+  caret-color: var(--foreground);
+}
+
+/* Pointer interactions shouldn't leave a focus ring. Drop the mobile tap-
+ * highlight box, and remove the focus outline when a control is reached by
+ * mouse or touch. Keyboard focus (:focus-visible) keeps its ring for a11y. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Display headings default to Sora */
 h1,
 h2,
