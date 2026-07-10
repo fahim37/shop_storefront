@@ -37,6 +37,8 @@ const PAYMENTS: {
   hint: string;
   badge: string;
   badgeBg: string;
+  /** When set, the payment tile shows this logo image instead of a text badge. */
+  logo?: string;
   enabled: boolean;
 }[] = [
   {
@@ -50,10 +52,11 @@ const PAYMENTS: {
   {
     id: "bkash",
     label: "bKash",
-    hint: "Online payment — coming soon",
+    hint: "Pay securely with your bKash wallet",
     badge: "bKash",
-    badgeBg: "oklch(0.5 0.21 350)",
-    enabled: false,
+    badgeBg: "#e2136e",
+    logo: "/bkash-logo.svg",
+    enabled: true,
   },
   {
     id: "sslcommerz",
@@ -178,6 +181,17 @@ export default function CheckoutPage() {
         shippingAddressId: addressId,
         paymentMethod: payment,
       });
+      // Online methods (bKash / SSLCommerz) return a hosted-page URL — hand the
+      // browser off to the gateway to collect payment. The gateway redirects
+      // back to /checkout/return|failed|cancelled once the customer is done.
+      if (res.paymentSessionUrl) {
+        toast.success("Redirecting to bKash…", {
+          description: "Complete your payment to confirm the order.",
+        });
+        window.location.assign(res.paymentSessionUrl);
+        return;
+      }
+      // COD (and any method that settles inline): straight to the order.
       toast.success("Order placed!", { description: res.order.orderNumber });
       router.push(`/account/orders/${res.order.id}`);
     } catch (err) {
@@ -371,12 +385,25 @@ export default function CheckoutPage() {
                       !p.enabled && "cursor-not-allowed opacity-55",
                     )}
                   >
-                    <span
-                      className="flex h-8 w-11 shrink-0 items-center justify-center rounded-md text-2xs font-extrabold text-white"
-                      style={{ background: p.badgeBg }}
-                    >
-                      {p.badge}
-                    </span>
+                    {p.logo ? (
+                      <span className="flex h-8 w-11 shrink-0 items-center justify-center rounded-md border border-border bg-white px-1.5">
+                        {/* Official bKash logo — served from /public. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.logo}
+                          alt={p.label}
+                          className="h-4 w-auto"
+                          decoding="async"
+                        />
+                      </span>
+                    ) : (
+                      <span
+                        className="flex h-8 w-11 shrink-0 items-center justify-center rounded-md text-2xs font-extrabold text-white"
+                        style={{ background: p.badgeBg }}
+                      >
+                        {p.badge}
+                      </span>
+                    )}
                     <span className="flex-1">
                       <b className="block text-13 font-extrabold">{p.label}</b>
                       <span className="text-xs font-semibold text-faint">{p.hint}</span>
