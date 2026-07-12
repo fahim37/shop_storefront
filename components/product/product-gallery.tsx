@@ -4,6 +4,7 @@ import * as React from "react";
 import { Play, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaImage } from "@/components/ui/media-image";
+import { VideoPlayer } from "@/components/ui/video-player";
 import { ProductLightbox } from "@/components/product/product-lightbox";
 import { mediaUrl } from "@/lib/media";
 import type { ProductImage } from "@/lib/api/types";
@@ -229,19 +230,15 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
       {/* Hero + zoom panel (panel anchors to this non-clipping wrapper) */}
       <div className="relative min-w-0 flex-1">
         {activeIsVideo && active ? (
-          /* Video hero: inline 720p player, poster-first. No zoom/lightbox. */
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-black">
-            { }
-            <video
-              key={active.id}
-              src={mediaUrl(active.mediaId, "playback") ?? undefined}
-              poster={mediaUrl(active.mediaId, "hero") ?? undefined}
-              controls
-              playsInline
-              preload="metadata"
-              className="h-full w-full object-contain animate-in fade-in-0"
-            />
-          </div>
+          /* Video hero: branded inline 720p player, poster-first. No zoom/lightbox. */
+          <VideoPlayer
+            key={active.id}
+            src={mediaUrl(active.mediaId, "playback")}
+            poster={mediaUrl(active.mediaId, "hero")}
+            title={title}
+            durationSeconds={active.durationSeconds}
+            className="aspect-square rounded-xl border border-border animate-in fade-in-0"
+          />
         ) : (
         <div
           ref={heroRef}
@@ -403,16 +400,15 @@ function MobileGallery({
               isVideo(img) ? (
                 <div
                   key={img.id}
-                  className="relative aspect-square w-full shrink-0 snap-center snap-always bg-black"
+                  className="relative aspect-square w-full shrink-0 snap-center snap-always"
                 >
-                  { }
-                  <video
-                    src={mediaUrl(img.mediaId, "playback") ?? undefined}
-                    poster={mediaUrl(img.mediaId, "hero") ?? undefined}
-                    controls
-                    playsInline
+                  <VideoPlayer
+                    src={mediaUrl(img.mediaId, "playback")}
+                    poster={mediaUrl(img.mediaId, "hero")}
+                    title={title}
+                    durationSeconds={img.durationSeconds}
                     preload={Math.abs(i - activeIndex) <= 1 ? "metadata" : "none"}
-                    className="h-full w-full object-contain"
+                    className="h-full w-full"
                   />
                 </div>
               ) : (
@@ -443,8 +439,9 @@ function MobileGallery({
           )}
         </div>
 
-        {/* Position counter */}
-        {images.length > 1 && (
+        {/* Position counter — hidden on video slides, where it would sit on
+            the player's duration chip / fullscreen button. */}
+        {images.length > 1 && !isVideo(images[activeIndex]) && (
           <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/45 px-2 py-0.5 text-xs font-medium text-white backdrop-blur">
             {activeIndex + 1}/{images.length}
           </span>
