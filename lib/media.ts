@@ -1,10 +1,12 @@
 import { API_BASE_URL } from "@/lib/config";
 
 /**
- * Image variants exposed by the backend media service. The backend resizes on
- * upload, so we pick the right size per context rather than client-resizing.
+ * Media variants exposed by the backend media service. The backend resizes
+ * images on upload (thumbnail/card/hero), so we pick the right size per
+ * context rather than client-resizing. "playback" is the 720p MP4 rendition
+ * of a video asset — its thumbnail/card/hero are poster frames.
  */
-export type MediaVariant = "original" | "thumbnail" | "card" | "hero";
+export type MediaVariant = "original" | "thumbnail" | "card" | "hero" | "playback";
 
 /**
  * Resolve a media asset id to an image URL. We hit the backend DIRECTLY (a

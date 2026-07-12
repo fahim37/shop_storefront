@@ -74,6 +74,12 @@ export interface ProductImage {
   position: number;
   isPrimary: boolean;
   createdAt: string;
+  /** "image" | "video" — video slots render an inline player. */
+  mediaType: "image" | "video";
+  /** Seconds; only set once a video is transcoded. */
+  durationSeconds: number | null;
+  /** Videos only become playable at "ready"; images are always "ready". */
+  processingStatus: "ready" | "processing" | "failed";
 }
 
 export interface ProductDetail {

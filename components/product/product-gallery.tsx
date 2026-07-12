@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ZoomIn } from "lucide-react";
+import { Play, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaImage } from "@/components/ui/media-image";
 import { ProductLightbox } from "@/components/product/product-lightbox";
@@ -46,23 +46,44 @@ function zoomPanelWidth(heroEl: HTMLElement, heroBox: DOMRect): number {
   return width > heroBox.width * 0.4 ? width : heroBox.width;
 }
 
+function isVideo(item: ProductImage | null | undefined): boolean {
+  return item?.mediaType === "video";
+}
+
+/** m:ss chip shown on video thumbnails. */
+function formatDuration(totalSeconds: number | null | undefined): string | null {
+  if (!totalSeconds || totalSeconds <= 0) return null;
+  const m = Math.floor(totalSeconds / 60);
+  const s = Math.round(totalSeconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 /**
- * PDP image gallery: a thumbnail rail (vertical on desktop, horizontal scroll
- * on mobile) beside a large hero image. Clicking a thumb swaps the hero.
+ * Gallery order: vendor-set position first (a video may deliberately lead
+ * the gallery), the cover as tiebreak. Videos that are still transcoding
+ * (or failed) are hidden from shoppers.
+ */
+function orderGallery(images: ProductImage[]): ProductImage[] {
+  return images
+    .filter((m) => m.mediaType !== "video" || m.processingStatus === "ready")
+    .sort((a, b) => {
+      if (a.position !== b.position) return a.position - b.position;
+      if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+      return 0;
+    });
+}
+
+/**
+ * PDP media gallery: a thumbnail rail (vertical on desktop, horizontal scroll
+ * on mobile) beside a large hero. Clicking a thumb swaps the hero. Image
+ * slots keep the Daraz-style hover magnifier + fullscreen lightbox; video
+ * slots play inline (720p rendition, poster-first, click to play) and show a
+ * duration chip on their thumbnails.
  *
- * Desktop (fine pointer) hover adds a Daraz-style magnifier: a translucent
- * lens follows the cursor over the hero and a zoom panel appears to the right
- * showing the lens area at {@link ZOOM}× from the original-variant image.
- * Falls back to a single branded placeholder when there are no images.
+ * Falls back to a single branded placeholder when there is no media.
  */
 export function ProductGallery({ images, title }: ProductGalleryProps) {
-  // Stable, primary-first ordering so the default hero is the primary image.
-  const ordered = React.useMemo(() => {
-    return [...images].sort((a, b) => {
-      if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-      return a.position - b.position;
-    });
-  }, [images]);
+  const ordered = React.useMemo(() => orderGallery(images), [images]);
 
   const [activeId, setActiveId] = React.useState<string | null>(
     ordered[0]?.id ?? null,
@@ -70,6 +91,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
   const active =
     ordered.find((img) => img.id === activeId) ?? ordered[0] ?? null;
+  const activeIsVideo = isVideo(active);
 
   const activeIndex = Math.max(
     0,
@@ -77,12 +99,23 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   );
   const [lightboxOpen, setLightboxOpen] = React.useState(false);
 
+  // The lightbox is an image-gesture surface — videos play inline instead,
+  // so it operates over the image subset with its own index space.
+  const lightboxImages = React.useMemo(
+    () => ordered.filter((img) => !isVideo(img)),
+    [ordered],
+  );
+  const lightboxIndex = Math.max(
+    0,
+    lightboxImages.findIndex((img) => img.id === active?.id),
+  );
+
   const hasThumbs = ordered.length > 1;
 
-  /* ── Hover zoom ──────────────────────────────────────────────────────── */
+  /* ── Hover zoom (images only) ────────────────────────────────────────── */
   const heroRef = React.useRef<HTMLDivElement>(null);
   const [lens, setLens] = React.useState<LensState | null>(null);
-  const zoomSrc = mediaUrl(active?.mediaId, "original");
+  const zoomSrc = activeIsVideo ? null : mediaUrl(active?.mediaId, "original");
 
   // Only enable on devices that actually hover with a precise pointer.
   const canZoom = React.useSyncExternalStore(
@@ -143,20 +176,23 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         onOpen={() => setLightboxOpen(true)}
       />
 
-      {/* ── Desktop (sm+): thumbnail rail + hero image with hover zoom ───── */}
+      {/* ── Desktop (sm+): thumbnail rail + hero with hover zoom / player ── */}
       <div className="hidden flex-col-reverse gap-3 sm:flex sm:flex-row sm:gap-4">
       {/* Thumbnail rail */}
       {hasThumbs && (
         <div className="no-scrollbar flex shrink-0 gap-2.5 overflow-x-auto sm:max-h-[640px] sm:flex-col sm:overflow-y-auto">
           {ordered.map((img) => {
             const on = active?.id === img.id;
+            const vid = isVideo(img);
             return (
               <button
                 key={img.id}
                 type="button"
                 onClick={() => setActiveId(img.id)}
                 onMouseEnter={() => setActiveId(img.id)}
-                aria-label={img.altText ?? title}
+                aria-label={
+                  vid ? `Play video — ${title}` : (img.altText ?? title)
+                }
                 aria-pressed={on}
                 className={cn(
                   "relative size-16 shrink-0 overflow-hidden rounded border-2 bg-muted transition-colors sm:size-[76px]",
@@ -172,6 +208,18 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                   className="object-cover"
                   sizes="68px"
                 />
+                {vid && (
+                  <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/30">
+                    <span className="grid size-6 place-items-center rounded-full bg-black/60 text-white">
+                      <Play className="size-3.5 fill-current" strokeWidth={0} />
+                    </span>
+                  </span>
+                )}
+                {vid && formatDuration(img.durationSeconds) && (
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-black/70 px-1 text-[10px] font-semibold tabular-nums text-white">
+                    {formatDuration(img.durationSeconds)}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -180,6 +228,21 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
       {/* Hero + zoom panel (panel anchors to this non-clipping wrapper) */}
       <div className="relative min-w-0 flex-1">
+        {activeIsVideo && active ? (
+          /* Video hero: inline 720p player, poster-first. No zoom/lightbox. */
+          <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-black">
+            { }
+            <video
+              key={active.id}
+              src={mediaUrl(active.mediaId, "playback") ?? undefined}
+              poster={mediaUrl(active.mediaId, "hero") ?? undefined}
+              controls
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-contain animate-in fade-in-0"
+            />
+          </div>
+        ) : (
         <div
           ref={heroRef}
           role={active ? "button" : undefined}
@@ -236,6 +299,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             />
           )}
         </div>
+        )}
 
         {/* Zoom panel — fills the info column to the right (lg+ only) */}
         {zooming && lens && (
@@ -262,11 +326,11 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 
       </div>
 
-      {lightboxOpen && active && (
+      {lightboxOpen && lightboxImages.length > 0 && (
         <ProductLightbox
-          images={ordered}
-          index={activeIndex}
-          onIndex={(i) => setActiveId(ordered[i]?.id ?? null)}
+          images={lightboxImages}
+          index={lightboxIndex}
+          onIndex={(i) => setActiveId(lightboxImages[i]?.id ?? null)}
           onClose={() => setLightboxOpen(false)}
           title={title}
         />
@@ -276,11 +340,12 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
 }
 
 /**
- * Mobile-only image gallery: a full-width horizontal scroll-snap carousel the
+ * Mobile-only media gallery: a full-width horizontal scroll-snap carousel the
  * user swipes through (one slide per fling, Daraz-style), with a position
- * counter and a tappable thumbnail rail like the desktop gallery. Tapping a
- * slide opens the fullscreen lightbox. Scroll position drives {@link activeIndex}
- * so the counter/thumbs and lightbox start on the visible image.
+ * counter and a tappable thumbnail rail like the desktop gallery. Image
+ * slides open the fullscreen lightbox on tap; video slides play inline with
+ * native controls. Scroll position drives {@link activeIndex} so the
+ * counter/thumbs and lightbox start on the visible item.
  */
 function MobileGallery({
   images,
@@ -334,26 +399,43 @@ function MobileGallery({
           className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-muted"
         >
           {images.length > 0 ? (
-            images.map((img, i) => (
-              <button
-                key={img.id}
-                type="button"
-                onClick={onOpen}
-                aria-label="Open image viewer"
-                className="relative aspect-square w-full shrink-0 snap-center snap-always"
-              >
-                <MediaImage
-                  mediaId={img.mediaId}
-                  variant="hero"
-                  alt={img.altText ?? title}
-                  className="object-contain"
-                  sizes="100vw"
-                  // Pre-warm the visible slide and its neighbours so swiping
-                  // never lands on a gray placeholder mid-gesture.
-                  loading={Math.abs(i - activeIndex) <= 1 ? "eager" : "lazy"}
-                />
-              </button>
-            ))
+            images.map((img, i) =>
+              isVideo(img) ? (
+                <div
+                  key={img.id}
+                  className="relative aspect-square w-full shrink-0 snap-center snap-always bg-black"
+                >
+                  { }
+                  <video
+                    src={mediaUrl(img.mediaId, "playback") ?? undefined}
+                    poster={mediaUrl(img.mediaId, "hero") ?? undefined}
+                    controls
+                    playsInline
+                    preload={Math.abs(i - activeIndex) <= 1 ? "metadata" : "none"}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={onOpen}
+                  aria-label="Open image viewer"
+                  className="relative aspect-square w-full shrink-0 snap-center snap-always"
+                >
+                  <MediaImage
+                    mediaId={img.mediaId}
+                    variant="hero"
+                    alt={img.altText ?? title}
+                    className="object-contain"
+                    sizes="100vw"
+                    // Pre-warm the visible slide and its neighbours so swiping
+                    // never lands on a gray placeholder mid-gesture.
+                    loading={Math.abs(i - activeIndex) <= 1 ? "eager" : "lazy"}
+                  />
+                </button>
+              ),
+            )
           ) : (
             <div className="relative aspect-square w-full shrink-0">
               <MediaImage variant="hero" alt={title} className="object-contain" />
@@ -375,13 +457,14 @@ function MobileGallery({
           <div className="mx-auto flex w-max gap-2">
             {images.map((img, i) => {
               const on = i === activeIndex;
+              const vid = isVideo(img);
               return (
                 <button
                   key={img.id}
                   data-thumb={i}
                   type="button"
                   onClick={() => goTo(i)}
-                  aria-label={`View image ${i + 1}`}
+                  aria-label={vid ? `Play video ${i + 1}` : `View image ${i + 1}`}
                   aria-pressed={on}
                   className={cn(
                     "relative size-14 shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-colors",
@@ -397,6 +480,13 @@ function MobileGallery({
                     className="object-cover"
                     sizes="56px"
                   />
+                  {vid && (
+                    <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/30">
+                      <span className="grid size-5 place-items-center rounded-full bg-black/60 text-white">
+                        <Play className="size-3 fill-current" strokeWidth={0} />
+                      </span>
+                    </span>
+                  )}
                 </button>
               );
             })}

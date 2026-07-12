@@ -55,14 +55,14 @@ const COPY: Record<
     tint: "text-red",
     ring: "bg-red/10 ring-red/20",
     title: "Payment failed",
-    body: "We couldn't complete your bKash payment. No money was taken — you can try again or pick another method.",
+    body: "We couldn't complete your bKash payment, so the order was cancelled and no money was taken. The items are back in stock — you can order them again anytime.",
   },
   cancelled: {
     icon: Ban,
     tint: "text-faint",
     ring: "bg-muted ring-border",
     title: "Payment cancelled",
-    body: "You cancelled the bKash payment before it completed. Your cart is still saved.",
+    body: "You cancelled the bKash payment, so the order was cancelled and no money was taken. The items are back in stock — you can order them again anytime.",
   },
 };
 
@@ -146,11 +146,16 @@ export function PaymentResult({ defaultOutcome }: { defaultOutcome: PaymentOutco
             </>
           ) : (
             <>
+              {/* The order was cancelled server-side and the cart already
+                  cleared at checkout — /checkout and /cart are empty now, so
+                  send the customer somewhere that actually helps. */}
               <Button asChild fullWidth>
-                <Link href="/checkout">Try again</Link>
+                <Link href="/">Continue shopping</Link>
               </Button>
               <Button asChild variant="outline" fullWidth>
-                <Link href="/cart">Back to cart</Link>
+                <Link href={orderId ? `/account/orders/${orderId}` : "/account/orders"}>
+                  View order details
+                </Link>
               </Button>
             </>
           )}

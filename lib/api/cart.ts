@@ -343,8 +343,14 @@ export function useCartMergeOnAuth(): void {
         qc.setQueryData(qk.cart(), res.cart);
       })
       .catch((err) => {
-        // A stale/unknown guest token is harmless — just drop it.
-        if (err instanceof ApiError) clearCartSessionToken();
+        // A stale/unknown guest token (4xx) is harmless — drop it. A server
+        // blip (5xx/network) is NOT: keep the token so the guest cart isn't
+        // orphaned, and let the next login retry the merge.
+        if (err instanceof ApiError && err.status < 500) {
+          clearCartSessionToken();
+        } else {
+          mergedRef.current = false;
+        }
         void qc.invalidateQueries({ queryKey: qk.cart() });
       });
   }, [status, qc]);

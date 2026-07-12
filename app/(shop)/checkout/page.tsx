@@ -180,6 +180,7 @@ export default function CheckoutPage() {
       const res = await checkout.mutateAsync({
         shippingAddressId: addressId,
         paymentMethod: payment,
+        cartId: cart.cartId || undefined,
       });
       // Online methods (bKash / SSLCommerz) return a hosted-page URL — hand the
       // browser off to the gateway to collect payment. The gateway redirects

@@ -22,6 +22,10 @@ const SheetOverlay = React.forwardRef<
     ref={ref}
     className={cn(
       "fixed inset-0 z-50 bg-[oklch(0.25_0.04_260/0.45)] backdrop-blur-[2px]",
+      // While fading out the overlay must not eat taps — otherwise closing the
+      // sheet leaves a ~300ms window where the hamburger (or a dialog opened
+      // right after, e.g. auth) silently swallows the first tap.
+      "data-[state=closed]:pointer-events-none",
       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:duration-[420ms] data-[state=closed]:duration-300",
       className,
     )}
@@ -35,7 +39,7 @@ SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const SHEET_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 
 const sheetVariants = cva(
-  "fixed z-50 flex flex-col gap-0 bg-card shadow-[var(--shadow-panel)] will-change-transform data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-[420ms] data-[state=open]:ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]",
+  "fixed z-50 flex flex-col gap-0 bg-card shadow-[var(--shadow-panel)] will-change-transform data-[state=closed]:pointer-events-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-[420ms] data-[state=open]:ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]",
   {
     variants: {
       side: {
@@ -136,11 +140,14 @@ function useSwipeToClose(
 
       // The finger dragged — don't let the release also "click" the link it
       // lands on. isTrusted guard: the programmatic dismiss click below must
-      // still get through to Radix.
+      // still get through to Radix. Swallow ONLY the first trusted click (the
+      // one synthesised from this drag's own pointerup) — a flat time window
+      // would also eat a genuine follow-up tap on a menu link.
       const swallow = (click: Event) => {
         if (!click.isTrusted) return;
         click.preventDefault();
         click.stopPropagation();
+        content.removeEventListener("click", swallow, true);
       };
       content.addEventListener("click", swallow, true);
       window.setTimeout(
@@ -163,9 +170,14 @@ function useSwipeToClose(
         const ms = Math.round(
           Math.min(320, Math.max(130, (d.width * (1 - progress)) / Math.max(velocity, 0.7))),
         );
+        // The dialog stays technically open (and the overlay transparent but
+        // interactive) until the dismiss click below — without this, every tap
+        // in that window lands on the invisible overlay and dies.
+        content.style.pointerEvents = "none";
         content.style.transition = `transform ${ms}ms ${SHEET_EASE}`;
         content.style.transform = `translate3d(${dir * d.width}px,0,0)`;
         if (overlay) {
+          overlay.style.pointerEvents = "none";
           overlay.style.transition = `opacity ${ms}ms linear`;
           overlay.style.opacity = "0";
         }

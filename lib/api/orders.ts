@@ -44,14 +44,21 @@ export interface CheckoutInput {
   paymentMethod: PaymentMethod;
   customerNote?: string;
   perVendorNotes?: Record<string, string>;
+  /**
+   * Cart being checked out. Not sent to the API — it derives a STABLE
+   * Idempotency-Key so a retry after a network timeout replays the already
+   * -placed order instead of creating a duplicate (a fresh uuid() per click
+   * defeats the server-side dedup entirely).
+   */
+  cartId?: string;
 }
 
 export function useCheckout() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: CheckoutInput) =>
+    mutationFn: ({ cartId, ...input }: CheckoutInput) =>
       http.post<CheckoutResponse>("/checkout", input, {
-        headers: { "Idempotency-Key": uuid() },
+        headers: { "Idempotency-Key": cartId ? `checkout:${cartId}` : uuid() },
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.cart() });
