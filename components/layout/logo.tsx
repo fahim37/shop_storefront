@@ -14,12 +14,13 @@ export interface LogoProps {
    */
   light?: boolean;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   href?: string;
 }
 
 /** Source art is pre-trimmed to ~2:1, so height alone sets the scale. */
 const IMG = {
+  xs: "h-7",
   sm: "h-8",
   md: "h-11",
   lg: "h-12",

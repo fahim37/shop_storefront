@@ -191,6 +191,16 @@ export interface SearchHit {
   score: number;
 }
 
+/** Store (vendor) whose name matched the search query. */
+export interface SearchStoreHit {
+  vendorId: string;
+  storeName: string;
+  storeSlug: string;
+  storeLogoUrl: string | null;
+  ratingAverage: number | null;
+  productCount: number;
+}
+
 export interface SearchResponse {
   items: SearchHit[];
   nextCursor: string | null;
@@ -202,6 +212,8 @@ export interface SearchResponse {
   /** Set when the backend auto-corrected a typo'd query ("hedphones" →
    *  "headphones") and the results include matches for the corrected term. */
   correctedQuery?: string | null;
+  /** Stores whose name matched the query — first page only. */
+  stores?: SearchStoreHit[];
 }
 
 export interface AutocompleteItem {
@@ -545,6 +557,35 @@ export interface MyReview {
   response: ReviewResponse | null;
   /** Follow-up conversation after the seller's reply, oldest first. */
   replies: ReviewReplyMessage[];
+}
+
+/**
+ * The subset of a review the write/edit dialog seeds its fields from. Satisfied
+ * structurally by both `MyReview` (account order pages) and `Review` (the PDP
+ * eligibility payload), so either can be passed as `existingReview`.
+ */
+export interface EditableReview {
+  id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  recommend: boolean | null;
+  media: ReviewMedia[];
+}
+
+/**
+ * Payload of `GET /reviews/eligibility/:productId` — the signed-in caller's
+ * verified-purchase review state for one product, driving the PDP CTA:
+ *   - `review`   — their existing review (any status), hydrated like a public
+ *     list item, so the PDP can pin it first and open it for editing.
+ *   - `subOrderId` — a delivered sub-order to attach a *new* review to; null
+ *     once they've reviewed or when they never received the product.
+ *   - `canReview` — true when they may write a review or already own one.
+ */
+export interface ReviewEligibility {
+  canReview: boolean;
+  subOrderId: string | null;
+  review: Review | null;
 }
 
 export type ReviewSort = "recent" | "helpful" | "rating_desc" | "rating_asc";

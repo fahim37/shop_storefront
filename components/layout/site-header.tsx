@@ -22,7 +22,7 @@ export function SiteHeader() {
         <div className="wrap flex h-11 items-center gap-3 md:h-[76px] md:gap-7">
           <MobileMenuButton />
           <Logo className="hidden md:flex" />
-          <Logo className="md:hidden" size="sm" light />
+          <Logo className="md:hidden" size="xs" light />
           <div className="hidden flex-1 md:block">
             <SearchBar />
           </div>

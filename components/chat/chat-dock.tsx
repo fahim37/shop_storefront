@@ -8,6 +8,7 @@ import { CloseButton } from "@/components/ui/close-button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useChatStore } from "@/lib/chat/use-chat-store";
 import { useChatSocket } from "@/lib/chat/use-chat-socket";
+import { useNotificationSocket } from "@/lib/notifications/use-notification-socket";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { ChatThread } from "@/components/chat/chat-thread";
 
@@ -22,6 +23,7 @@ import { ChatThread } from "@/components/chat/chat-thread";
 export function ChatDock() {
   const { isAuthenticated } = useAuth();
   useChatSocket();
+  useNotificationSocket();
 
   const open = useChatStore((s) => s.open);
   const view = useChatStore((s) => s.view);

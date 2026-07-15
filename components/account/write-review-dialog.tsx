@@ -29,7 +29,7 @@ import {
   ReviewPhotoUploader,
   type ReviewPhoto,
 } from "@/components/account/review-photo-uploader";
-import type { MyReview } from "@/lib/api/types";
+import type { EditableReview } from "@/lib/api/types";
 
 export interface WriteReviewDialogProps {
   open: boolean;
@@ -40,9 +40,10 @@ export interface WriteReviewDialogProps {
   /**
    * The user's existing review for this item, if any. When present the dialog
    * switches to edit mode: fields are pre-filled and submit PATCHes instead of
-   * creating a new review.
+   * creating a new review. Accepts anything review-shaped (`MyReview` from the
+   * account pages, `Review` from the PDP eligibility payload).
    */
-  existingReview?: MyReview | null;
+  existingReview?: EditableReview | null;
 }
 
 const RATING_LABELS = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
@@ -99,7 +100,12 @@ export function WriteReviewDialog({
   // (tracking the previous `open`) rather than in an effect so the fields are
   // populated on the very first open frame. In edit mode we seed from the
   // existing review; otherwise we start from a blank 5-star form.
-  const [wasOpen, setWasOpen] = React.useState(open);
+  //
+  // `wasOpen` starts false (NOT `open`) so the seed also runs when the dialog is
+  // mounted already-open — the storefront/account callers mount it conditionally
+  // with `open` true, so seeding off a false→true transition would never fire,
+  // leaving the create form on 0 stars and edit forms blank.
+  const [wasOpen, setWasOpen] = React.useState(false);
   if (open && !wasOpen) {
     setWasOpen(true);
     setRating(existingReview?.rating ?? 5);

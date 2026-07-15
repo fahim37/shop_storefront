@@ -12,6 +12,7 @@ import type {
   MyReview,
   Question,
   Review,
+  ReviewEligibility,
   ReviewListResponse,
   ReviewReplyMessage,
   ReviewSort,
@@ -56,6 +57,24 @@ export function useMyReviews(enabled = true) {
     queryKey: qk.myReviews(),
     queryFn: () => http.get<MyReview[]>("/reviews/mine"),
     enabled,
+  });
+}
+
+/**
+ * The signed-in caller's verified-purchase review state for one product —
+ * whether they can review it, the sub-order a new review attaches to, and their
+ * existing review (for the PDP's "edit / write / pin own review first" flow).
+ * Only meaningful when authenticated, so callers gate `enabled` on the session.
+ */
+export function useReviewEligibility(
+  productId: string | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: qk.reviewEligibility(productId ?? ""),
+    queryFn: () =>
+      http.get<ReviewEligibility>(`/reviews/eligibility/${productId}`),
+    enabled: enabled && !!productId,
   });
 }
 

@@ -43,8 +43,10 @@ import {
   useInfiniteProductReviews,
   useProductQuestions,
   useReplyToReview,
+  useReviewEligibility,
   useReviewHelpful,
 } from "@/lib/api/reviews";
+import { WriteReviewDialog } from "@/components/account/write-review-dialog";
 import { useAuth } from "@/lib/auth/auth-context";
 import type {
   ProductCardRow,
@@ -228,9 +230,22 @@ const REVIEW_SORTS: Array<{ value: ReviewSort; label: string }> = [
   { value: "rating_asc", label: "Lowest rated" },
 ];
 
+/** PDP review CTA the summary card renders, derived from auth + eligibility. */
+type ReviewCta = "loading" | "signin" | "write" | "edit" | "gated";
+
 function ReviewsTab({ product }: { product: ProductCardRow }) {
+  const { user, status, requireAuth } = useAuth();
   const [sort, setSort] = React.useState<ReviewSort>("recent");
   const [starFilter, setStarFilter] = React.useState<number | null>(null);
+  const [writeOpen, setWriteOpen] = React.useState(false);
+
+  // Verified-purchase state for this product (only fetched when signed in):
+  // the caller's existing review (for pin-first + edit) and a sub-order to
+  // attach a new review to.
+  const eligibility = useReviewEligibility(product.id, !!user);
+  const ownReview = eligibility.data?.review ?? null;
+  const newReviewSubOrderId = eligibility.data?.subOrderId ?? null;
+
   const query = useInfiniteProductReviews(product.id, {
     sort,
     rating: starFilter ?? undefined,
@@ -267,6 +282,34 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
     ? (summary?.distribution?.[String(starFilter)] ?? reviews.length)
     : total;
 
+  // Pin the caller's own review above the list (unfiltered view only) and drop
+  // it from the page list so it isn't rendered twice.
+  const pinnedOwn = starFilter === null ? ownReview : null;
+  const listReviews = pinnedOwn
+    ? reviews.filter((r) => r.id !== pinnedOwn.id)
+    : reviews;
+
+  const cta: ReviewCta =
+    status !== "authenticated"
+      ? status === "loading"
+        ? "loading"
+        : "signin"
+      : eligibility.isLoading
+        ? "loading"
+        : ownReview
+          ? "edit"
+          : newReviewSubOrderId
+            ? "write"
+            : "gated";
+
+  const openWrite = () => {
+    // requireAuth opens the login modal when signed out; once signed in the
+    // eligibility query resolves and the CTA settles into write/edit/gated.
+    requireAuth(() => {
+      if (ownReview || newReviewSubOrderId) setWriteOpen(true);
+    });
+  };
+
   return (
     <div className="grid gap-4 lg:grid-cols-[300px_1fr] lg:gap-6">
       <RatingSummaryCard
@@ -277,6 +320,8 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
         onToggleStar={(star) =>
           setStarFilter((cur) => (cur === star ? null : star))
         }
+        cta={cta}
+        onWrite={openWrite}
       />
 
       {/* Review list */}
@@ -324,6 +369,22 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
           </Select>
         </div>
 
+        {/* Caller's own review, pinned first (even before it's published). */}
+        {pinnedOwn && (
+          <div className="mb-4 sm:mb-5">
+            <p className="mb-2 text-11 font-extrabold uppercase tracking-wide text-faint">
+              Your review
+            </p>
+            <ReviewItem
+              review={pinnedOwn}
+              productId={product.id}
+              isOwn
+              onEdit={() => setWriteOpen(true)}
+              highlight={pinnedOwn.id === targetReviewId}
+            />
+          </div>
+        )}
+
         {query.isLoading ? (
           <ReviewListSkeleton />
         ) : query.isError ? (
@@ -332,8 +393,10 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
             title="Couldn't load reviews"
             description="Please try again in a moment."
           />
-        ) : reviews.length === 0 ? (
-          starFilter ? (
+        ) : listReviews.length === 0 ? (
+          pinnedOwn ? (
+            <p className="text-sm text-sub">No other reviews yet.</p>
+          ) : starFilter ? (
             <EmptyState
               icon={<Star className="size-6" />}
               title={`No ${starFilter}-star reviews`}
@@ -363,7 +426,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
         ) : (
           <>
             <ul className="flex flex-col gap-4 sm:gap-5">
-              {reviews.map((rv) => (
+              {listReviews.map((rv) => (
                 <ReviewItem
                   key={rv.id}
                   review={rv}
@@ -387,7 +450,7 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
                   <ChevronDown className="size-4" />
                 </Button>
               </div>
-            ) : reviews.length > REVIEWS_PAGE_SIZE ? (
+            ) : listReviews.length > REVIEWS_PAGE_SIZE ? (
               <p className="mt-5 text-center text-xs font-semibold text-faint">
                 You&apos;ve seen all {shownCount}{" "}
                 {shownCount === 1 ? "review" : "reviews"}
@@ -396,6 +459,21 @@ function ReviewsTab({ product }: { product: ProductCardRow }) {
           </>
         )}
       </div>
+
+      {/* Verified-purchase review dialog (create or edit), opened from the
+          summary-card CTA or the pinned own-review "Edit". */}
+      {writeOpen && (ownReview || newReviewSubOrderId) && (
+        <WriteReviewDialog
+          open={writeOpen}
+          onOpenChange={setWriteOpen}
+          productId={product.id}
+          // Edit PATCHes by review id and ignores subOrderId; a new review needs
+          // the eligible delivered sub-order.
+          subOrderId={ownReview ? "" : (newReviewSubOrderId ?? "")}
+          productTitle={product.title}
+          existingReview={ownReview}
+        />
+      )}
     </div>
   );
 }
@@ -410,12 +488,16 @@ function RatingSummaryCard({
   total,
   activeStar,
   onToggleStar,
+  cta,
+  onWrite,
 }: {
   product: ProductCardRow;
   distribution: Record<string, number> | undefined;
   total: number;
   activeStar: number | null;
   onToggleStar: (star: number) => void;
+  cta: ReviewCta;
+  onWrite: () => void;
 }) {
   return (
     <Card className="h-fit lg:sticky lg:top-24">
@@ -481,16 +563,48 @@ function RatingSummaryCard({
 
         <Separator />
 
-        {/* Write-review CTA */}
-        <div className="flex flex-col items-center gap-1.5 text-center">
-          <p className="text-13 leading-relaxed text-sub">
-            Only verified buyers can review. Bought this?
-          </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/account/orders">
-              <PencilLine className="size-4" /> Write a review
-            </Link>
-          </Button>
+        {/* Write-review CTA — gated on sign-in + verified purchase. */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          {cta === "loading" ? (
+            <Skeleton className="h-9 w-40 rounded-md" />
+          ) : cta === "edit" ? (
+            <>
+              <p className="text-13 leading-relaxed text-sub">
+                You&apos;ve reviewed this product — thanks!
+              </p>
+              <Button variant="outline" size="sm" onClick={onWrite}>
+                <PencilLine className="size-4" /> Edit your review
+              </Button>
+            </>
+          ) : cta === "write" ? (
+            <>
+              <p className="text-13 leading-relaxed text-sub">
+                You bought this — share your experience.
+              </p>
+              <Button variant="accent" size="sm" onClick={onWrite}>
+                <PencilLine className="size-4" /> Write a review
+              </Button>
+            </>
+          ) : cta === "signin" ? (
+            <>
+              <p className="text-13 leading-relaxed text-sub">
+                Only verified buyers can review. Bought this?
+              </p>
+              <Button variant="outline" size="sm" onClick={onWrite}>
+                <PencilLine className="size-4" /> Sign in to review
+              </Button>
+            </>
+          ) : (
+            /* gated: signed in, but no delivered order for this product. */
+            <>
+              <p className="text-13 leading-relaxed text-sub">
+                Only verified buyers can review this product.
+              </p>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/account/orders">View your orders</Link>
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -501,11 +615,17 @@ function ReviewItem({
   review,
   productId,
   highlight = false,
+  isOwn = false,
+  onEdit,
 }: {
   review: Review;
   productId: string;
   /** Deep-link target (from the "seller replied" notification) — ring it. */
   highlight?: boolean;
+  /** The caller's own (pinned) review — shows Edit + status, hides Helpful. */
+  isOwn?: boolean;
+  /** Open the edit dialog for this review (own review only). */
+  onEdit?: () => void;
 }) {
   const { user } = useAuth();
   const helpful = useReviewHelpful(productId);
@@ -513,8 +633,17 @@ function ReviewItem({
   const helpfulCount = review.helpfulCount + (bumped ? 1 : 0);
 
   // The author can reply back once the seller has responded.
-  const isAuthor = !!user && user.id === review.userId;
+  const isAuthor = isOwn || (!!user && user.id === review.userId);
   const canReply = isAuthor && !!review.response;
+
+  const statusNote =
+    review.status === "pending_moderation"
+      ? "In review"
+      : review.status === "hidden"
+        ? "Hidden"
+        : review.status === "rejected"
+          ? "Not published"
+          : null;
 
   const markHelpful = () => {
     if (bumped || helpful.isPending) return;
@@ -559,6 +688,11 @@ function ReviewItem({
               <CheckCircle2 className="size-3" strokeWidth={2.4} /> Verified
               purchase
             </Badge>
+            {isOwn && statusNote && (
+              <Badge variant="muted" size="sm">
+                {statusNote}
+              </Badge>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-2">
             <RatingStars value={review.rating} size={14} />
@@ -610,20 +744,34 @@ function ReviewItem({
         />
       )}
 
-      <button
-        type="button"
-        onClick={markHelpful}
-        disabled={bumped || helpful.isPending}
-        className={cn(
-          "mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold transition-colors",
-          bumped
-            ? "border-primary/40 bg-blue-soft text-primary"
-            : "text-sub hover:border-primary/40 hover:text-primary",
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {isOwn ? (
+          onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold text-sub transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <PencilLine className="size-3.5" strokeWidth={2.4} /> Edit review
+            </button>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={markHelpful}
+            disabled={bumped || helpful.isPending}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-bold transition-colors",
+              bumped
+                ? "border-primary/40 bg-blue-soft text-primary"
+                : "text-sub hover:border-primary/40 hover:text-primary",
+            )}
+          >
+            <ThumbsUp className={cn("size-3.5", bumped && "fill-primary")} />
+            Helpful ({helpfulCount})
+          </button>
         )}
-      >
-        <ThumbsUp className={cn("size-3.5", bumped && "fill-primary")} />
-        Helpful ({helpfulCount})
-      </button>
+      </div>
     </li>
   );
 }

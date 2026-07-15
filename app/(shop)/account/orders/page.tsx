@@ -48,7 +48,7 @@ function bucketOf(order: OrderListItem): Exclude<OrderFilter, "all"> {
 
 export default function OrdersPage() {
   const { data: orders, isLoading, isError } = useOrders({ limit: 50 });
-  const [filter, setFilter] = React.useState<OrderFilter>("all");
+  const [filter, setFilter] = React.useState<OrderFilter>("active");
 
   const counts = React.useMemo(() => {
     const c: Record<OrderFilter, number> = {

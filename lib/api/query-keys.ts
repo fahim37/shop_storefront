@@ -68,6 +68,9 @@ export const qk = {
   reviewsList: (productId: string, params: { sort: string; rating?: number }) =>
     ["reviews", productId, params] as const,
   myReviews: () => ["reviews", "mine"] as const,
+  /** PDP verified-purchase state — prefix-invalidated by `reviews(id)`. */
+  reviewEligibility: (productId: string) =>
+    ["reviews", productId, "eligibility"] as const,
   questions: (productId: string) => ["questions", productId] as const,
 
   // engagement

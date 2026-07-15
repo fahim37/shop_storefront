@@ -2,11 +2,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Search as SearchIcon, SearchX, Lightbulb } from "lucide-react";
+import {
+  Search as SearchIcon,
+  SearchX,
+  Lightbulb,
+  Store as StoreIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RatingStars } from "@/components/ui/rating-stars";
 import {
   ProductGrid,
   ProductGridSkeleton,
@@ -28,6 +34,7 @@ import {
   useSearchInfinite,
 } from "@/lib/api/search";
 import type { SearchParams } from "@/lib/api/query-keys";
+import type { SearchStoreHit } from "@/lib/api/types";
 
 function SearchResults() {
   const { get, getList, getOptions } = useFilterParams();
@@ -77,6 +84,8 @@ function SearchResults() {
   const pages = data?.pages ?? [];
   const hits = pages.flatMap((p) => p.items);
   const products = hits.map(fromSearchHit);
+  // Store-name matches ride on the first page only.
+  const stores = pages[0]?.stores ?? [];
   const totalLabel = hasNextPage ? `${hits.length}+` : `${hits.length}`;
 
   // A filter/sort/query change refetches while the PREVIOUS hits stay on
@@ -150,6 +159,22 @@ function SearchResults() {
             ?
           </span>
         </Link>
+      )}
+
+      {/* Stores whose name matched the query — shown even when no products
+          match (searching a store's name should always lead to its page). */}
+      {!showSkeleton && stores.length > 0 && (
+        <section aria-label="Matching stores" className="flex flex-col gap-2">
+          <h2 className="flex items-center gap-1.5 text-sm font-extrabold text-ink">
+            <StoreIcon className="size-4 text-primary" strokeWidth={2.2} />
+            Stores
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {stores.map((store) => (
+              <StoreHitCard key={store.vendorId} store={store} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Toolbar: filters (mobile) + sort */}
@@ -228,6 +253,51 @@ function SearchResults() {
         </div>
       </div>
     </div>
+  );
+}
+
+function StoreHitCard({ store }: { store: SearchStoreHit }) {
+  const rating = store.ratingAverage;
+  return (
+    <Link
+      href={`/store/${store.storeSlug}`}
+      className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-pop)]"
+    >
+      <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+        {store.storeLogoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={store.storeLogoUrl}
+            alt={store.storeName}
+            className="size-full object-cover"
+          />
+        ) : (
+          <StoreIcon className="size-5 text-faint" strokeWidth={1.6} />
+        )}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-extrabold text-ink group-hover:text-primary">
+          {store.storeName}
+        </span>
+        <span className="mt-0.5 flex items-center gap-2 text-11 text-faint">
+          {rating !== null && (
+            <span className="flex items-center gap-1">
+              <RatingStars value={rating} size={11} />
+              <b className="text-ink">{rating.toFixed(1)}</b>
+            </span>
+          )}
+          <span>
+            {store.productCount}{" "}
+            {store.productCount === 1 ? "product" : "products"}
+          </span>
+        </span>
+      </span>
+
+      <span className="shrink-0 text-11 font-extrabold text-primary">
+        Visit store
+      </span>
+    </Link>
   );
 }
 
