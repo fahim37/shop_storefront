@@ -57,6 +57,8 @@ function AssistantFab() {
   const open = useAssistantStore((s) => s.open);
   const setOpen = useAssistantStore((s) => s.setOpen);
   const blink = useBlink();
+  // Smaller launcher on phones — 64px crowded the bottom nav corner.
+  const isDesktop = useIsDesktop();
   if (open) return null;
   return (
     <button
@@ -71,7 +73,7 @@ function AssistantFab() {
         className="block"
         style={{ animation: "mascot-floaty 3.6s .3s ease-in-out infinite" }}
       >
-        <MascotSvg size={64} blink={blink} glow />
+        <MascotSvg size={isDesktop ? 64 : 46} blink={blink} glow />
       </span>
     </button>
   );

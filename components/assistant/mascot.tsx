@@ -540,16 +540,34 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     springRaf.current = window.requestAnimationFrame(step);
   }, [boop, later]);
 
-  // Eye life. On desktop the pupils follow the mouse; on touch there is no
-  // hover, so they also (a) glance at every tap, (b) follow device tilt via
-  // the gyroscope, and (c) wander on their own after ~2.6s without input, so
-  // she never sits dead-eyed on a phone.
+  // Eye life. All inputs (mouse, taps, tilt, wander) only set a TARGET; a
+  // small rAF loop glides the pupils toward it with exponential easing, so
+  // discrete touch input reads as a soft glance instead of a teleport — this
+  // is what makes the eyes feel alive instead of twitchy on mobile.
   React.useEffect(() => {
     const timeouts = new Set<number>();
     let lastInput = 0;
 
-    const applyEye = (nx: number, ny: number) => {
-      setEye((p) => (Math.abs(nx - p.x) > 0.4 || Math.abs(ny - p.y) > 0.4 ? { x: nx, y: ny } : p));
+    const anim = { raf: 0, tx: 0, ty: 0, x: 0, y: 0 };
+    const tick = () => {
+      anim.raf = 0;
+      const dx = anim.tx - anim.x;
+      const dy = anim.ty - anim.y;
+      if (Math.hypot(dx, dy) < 0.1) {
+        anim.x = anim.tx;
+        anim.y = anim.ty;
+        setEye({ x: anim.x, y: anim.y });
+        return;
+      }
+      anim.x += dx * 0.14;
+      anim.y += dy * 0.14;
+      setEye({ x: anim.x, y: anim.y });
+      anim.raf = window.requestAnimationFrame(tick);
+    };
+    const setTarget = (nx: number, ny: number) => {
+      anim.tx = nx;
+      anim.ty = ny;
+      if (!anim.raf) anim.raf = window.requestAnimationFrame(tick);
     };
     const lookToward = (clientX: number, clientY: number) => {
       const el = heroRef.current;
@@ -559,7 +577,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       const ddy = clientY - (r.top + r.height / 2);
       const len = Math.max(Math.hypot(ddx, ddy), 1);
       const m = Math.min(len / 60, 1) * 5;
-      applyEye((ddx / len) * m, (ddy / len) * m);
+      setTarget((ddx / len) * m, (ddy / len) * m);
     };
 
     const onMove = (e: PointerEvent) => {
@@ -575,9 +593,19 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       }
       lookToward(e.clientX, e.clientY);
     };
+    // Tap: glance toward the touch, hold a beat, then look back at the
+    // camera — on a phone there is no "mouse leaving", so the return glance
+    // is what keeps her from staring at the last tapped corner forever.
     const onDown = (e: PointerEvent) => {
       lastInput = Date.now();
-      if (!gesture.current.dragging) lookToward(e.clientX, e.clientY);
+      if (gesture.current.dragging) return;
+      lookToward(e.clientX, e.clientY);
+      const at = lastInput;
+      const t = window.setTimeout(() => {
+        timeouts.delete(t);
+        if (lastInput === at) setTarget(0, 0);
+      }, 850);
+      timeouts.add(t);
     };
     const onUp = () => {
       if (gesture.current.dragging) release();
@@ -588,17 +616,17 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     const onTilt = (e: DeviceOrientationEvent) => {
       if (e.gamma == null || e.beta == null) return;
       lastInput = Date.now();
-      applyEye(clamp(e.gamma / 12, -5, 5), clamp((e.beta - 40) / 14, -5, 5));
+      setTarget(clamp(e.gamma / 12, -5, 5), clamp((e.beta - 40) / 14, -5, 5));
     };
     // Idle wander: a soft glance somewhere, then settle back to center.
     const wander = window.setInterval(() => {
       if (Date.now() - lastInput < 2600) return;
       const a = Math.random() * Math.PI * 2;
       const m = 2 + Math.random() * 3;
-      setEye({ x: Math.cos(a) * m, y: Math.sin(a) * m * 0.6 });
+      setTarget(Math.cos(a) * m, Math.sin(a) * m * 0.6);
       const t = window.setTimeout(() => {
         timeouts.delete(t);
-        if (Date.now() - lastInput >= 2600) setEye({ x: 0, y: 0 });
+        if (Date.now() - lastInput >= 2600) setTarget(0, 0);
       }, 900);
       timeouts.add(t);
     }, 3200);
@@ -616,6 +644,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       window.removeEventListener("deviceorientation", onTilt);
       window.clearInterval(wander);
       timeouts.forEach((t) => window.clearTimeout(t));
+      window.cancelAnimationFrame(anim.raf);
     };
   }, [release]);
 
