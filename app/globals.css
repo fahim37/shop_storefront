@@ -77,11 +77,12 @@
   --shadow-card: 0 1px 2px rgb(24 30 48 / 0.05), 0 10px 24px -16px rgb(24 30 48 / 0.22);
   --shadow-pop: 0 16px 40px -12px rgb(24 30 48 / 0.28);
 
-  /* Orbie — the shopping-assistant mascot. Body gradient + face derive from
-   * the brand palette so a rebrand recolors the character too. */
-  --orbie-body-1: color-mix(in oklch, var(--blue) 55%, white);
-  --orbie-body-2: var(--blue-strong);
-  --orbie-face: var(--navy);
+  /* Nova — the shopping-assistant mascot (a gold star sprite). Body gradient
+   * + face derive from the brand palette (amber accent, navy ink) so a
+   * rebrand recolors the character too. */
+  --mascot-body-1: color-mix(in oklch, var(--amber) 45%, white);
+  --mascot-body-2: var(--amber);
+  --mascot-face: var(--navy);
 }
 
 /* -----------------------------------------------------------------------------
@@ -411,33 +412,30 @@
   }
 }
 
-/* Orbie, the shopping-assistant mascot (components/assistant/orbie.tsx).
+/* Nova, the shopping-assistant mascot (components/assistant/mascot.tsx).
  * Idle float + body wobble run forever; boing (boop squash), flyup (heart/
  * star bursts) and talkmouth/dotb/wavebar/spinstar are mood-driven. All are
  * referenced by inline `animation:` styles from the component and collapse
  * under the reduced-motion rule at the bottom of this file. */
-@keyframes orbie-floaty {
+@keyframes mascot-floaty {
   0%,
   100% {
-    transform: translateY(0) rotate(-1.5deg);
+    transform: translateY(0) rotate(-0.75deg);
   }
   50% {
-    transform: translateY(-14px) rotate(1.5deg);
+    transform: translateY(-7px) rotate(0.75deg);
   }
 }
-@keyframes orbie-wob {
+@keyframes mascot-breathe {
   0%,
   100% {
-    transform: scale(1, 1);
+    transform: scale(1);
   }
-  33% {
-    transform: scale(1.035, 0.965);
-  }
-  66% {
-    transform: scale(0.972, 1.04);
+  50% {
+    transform: scale(1.045);
   }
 }
-@keyframes orbie-boing {
+@keyframes mascot-boing {
   0% {
     transform: scale(1, 1);
   }
@@ -457,7 +455,7 @@
     transform: scale(1, 1);
   }
 }
-@keyframes orbie-talkmouth {
+@keyframes mascot-talkmouth {
   0%,
   100% {
     transform: scaleY(1);
@@ -466,7 +464,7 @@
     transform: scaleY(0.35);
   }
 }
-@keyframes orbie-dotb {
+@keyframes mascot-dotb {
   0%,
   80%,
   100% {
@@ -478,7 +476,7 @@
     opacity: 1;
   }
 }
-@keyframes orbie-flyup {
+@keyframes mascot-flyup {
   0% {
     transform: translateY(0) scale(0.5) rotate(0deg);
     opacity: 1;
@@ -488,7 +486,7 @@
     opacity: 0;
   }
 }
-@keyframes orbie-twinkle {
+@keyframes mascot-twinkle {
   0%,
   100% {
     opacity: 0.2;
@@ -499,7 +497,7 @@
     transform: scale(1.2);
   }
 }
-@keyframes orbie-spinstar {
+@keyframes mascot-spinstar {
   from {
     transform: rotate(0deg);
   }
@@ -507,7 +505,7 @@
     transform: rotate(360deg);
   }
 }
-@keyframes orbie-wavebar {
+@keyframes mascot-wavebar {
   0%,
   100% {
     transform: scaleY(0.3);
@@ -516,7 +514,7 @@
     transform: scaleY(1);
   }
 }
-@keyframes orbie-shadowpulse {
+@keyframes mascot-shadowpulse {
   0%,
   100% {
     transform: scaleX(1);

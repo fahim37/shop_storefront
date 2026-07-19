@@ -10,7 +10,7 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
 import { AssistantComposer } from "./assistant-composer";
 import { AssistantThread } from "./assistant-thread";
-import { ORBIE_STATUS, OrbieSvg, useBlink, useOrbieMood, useOrbieUi } from "./orbie";
+import { MASCOT_STATUS, MascotSvg, useBlink, useMascotMood, useMascotUi } from "./mascot";
 
 /**
  * Global AI shopping-assistant surface: a floating launcher (FAB) plus a
@@ -65,32 +65,32 @@ function AssistantFab() {
       aria-label="Open shopping assistant"
       className="group fixed right-4 z-40 animate-pop transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6 motion-reduce:animate-none"
     >
-      {/* Orbie bobs gently while waiting to be opened. */}
+      {/* Nova bobs gently while waiting to be opened. */}
       <span
         aria-hidden
         className="block"
-        style={{ animation: "orbie-floaty 3s .3s ease-in-out infinite" }}
+        style={{ animation: "mascot-floaty 3.6s .3s ease-in-out infinite" }}
       >
-        <OrbieSvg size={64} blink={blink} glow />
+        <MascotSvg size={64} blink={blink} glow />
       </span>
     </button>
   );
 }
 
 /**
- * Header badge: a mini Orbie that mirrors the live mood and relays boops to
+ * Header badge: a mini Nova that mirrors the live mood and relays boops to
  * the hero in the thread (plus its own little squash so the tap lands).
  */
-function OrbieBadge() {
-  const mood = useOrbieMood();
+function MascotBadge() {
+  const mood = useMascotMood();
   const blink = useBlink();
-  const boop = useOrbieUi((s) => s.boop);
+  const boop = useMascotUi((s) => s.boop);
   const [squash, setSquash] = React.useState(false);
 
   return (
     <button
       type="button"
-      aria-label="Boop Orbie"
+      aria-label="Boop Nova"
       onClick={() => {
         boop();
         setSquash(true);
@@ -98,11 +98,11 @@ function OrbieBadge() {
       }}
       className="relative grid size-12 shrink-0 place-items-center transition-transform hover:scale-108"
       style={{
-        animation: squash ? "orbie-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
+        animation: squash ? "mascot-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
         transformOrigin: "50% 88%",
       }}
     >
-      <OrbieSvg size={44} mood={mood} blink={blink} halo />
+      <MascotSvg size={44} mood={mood} blink={blink} halo />
     </button>
   );
 }
@@ -134,7 +134,7 @@ export function AssistantDock() {
     [setOpen],
   );
 
-  const mood = useOrbieMood();
+  const mood = useMascotMood();
 
   return (
     <>
@@ -152,12 +152,12 @@ export function AssistantDock() {
                 aria-hidden
                 className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-white/10"
               />
-              <OrbieBadge />
+              <MascotBadge />
               <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
-                Orbie — Shopping Assistant
+                Nova — Shopping Assistant
                 <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
                   <span className="size-1.5 animate-badge-pulse rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)] motion-reduce:animate-none" />
-                  {ORBIE_STATUS[mood]}
+                  {MASCOT_STATUS[mood]}
                 </span>
               </SheetTitle>
               <div className="relative ml-auto flex items-center gap-1.5">

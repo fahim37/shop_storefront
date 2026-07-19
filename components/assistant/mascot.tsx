@@ -6,27 +6,29 @@ import { create } from "zustand";
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
 /* ----------------------------------------------------------------------------
- * Orbie — the shopping-assistant mascot.
+ * Nova — the shopping-assistant mascot, a gold star sprite.
  *
- * A hand-drawn SVG blob with moods (idle / listening / thinking / talking /
- * happy / held), a blink cycle, pupils that follow the pointer, a boop
- * interaction (squash + heart/star bursts + speech bubble) and a grab-and-
- * fling drag with a spring return. Keyframes live in globals.css under the
- * `orbie-*` prefix and collapse under prefers-reduced-motion.
+ * A hand-drawn SVG four-point star with moods (idle / listening / thinking /
+ * talking / happy / held), a blink cycle, pupils that follow pointer, taps
+ * and device tilt, a boop interaction (squash + heart/star bursts + speech
+ * bubble + haptics) and a grab-and-fling drag with a spring return.
+ * Keyframes live in globals.css under the `mascot-*` prefix and collapse
+ * under prefers-reduced-motion. Colors come from the `--mascot-*` tokens
+ * (amber body, navy face) so a rebrand recolors her automatically.
  *
  * Three surfaces consume this module:
- *   - OrbieHero    — the big interactive character in the dock thread
- *   - OrbieAvatar  — static mini face beside assistant bubbles
- *   - OrbieSvg     — raw renderer (FAB, header badge)
- * plus useOrbieMood/useOrbieUi to sync mood across all of them.
+ *   - MascotHero    — the big interactive character in the dock thread
+ *   - MascotAvatar  — static mini face beside assistant bubbles
+ *   - MascotSvg     — raw renderer (FAB, header badge)
+ * plus useMascotMood/useMascotUi to sync mood across all of them.
  * ------------------------------------------------------------------------- */
 
-export type OrbieMood = "idle" | "listening" | "thinking" | "talking" | "happy" | "held";
+export type MascotMood = "idle" | "listening" | "thinking" | "talking" | "happy" | "held";
 
 /* ── Cross-surface UI bits (composer focus, boop relay) ─────────────────── */
 
-interface OrbieUiState {
-  /** Composer focus → "listening" mood on every Orbie on screen. */
+interface MascotUiState {
+  /** Composer focus → "listening" mood on every Nova on screen. */
   composerFocused: boolean;
   /** Bumped by remote boopers (header badge) — the hero plays the boop. */
   boopTick: number;
@@ -34,7 +36,7 @@ interface OrbieUiState {
   boop: () => void;
 }
 
-export const useOrbieUi = create<OrbieUiState>((set) => ({
+export const useMascotUi = create<MascotUiState>((set) => ({
   composerFocused: false,
   boopTick: 0,
   setComposerFocused: (v) => set({ composerFocused: v }),
@@ -46,10 +48,10 @@ export const useOrbieUi = create<OrbieUiState>((set) => ({
  * "thinking", token flow as "talking", a finished reply flashes "happy",
  * a focused composer is "listening". "held" is local to the hero (dragging).
  */
-export function useOrbieMood(): OrbieMood {
+export function useMascotMood(): MascotMood {
   const isStreaming = useAssistantStore((s) => s.isStreaming);
   const hasLiveText = useAssistantStore((s) => s.streamText.length > 0 && !s.streamStale);
-  const composerFocused = useOrbieUi((s) => s.composerFocused);
+  const composerFocused = useMascotUi((s) => s.composerFocused);
 
   // "Happy" is a 1.4s afterglow when a stream finishes — driven off the
   // store subscription (an external system) rather than render state.
@@ -74,7 +76,7 @@ export function useOrbieMood(): OrbieMood {
   return "idle";
 }
 
-export const ORBIE_STATUS: Record<OrbieMood, string> = {
+export const MASCOT_STATUS: Record<MascotMood, string> = {
   idle: "Online — ask anything",
   listening: "Listening…",
   thinking: "Thinking…",
@@ -93,21 +95,26 @@ function starPath(cx: number, cy: number, r: number): string {
   );
 }
 
-const FACE = "var(--orbie-face)";
+const FACE = "var(--mascot-face)";
 
 function Face({
   mood,
   blink,
   ex,
   ey,
+  cx = 100,
+  cy = 94,
+  s = 0.8,
 }: {
-  mood: OrbieMood;
+  mood: MascotMood;
   blink: boolean;
   ex: number;
   ey: number;
+  cx?: number;
+  cy?: number;
+  /** Overall face scale — Nova's star body has a narrow waist, so ~0.8. */
+  s?: number;
 }) {
-  const cx = 100;
-  const cy = 102;
   const held = mood === "held";
   // Thinking looks up-and-away instead of tracking the pointer.
   const eo = mood === "thinking" ? { x: 2, y: -4 } : { x: ex, y: ey };
@@ -116,19 +123,25 @@ function Face({
     mood === "happy" && !blink ? (
       <path
         key={x}
-        d={`M${x - 8},${cy + 3} Q${x},${cy - 8} ${x + 8},${cy + 3}`}
+        d={`M${x - 8 * s},${cy + 3 * s} Q${x},${cy - 8 * s} ${x + 8 * s},${cy + 3 * s}`}
         stroke={FACE}
-        strokeWidth={3.6}
+        strokeWidth={3.6 * s}
         fill="none"
         strokeLinecap="round"
       />
     ) : (
       <g key={x}>
-        <ellipse cx={x} cy={cy} rx={held ? 9.5 : 8} ry={blink ? 1.5 : held ? 11 : 9} fill="#fff" />
+        <ellipse
+          cx={x}
+          cy={cy}
+          rx={(held ? 9.5 : 8) * s}
+          ry={blink ? 1.5 : (held ? 11 : 9) * s}
+          fill="#fff"
+        />
         {!blink ? (
           <>
-            <circle cx={x + eo.x} cy={cy + eo.y * 0.6} r={held ? 5 : 4.2} fill={FACE} />
-            <circle cx={x + eo.x + 1.6} cy={cy + eo.y * 0.6 - 1.8} r={1.5} fill="#fff" />
+            <circle cx={x + eo.x} cy={cy + eo.y * 0.6} r={(held ? 5 : 4.2) * s} fill={FACE} />
+            <circle cx={x + eo.x + 1.6} cy={cy + eo.y * 0.6 - 1.8} r={1.5 * s} fill="#fff" />
           </>
         ) : null}
       </g>
@@ -139,28 +152,31 @@ function Face({
     mouth = (
       <ellipse
         cx={cx}
-        cy={cy + 22}
-        rx={7}
-        ry={6}
+        cy={cy + 22 * s}
+        rx={7 * s}
+        ry={6 * s}
         fill={FACE}
         style={{
-          animation: "orbie-talkmouth .28s ease-in-out infinite",
-          transformOrigin: `${cx}px ${cy + 22}px`,
+          animation: "mascot-talkmouth .28s ease-in-out infinite",
+          transformOrigin: `${cx}px ${cy + 22 * s}px`,
         }}
       />
     );
   } else if (mood === "thinking" || held) {
-    mouth = <circle cx={cx} cy={cy + 22} r={held ? 4.5 : 3.5} fill={FACE} />;
+    mouth = <circle cx={cx} cy={cy + 22 * s} r={(held ? 4.5 : 3.5) * s} fill={FACE} />;
   } else if (mood === "happy") {
     mouth = (
-      <path d={`M${cx - 11},${cy + 17} Q${cx},${cy + 32} ${cx + 11},${cy + 17} Z`} fill={FACE} />
+      <path
+        d={`M${cx - 11 * s},${cy + 17 * s} Q${cx},${cy + 32 * s} ${cx + 11 * s},${cy + 17 * s} Z`}
+        fill={FACE}
+      />
     );
   } else {
     mouth = (
       <path
-        d={`M${cx - 9},${cy + 19} Q${cx},${cy + 27} ${cx + 9},${cy + 19}`}
+        d={`M${cx - 9 * s},${cy + 19 * s} Q${cx},${cy + 27 * s} ${cx + 9 * s},${cy + 19 * s}`}
         stroke={FACE}
-        strokeWidth={3}
+        strokeWidth={3 * s}
         fill="none"
         strokeLinecap="round"
       />
@@ -169,33 +185,47 @@ function Face({
 
   return (
     <g>
-      {eye(cx - 17)}
-      {eye(cx + 17)}
+      {eye(cx - 15 * s)}
+      {eye(cx + 15 * s)}
       {mouth}
-      <ellipse cx={cx - 29} cy={cy + 13} rx={6} ry={3.8} fill="#FF8FB1" opacity={0.6} />
-      <ellipse cx={cx + 29} cy={cy + 13} rx={6} ry={3.8} fill="#FF8FB1" opacity={0.6} />
+      <ellipse
+        cx={cx - 26 * s}
+        cy={cy + 12 * s}
+        rx={5.5 * s}
+        ry={3.5 * s}
+        fill="#FF8FB1"
+        opacity={0.6}
+      />
+      <ellipse
+        cx={cx + 26 * s}
+        cy={cy + 12 * s}
+        rx={5.5 * s}
+        ry={3.5 * s}
+        fill="#FF8FB1"
+        opacity={0.6}
+      />
     </g>
   );
 }
 
-export interface OrbieSvgProps {
-  /** Rendered width in px (height is ×1.1 — the blob is taller than wide). */
+export interface MascotSvgProps {
+  /** Rendered size in px (the star is symmetric — width = height). */
   size: number;
-  mood?: OrbieMood;
+  mood?: MascotMood;
   blink?: boolean;
   /** Pupil offset (eye-follow), in viewBox units, max ~5. */
   ex?: number;
   ey?: number;
-  /** Brand-blue drop-shadow glow (hero, FAB). */
+  /** Warm amber drop-shadow glow (hero, FAB). */
   glow?: boolean;
   /** White halo, for placement on the colored header. */
   halo?: boolean;
-  /** Disables the always-on body wobble (used by the tiny static avatars). */
+  /** Disables the always-on animations (used by the tiny static avatars). */
   still?: boolean;
   className?: string;
 }
 
-export function OrbieSvg({
+export function MascotSvg({
   size,
   mood = "idle",
   blink = false,
@@ -205,85 +235,117 @@ export function OrbieSvg({
   halo = false,
   still = false,
   className,
-}: OrbieSvgProps) {
-  // Gradient defs need document-unique ids — one blob per React instance.
-  const gid = `orbie-${React.useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
+}: MascotSvgProps) {
+  // Gradient defs need document-unique ids — one sprite per React instance.
+  const gid = `mascot-${React.useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
+  // No ambient 0-offset halo — it washed the character out to a white blur.
+  // glow is just a faint warm shadow beneath her; halo is a much quieter
+  // white edge for the colored header.
   const filter = halo
-    ? `drop-shadow(0 0 ${Math.round(size * 0.18)}px rgb(255 255 255 / 0.7))`
+    ? `drop-shadow(0 0 ${Math.round(size * 0.1)}px rgb(255 255 255 / 0.4))`
     : glow
-      ? `drop-shadow(0 0 ${Math.round(size * 0.06)}px color-mix(in oklch, var(--blue) 30%, transparent)) drop-shadow(0 4px ${Math.round(size * 0.1)}px color-mix(in oklch, var(--blue-strong) 18%, transparent))`
+      ? `drop-shadow(0 4px ${Math.round(size * 0.08)}px color-mix(in oklch, var(--amber-deep) 22%, transparent))`
       : undefined;
 
   return (
     <svg
-      viewBox="0 0 200 220"
+      viewBox="0 0 200 200"
       width={size}
-      height={size * 1.1}
+      height={size}
       className={className}
       style={{ display: "block", overflow: "visible", filter }}
       aria-hidden
     >
       <defs>
-        <radialGradient id={gid} cx="35%" cy="22%" r="90%">
-          <stop offset="0%" style={{ stopColor: "var(--orbie-body-1)" }} />
-          <stop offset="100%" style={{ stopColor: "var(--orbie-body-2)" }} />
+        <radialGradient id={gid} cx="35%" cy="30%" r="90%">
+          <stop offset="0%" style={{ stopColor: "var(--mascot-body-1)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-body-2)" }} />
         </radialGradient>
       </defs>
       {mood === "thinking" ? (
-        <g style={{ animation: "orbie-spinstar 1.6s linear infinite", transformOrigin: "148px 34px" }}>
-          <path d={starPath(148, 34, 10)} fill="var(--amber)" />
-          <path d={starPath(148, 34, 4.5)} fill="var(--amber-soft)" />
+        <g
+          style={{
+            animation: "mascot-spinstar 1.6s linear infinite",
+            transformOrigin: "154px 30px",
+          }}
+        >
+          <path d={starPath(154, 30, 10)} fill="var(--blue)" />
+          <path d={starPath(154, 30, 4.5)} fill="var(--blue-soft)" />
         </g>
       ) : null}
       <g
         style={
           still
             ? undefined
-            : { animation: "orbie-wob 3.6s ease-in-out infinite", transformOrigin: "100px 140px" }
+            : {
+                animation: "mascot-breathe 3.4s ease-in-out infinite",
+                transformOrigin: "100px 100px",
+              }
         }
       >
         <path
-          d="M100,40 C145,40 170,72 170,110 C170,152 140,186 100,186 C60,186 30,152 30,110 C30,72 55,40 100,40 Z"
+          d="M100,10 C112,68 132,88 190,100 C132,112 112,132 100,190 C88,132 68,112 10,100 C68,88 88,68 100,10 Z"
           fill={`url(#${gid})`}
         />
-        <path
-          d="M60,60 C70,47 86,42 100,42"
-          stroke="#fff"
-          strokeWidth={7}
-          strokeLinecap="round"
-          fill="none"
-          opacity={0.5}
+        {/* Blue twinkle satellites riding her points — the brand-blue tie-in. */}
+        <circle
+          cx={160}
+          cy={42}
+          r={6}
+          fill="var(--blue)"
+          style={
+            still
+              ? { opacity: 0.6 }
+              : {
+                  animation: "mascot-twinkle 2.1s ease-in-out infinite",
+                  transformOrigin: "160px 42px",
+                }
+          }
+        />
+        <circle
+          cx={38}
+          cy={156}
+          r={4.5}
+          fill="var(--blue)"
+          style={
+            still
+              ? { opacity: 0.6 }
+              : {
+                  animation: "mascot-twinkle 2.7s .4s ease-in-out infinite",
+                  transformOrigin: "38px 156px",
+                }
+          }
         />
         <Face mood={mood} blink={blink} ex={ex} ey={ey} />
       </g>
-      {/* Ambient sparkles over her top-right shoulder — hidden on the tiny
+      {/* Ambient stardust over her top-right shoulder — hidden on the tiny
           still avatars, and while thinking (the spinning star owns that spot). */}
       {!still && mood !== "thinking" ? (
         <g aria-hidden>
           <path
-            d={starPath(166, 36, 8)}
+            d={starPath(158, 24, 7)}
             fill="var(--amber)"
             style={{
-              animation: "orbie-twinkle 2.1s ease-in-out infinite",
-              transformOrigin: "166px 36px",
+              animation: "mascot-twinkle 2.1s ease-in-out infinite",
+              transformOrigin: "158px 24px",
             }}
           />
           <path
-            d={starPath(184, 68, 5)}
+            d={starPath(186, 62, 5)}
             fill="var(--amber)"
             style={{
-              animation: "orbie-twinkle 2.7s .4s ease-in-out infinite",
-              transformOrigin: "184px 68px",
+              animation: "mascot-twinkle 2.7s .4s ease-in-out infinite",
+              transformOrigin: "186px 62px",
             }}
           />
           <circle
-            cx={148}
-            cy={18}
+            cx={134}
+            cy={12}
             r={3.2}
-            fill="var(--orbie-body-1)"
+            fill="var(--blue)"
             style={{
-              animation: "orbie-twinkle 1.8s .8s ease-in-out infinite",
-              transformOrigin: "148px 18px",
+              animation: "mascot-twinkle 1.8s .8s ease-in-out infinite",
+              transformOrigin: "134px 12px",
             }}
           />
         </g>
@@ -312,18 +374,18 @@ export function useBlink(): boolean {
 
 /* ── Mini avatar (message rows / typing indicator) ──────────────────────── */
 
-export function OrbieAvatar({
+export function MascotAvatar({
   size = 26,
   mood = "idle",
   className,
 }: {
   size?: number;
-  mood?: OrbieMood;
+  mood?: MascotMood;
   className?: string;
 }) {
   return (
     <span className={className ?? "mt-0.5 shrink-0"}>
-      <OrbieSvg size={size} mood={mood} still />
+      <MascotSvg size={size} mood={mood} still />
     </span>
   );
 }
@@ -360,9 +422,9 @@ function StarBit() {
   );
 }
 
-export function OrbieHero({ compact = false }: { compact?: boolean }) {
+export function MascotHero({ compact = false }: { compact?: boolean }) {
   const size = compact ? 120 : 192;
-  const mood = useOrbieMood();
+  const mood = useMascotMood();
   const blink = useBlink();
 
   const heroRef = React.useRef<HTMLDivElement>(null);
@@ -370,7 +432,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
   const [pos, setPos] = React.useState({ dx: 0, dy: 0 });
   const [dragging, setDragging] = React.useState(false);
   const [squash, setSquash] = React.useState(false);
-  const [boopMood, setBoopMood] = React.useState<OrbieMood | null>(null);
+  const [boopMood, setBoopMood] = React.useState<MascotMood | null>(null);
   /** Short-lived bubble line (boop word / "wheee!") — beats the mood line. */
   const [transient, setTransient] = React.useState<string | null>(null);
   const [bursts, setBursts] = React.useState<Burst[]>([]);
@@ -438,7 +500,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
 
   // Remote boops (header badge) arrive through the UI store subscription.
   React.useEffect(() => {
-    const unsub = useOrbieUi.subscribe((s, prev) => {
+    const unsub = useMascotUi.subscribe((s, prev) => {
       if (s.boopTick !== prev.boopTick) boop();
     });
     return unsub;
@@ -568,7 +630,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
     setDragging(true);
   };
 
-  const renderMood: OrbieMood = dragging ? "held" : (boopMood ?? mood);
+  const renderMood: MascotMood = dragging ? "held" : (boopMood ?? mood);
   const dist = Math.hypot(pos.dx, pos.dy);
   const stretch = dragging
     ? `scale(${1 + dist / 800}, ${1 - dist / 900}) rotate(${pos.dx * 0.08}deg)`
@@ -578,19 +640,19 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
   // (big hero only — it sits on the empty thread, so "hi!" is its idle line).
   const moodBubble =
     renderMood === "listening" ? "i'm all ears!" : renderMood === "thinking" ? "hmm…" : null;
-  const greeting = !compact && renderMood === "idle" ? "hi! i'm Orbie!" : null;
+  const greeting = !compact && renderMood === "idle" ? "hi! i'm Nova!" : null;
   const bubble = dragging ? null : (transient ?? moodBubble ?? greeting);
 
   return (
     <div
       className="relative grid place-items-center"
-      style={{ minHeight: size * 1.1 + 16, padding: "4px 0" }}
+      style={{ minHeight: size + 16, padding: "4px 0" }}
     >
       <div
         ref={heroRef}
         role="button"
         tabIndex={0}
-        aria-label="Orbie — tap for a boop"
+        aria-label="Nova — tap for a boop"
         onPointerDown={grab}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -606,15 +668,15 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
           transition: dragging ? "none" : "transform .1s linear",
         }}
       >
-        <div style={{ animation: dragging ? "none" : "orbie-floaty 2.8s ease-in-out infinite" }}>
+        <div style={{ animation: dragging ? "none" : "mascot-floaty 3.6s ease-in-out infinite" }}>
           <div
             className="relative"
             style={{
-              animation: squash ? "orbie-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
+              animation: squash ? "mascot-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
               transformOrigin: "50% 88%",
             }}
           >
-            <OrbieSvg size={size} mood={renderMood} blink={blink} ex={eye.x} ey={eye.y} glow />
+            <MascotSvg size={size} mood={renderMood} blink={blink} ex={eye.x} ey={eye.y} glow />
 
             {/* Thinking — drifting thought dots by the head */}
             {renderMood === "thinking" ? (
@@ -628,7 +690,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
                       top: -i * 12,
                       width: 11 - i * 3,
                       height: 11 - i * 3,
-                      animation: `orbie-dotb 1.2s ${i * 0.18}s ease-in-out infinite`,
+                      animation: `mascot-dotb 1.2s ${i * 0.18}s ease-in-out infinite`,
                     }}
                   />
                 ))}
@@ -648,7 +710,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
                     className="w-1 rounded-sm bg-primary"
                     style={{
                       height: 15,
-                      animation: `orbie-wavebar ${0.5 + (i % 3) * 0.15}s ${i * 0.08}s ease-in-out infinite`,
+                      animation: `mascot-wavebar ${0.5 + (i % 3) * 0.15}s ${i * 0.08}s ease-in-out infinite`,
                       transformOrigin: "bottom",
                     }}
                   />
@@ -666,7 +728,7 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
               >
                 <span
                   className="block"
-                  style={{ animation: `orbie-flyup .95s ${b.delay}s ease-out both` }}
+                  style={{ animation: `mascot-flyup .95s ${b.delay}s ease-out both` }}
                 >
                   {b.star ? <StarBit /> : <HeartBit />}
                 </span>
@@ -683,14 +745,14 @@ export function OrbieHero({ compact = false }: { compact?: boolean }) {
             width: size * 0.5,
             height: 10,
             background: "radial-gradient(ellipse, rgb(22 29 63 / 0.35), transparent 70%)",
-            animation: "orbie-shadowpulse 2.8s ease-in-out infinite",
+            animation: "mascot-shadowpulse 3.6s ease-in-out infinite",
           }}
         />
       </div>
 
       {/* Speech bubble */}
       {bubble ? (
-        <div className="pointer-events-none absolute right-1/2 top-1 z-2 translate-x-[calc(100%+48px)] animate-pop whitespace-nowrap rounded-2xl rounded-bl-xs border-2 border-blue-soft bg-card px-3 py-1.5 text-13 font-extrabold text-primary shadow-[var(--shadow-card)] motion-reduce:animate-none">
+        <div className="pointer-events-none absolute right-1/2 top-1 z-2 translate-x-[calc(100%+48px)] animate-pop whitespace-nowrap rounded-2xl rounded-bl-xs border-2 border-amber-soft bg-card px-3 py-1.5 text-13 font-extrabold text-amber-deep shadow-[var(--shadow-card)] motion-reduce:animate-none">
           {bubble}
         </div>
       ) : null}

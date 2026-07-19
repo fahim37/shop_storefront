@@ -8,7 +8,7 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 import type { AssistantMessage } from "@/lib/assistant/types";
 
 import { MarkdownLite } from "./markdown-lite";
-import { OrbieAvatar, OrbieHero } from "./orbie";
+import { MascotAvatar, MascotHero } from "./mascot";
 import { RichContentBlock } from "./rich-content";
 
 /** Prompt chips shown on the empty thread. */
@@ -18,9 +18,9 @@ const SUGGESTIONS = [
   "Any discount coupons right now?",
 ];
 
-/** Mini Orbie beside assistant replies. */
+/** Mini Nova beside assistant replies. */
 function BotAvatar() {
-  return <OrbieAvatar size={26} className="mt-0.5 shrink-0" />;
+  return <MascotAvatar size={26} className="mt-0.5 shrink-0" />;
 }
 
 function Bubble({ message }: { message: AssistantMessage }) {
@@ -53,7 +53,7 @@ function Bubble({ message }: { message: AssistantMessage }) {
   );
 }
 
-/** Three-dot typing indicator (Orbie's staggered bob). */
+/** Three-dot typing indicator (Nova's staggered bob). */
 function TypingDots() {
   return (
     <span className="flex items-center gap-1" aria-hidden>
@@ -61,7 +61,7 @@ function TypingDots() {
         <span
           key={i}
           className="size-1.5 rounded-full bg-primary/70"
-          style={{ animation: `orbie-dotb 1.1s ${i * 0.15}s infinite` }}
+          style={{ animation: `mascot-dotb 1.1s ${i * 0.15}s infinite` }}
         />
       ))}
     </span>
@@ -77,7 +77,7 @@ function StreamingBubble() {
 
   return (
     <div className="flex w-full animate-fade-up items-start gap-2 motion-reduce:animate-none">
-      <OrbieAvatar size={26} mood="thinking" className="mt-0.5 shrink-0" />
+      <MascotAvatar size={26} mood="thinking" className="mt-0.5 shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col items-start">
         {streamText ? (
           <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-line bg-card px-3.5 py-2 text-13 font-medium leading-relaxed text-ink shadow-xs">
@@ -169,14 +169,14 @@ export function AssistantThread() {
     >
       {messages.length === 0 && !isStreaming ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-          <OrbieHero />
+          <MascotHero />
           <div className="animate-fade-up motion-reduce:animate-none">
             <p className="text-15 font-extrabold text-ink">
-              Hi! I&apos;m Orbie — your shopping buddy
+              Hi! I&apos;m Nova — your shopping buddy
             </p>
             <p className="mx-auto mt-1 max-w-72 text-xs font-medium text-sub">
               Ask me about products, deals, orders, returns — anything in the
-              store. Or grab me, I&apos;m squishy.
+              store. Or grab me — I sparkle.
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -195,10 +195,10 @@ export function AssistantThread() {
         </div>
       ) : (
         <>
-          {/* Compact Orbie rides at the top of the transcript (scrolls away
+          {/* Compact Nova rides at the top of the transcript (scrolls away
               with history, like the prototype) — still boopable/squishy. */}
           <div className="flex justify-center pb-1">
-            <OrbieHero compact />
+            <MascotHero compact />
           </div>
           {messages.map((m) => (
             <Bubble key={m.id} message={m} />
