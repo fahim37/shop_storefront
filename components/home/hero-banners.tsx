@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
  * Hero banners — Daraz-style hero driven by admin-managed homepage blocks.
  * Left: big image carousel (auto-advances every 5s, pauses on hover /
  * interaction, respects prefers-reduced-motion — same embla pattern as
- * HeroSlider). Right (lg+): up to 3 banner tiles stacked to match the slider
- * height; below the slider as a 2-col grid on mobile. The uploaded artwork
- * carries its own text, so slides/tiles render images only (captions become
- * alt text for screen readers).
+ * HeroSlider). Right (lg+): exactly 2 square banner tiles stacked in one
+ * column to match the slider height. The uploaded artwork carries its own
+ * text, so slides/tiles render images only (captions become alt text for
+ * screen readers).
  * ------------------------------------------------------------------------- */
 
 export interface HeroBannerTile {
@@ -61,7 +61,7 @@ function TileLink({
 
 export function HeroBanners({ carousel, banners }: HeroBannersProps) {
   const slides = carousel?.slides ?? [];
-  const tiles = banners.slice(0, 4);
+  const tiles = banners.slice(0, 2);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
   const [selected, setSelected] = React.useState(0);
@@ -103,13 +103,13 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
   if (slides.length === 0 && tiles.length === 0) return null;
 
   return (
-    <div className={cn("grid gap-2", tiles.length > 0 && "lg:grid-cols-4")}>
+    <div className={cn("grid gap-2", tiles.length > 0 && "lg:grid-cols-5")}>
       {/* Slider */}
       {slides.length > 0 && (
         <div
           className={cn(
             "group relative overflow-hidden rounded-none md:rounded-b-lg md:rounded-t-none",
-            tiles.length > 0 && "lg:col-span-3",
+            tiles.length > 0 && "lg:col-span-4",
           )}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
@@ -220,55 +220,43 @@ export function HeroBanners({ carousel, banners }: HeroBannersProps) {
         </div>
       )}
 
-      {/* Banner tiles — Daraz-style bento beside the slider, DESKTOP ONLY
-          (mobile shows just the main slider to keep the top of the page
-          tight). Wide tiles span both columns; with 3–4 tiles the LAST TWO
-          share a row half/half:
-            1 tile  → [full]
-            2 tiles → [full, full]
-            3 tiles → [full, half+half]
-            4 tiles → [full, full, half+half]
-          Images are absolutely positioned so the tiles contribute ZERO
-          intrinsic height — the slider's aspect ratio alone sets the hero
-          height and every tile crops (object-cover) into its cell. Without
-          this the natural image heights stretch the row and leave a hole
-          under the slider. */}
+      {/* Banner tiles — two square tiles stacked in ONE column beside the
+          slider, DESKTOP ONLY (mobile shows just the main slider to keep the
+          top of the page tight). The slider spans 4 of 5 grid columns at 2:1,
+          so this 1-of-5 column's two rows come out square — the same 1:1 the
+          admin cropper enforces. Images are absolutely positioned so the
+          tiles contribute ZERO intrinsic height — the slider's aspect ratio
+          alone sets the hero height and each tile crops (object-cover) into
+          its cell. Without this the natural image heights stretch the row and
+          leave a hole under the slider. */}
       {tiles.length > 0 && (
         <div
           className={cn(
-            "hidden gap-2 lg:grid lg:h-full lg:min-h-0 lg:grid-cols-2",
-            tiles.length === 1 && "lg:grid-rows-1",
-            tiles.length === 2 && "lg:grid-rows-2",
-            tiles.length === 3 && "lg:grid-rows-2",
-            tiles.length === 4 && "lg:grid-rows-3",
+            "hidden gap-2 lg:grid lg:h-full lg:min-h-0",
+            tiles.length === 1 ? "lg:grid-rows-1" : "lg:grid-rows-2",
           )}
         >
-          {tiles.map((b, i) => {
-            // Every tile is full-width except the final pair (when 3+).
-            const half = tiles.length >= 3 && i >= tiles.length - 2;
-            return (
-              <TileLink
-                key={`${b.imageMediaId}-${i}`}
-                href={b.linkUrl}
-                label={b.altText ?? b.title}
-                className={cn(
-                  "group/tile relative block h-full min-h-0 overflow-hidden",
-                  i === 0 ? "rounded-b-md rounded-t-none" : "rounded-md",
-                  half ? "col-span-1" : "col-span-2",
-                )}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={mediaUrl(b.imageMediaId, "card")!}
-                  alt={b.altText ?? b.title ?? `Promotion banner ${i + 1}`}
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className="absolute inset-0 size-full object-cover bg-gradient-to-br from-blue-soft to-surface transition-transform duration-300 group-hover/tile:scale-[1.02]"
-                />
-              </TileLink>
-            );
-          })}
+          {tiles.map((b, i) => (
+            <TileLink
+              key={`${b.imageMediaId}-${i}`}
+              href={b.linkUrl}
+              label={b.altText ?? b.title}
+              className={cn(
+                "group/tile relative block h-full min-h-0 overflow-hidden",
+                i === 0 ? "rounded-b-md rounded-t-none" : "rounded-md",
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mediaUrl(b.imageMediaId, "card")!}
+                alt={b.altText ?? b.title ?? `Promotion banner ${i + 1}`}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+                className="absolute inset-0 size-full object-cover bg-gradient-to-br from-blue-soft to-surface transition-transform duration-300 group-hover/tile:scale-[1.02]"
+              />
+            </TileLink>
+          ))}
         </div>
       )}
     </div>
