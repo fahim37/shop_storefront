@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, RotateCcw, Sparkles } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 import type { AssistantMessage } from "@/lib/assistant/types";
 
 import { MarkdownLite } from "./markdown-lite";
+import { OrbieAvatar, OrbieHero } from "./orbie";
 import { RichContentBlock } from "./rich-content";
 
 /** Prompt chips shown on the empty thread. */
@@ -17,13 +18,9 @@ const SUGGESTIONS = [
   "Any discount coupons right now?",
 ];
 
-/** Small sparkles avatar shown beside assistant replies. */
+/** Mini Orbie beside assistant replies. */
 function BotAvatar() {
-  return (
-    <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-linear-to-br from-blue to-blue-strong text-white shadow-xs">
-      <Sparkles className="size-3.5" />
-    </span>
-  );
+  return <OrbieAvatar size={26} className="mt-0.5 shrink-0" />;
 }
 
 function Bubble({ message }: { message: AssistantMessage }) {
@@ -56,15 +53,15 @@ function Bubble({ message }: { message: AssistantMessage }) {
   );
 }
 
-/** Classic three-dot typing indicator (staggered bounce). */
+/** Three-dot typing indicator (Orbie's staggered bob). */
 function TypingDots() {
   return (
     <span className="flex items-center gap-1" aria-hidden>
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="size-1.5 animate-bounce rounded-full bg-primary/70 motion-reduce:animate-none"
-          style={{ animationDelay: `${i * 140}ms`, animationDuration: "0.9s" }}
+          className="size-1.5 rounded-full bg-primary/70"
+          style={{ animation: `orbie-dotb 1.1s ${i * 0.15}s infinite` }}
         />
       ))}
     </span>
@@ -80,7 +77,7 @@ function StreamingBubble() {
 
   return (
     <div className="flex w-full animate-fade-up items-start gap-2 motion-reduce:animate-none">
-      <BotAvatar />
+      <OrbieAvatar size={26} mood="thinking" className="mt-0.5 shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col items-start">
         {streamText ? (
           <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-line bg-card px-3.5 py-2 text-13 font-medium leading-relaxed text-ink shadow-xs">
@@ -171,16 +168,15 @@ export function AssistantThread() {
       className="flex-1 space-y-3 overflow-y-auto bg-surface px-3 py-3.5"
     >
       {messages.length === 0 && !isStreaming ? (
-        <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-          <div className="grid size-14 animate-pop place-items-center rounded-2xl bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-card)] motion-reduce:animate-none">
-            <Sparkles className="size-7" />
-          </div>
+        <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+          <OrbieHero />
           <div className="animate-fade-up motion-reduce:animate-none">
             <p className="text-15 font-extrabold text-ink">
-              Hi! I&apos;m your shopping assistant
+              Hi! I&apos;m Orbie — your shopping buddy
             </p>
-            <p className="mx-auto mt-1 max-w-64 text-xs font-medium text-sub">
-              Ask me about products, deals, orders, returns — anything in the store.
+            <p className="mx-auto mt-1 max-w-72 text-xs font-medium text-sub">
+              Ask me about products, deals, orders, returns — anything in the
+              store. Or grab me, I&apos;m squishy.
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -199,6 +195,11 @@ export function AssistantThread() {
         </div>
       ) : (
         <>
+          {/* Compact Orbie rides at the top of the transcript (scrolls away
+              with history, like the prototype) — still boopable/squishy. */}
+          <div className="flex justify-center pb-1">
+            <OrbieHero compact />
+          </div>
           {messages.map((m) => (
             <Bubble key={m.id} message={m} />
           ))}

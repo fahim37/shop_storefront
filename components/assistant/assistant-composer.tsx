@@ -6,6 +6,8 @@ import { SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
+import { useOrbieUi } from "./orbie";
+
 /**
  * Message composer for the assistant dock. Mirrors the vendor-chat composer
  * (auto-grow textarea, Enter submits); while a reply is streaming the send
@@ -15,8 +17,12 @@ export function AssistantComposer() {
   const isStreaming = useAssistantStore((s) => s.isStreaming);
   const send = useAssistantStore((s) => s.send);
   const stop = useAssistantStore((s) => s.stop);
+  const setComposerFocused = useOrbieUi((s) => s.setComposerFocused);
 
   const [text, setText] = React.useState("");
+
+  // Leaving the field mid-conversation should drop the "listening" mood too.
+  React.useEffect(() => () => setComposerFocused(false), [setComposerFocused]);
 
   const submit = () => {
     const body = text.trim();
@@ -39,9 +45,11 @@ export function AssistantComposer() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
+          onFocus={() => setComposerFocused(true)}
+          onBlur={() => setComposerFocused(false)}
           rows={1}
-          placeholder="Ask me anything…"
-          aria-label="Message the shopping assistant"
+          placeholder="Ask Orbie anything…"
+          aria-label="Message Orbie, the shopping assistant"
           className="max-h-28 min-h-8 flex-1 resize-none self-center bg-transparent py-1 text-13 font-medium outline-none placeholder:text-faint"
         />
         {isStreaming ? (

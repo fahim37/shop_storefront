@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { RotateCcw, Sparkles } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CloseButton } from "@/components/ui/close-button";
@@ -10,6 +10,7 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
 import { AssistantComposer } from "./assistant-composer";
 import { AssistantThread } from "./assistant-thread";
+import { ORBIE_STATUS, OrbieSvg, useBlink, useOrbieMood, useOrbieUi } from "./orbie";
 
 /**
  * Global AI shopping-assistant surface: a floating launcher (FAB) plus a
@@ -55,21 +56,53 @@ function useAuthIdentityBridge() {
 function AssistantFab() {
   const open = useAssistantStore((s) => s.open);
   const setOpen = useAssistantStore((s) => s.setOpen);
+  const blink = useBlink();
   if (open) return null;
   return (
     <button
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Open shopping assistant"
-      className="group fixed right-4 z-40 grid size-13 animate-pop place-items-center rounded-full bg-linear-to-br from-blue to-blue-strong text-white shadow-[var(--shadow-pop)] ring-1 ring-white/20 transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6 motion-reduce:animate-none"
+      className="group fixed right-4 z-40 animate-pop transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6 motion-reduce:animate-none"
     >
-      {/* Soft attention ring — one slow ping every few seconds, honours
-          prefers-reduced-motion. */}
+      {/* Orbie bobs gently while waiting to be opened. */}
       <span
         aria-hidden
-        className="absolute inset-0 -z-10 animate-ping rounded-full bg-blue/40 [animation-duration:3.2s] group-hover:hidden motion-reduce:hidden"
-      />
-      <Sparkles className="size-6 transition-transform duration-200 group-hover:rotate-12" />
+        className="block"
+        style={{ animation: "orbie-floaty 3s .3s ease-in-out infinite" }}
+      >
+        <OrbieSvg size={64} blink={blink} glow />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Header badge: a mini Orbie that mirrors the live mood and relays boops to
+ * the hero in the thread (plus its own little squash so the tap lands).
+ */
+function OrbieBadge() {
+  const mood = useOrbieMood();
+  const blink = useBlink();
+  const boop = useOrbieUi((s) => s.boop);
+  const [squash, setSquash] = React.useState(false);
+
+  return (
+    <button
+      type="button"
+      aria-label="Boop Orbie"
+      onClick={() => {
+        boop();
+        setSquash(true);
+        window.setTimeout(() => setSquash(false), 620);
+      }}
+      className="relative grid size-12 shrink-0 place-items-center transition-transform hover:scale-108"
+      style={{
+        animation: squash ? "orbie-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
+        transformOrigin: "50% 88%",
+      }}
+    >
+      <OrbieSvg size={44} mood={mood} blink={blink} halo />
     </button>
   );
 }
@@ -101,6 +134,8 @@ export function AssistantDock() {
     [setOpen],
   );
 
+  const mood = useOrbieMood();
+
   return (
     <>
       <AssistantFab />
@@ -112,19 +147,17 @@ export function AssistantDock() {
         >
           <div className="flex h-full flex-col">
             {/* Header — brand blue (not navy) with a soft radial glow */}
-            <div className="relative flex items-center gap-3 overflow-hidden bg-linear-to-r from-blue-strong via-blue to-[oklch(0.58_0.19_255)] px-3.5 py-3 text-white">
+            <div className="relative flex items-center gap-2.5 overflow-hidden bg-linear-to-r from-blue-strong via-blue to-[oklch(0.58_0.19_255)] px-3.5 py-2.5 text-white">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-white/10"
               />
-              <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                <Sparkles className="size-4.5" />
-              </span>
+              <OrbieBadge />
               <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
-                Shopping Assistant
+                Orbie — Shopping Assistant
                 <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
                   <span className="size-1.5 animate-badge-pulse rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)] motion-reduce:animate-none" />
-                  Online — ask anything
+                  {ORBIE_STATUS[mood]}
                 </span>
               </SheetTitle>
               <div className="relative ml-auto flex items-center gap-1.5">
