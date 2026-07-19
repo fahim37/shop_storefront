@@ -9,9 +9,10 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
  * Nova — the shopping-assistant mascot, a gold star sprite.
  *
  * A hand-drawn SVG four-point star with moods (idle / listening / thinking /
- * talking / happy / held), a blink cycle, pupils that follow pointer, taps
- * and device tilt, a boop interaction (squash + heart/star bursts + speech
- * bubble + haptics) and a grab-and-fling drag with a spring return.
+ * talking / happy / held), a blink cycle, calm pill eyes whose highlights
+ * follow pointer, taps and device tilt, a boop interaction (squash +
+ * heart/star bursts + speech bubble + haptics) and a grab-and-fling drag
+ * with a spring return.
  * Keyframes live in globals.css under the `mascot-*` prefix and collapse
  * under prefers-reduced-motion. Colors come from the `--mascot-*` tokens
  * (amber body, navy face) so a rebrand recolors her automatically.
@@ -116,65 +117,95 @@ function Face({
   s?: number;
 }) {
   const held = mood === "held";
-  // Thinking looks up-and-away instead of tracking the pointer.
-  const eo = mood === "thinking" ? { x: 2, y: -4 } : { x: ex, y: ey };
+  // Thinking looks up-and-away instead of tracking the pointer. Follow input
+  // is damped and clamped — the pills stay put, only the highlight glides.
+  const eo =
+    mood === "thinking"
+      ? { x: 1.2, y: -2.5 }
+      : { x: clamp(ex * 0.45, -2.4, 2.4), y: clamp(ey * 0.35, -1.8, 1.8) };
 
-  const eye = (x: number) =>
-    mood === "happy" && !blink ? (
-      <path
-        key={x}
-        d={`M${x - 8 * s},${cy + 3 * s} Q${x},${cy - 8 * s} ${x + 8 * s},${cy + 3 * s}`}
-        stroke={FACE}
-        strokeWidth={3.6 * s}
-        fill="none"
-        strokeLinecap="round"
-      />
-    ) : (
-      <g key={x}>
-        <ellipse
-          cx={x}
-          cy={cy}
-          rx={(held ? 9.5 : 8) * s}
-          ry={blink ? 1.5 : (held ? 11 : 9) * s}
-          fill="#fff"
+  const eye = (x: number) => {
+    if (mood === "happy" && !blink) {
+      return (
+        <path
+          key={x}
+          d={`M${x - 6.5 * s},${cy + 2.5 * s} Q${x},${cy - 6.5 * s} ${x + 6.5 * s},${cy + 2.5 * s}`}
+          stroke={FACE}
+          strokeWidth={3.4 * s}
+          fill="none"
+          strokeLinecap="round"
         />
-        {!blink ? (
-          <>
-            <circle cx={x + eo.x} cy={cy + eo.y * 0.6} r={(held ? 5 : 4.2) * s} fill={FACE} />
-            <circle cx={x + eo.x + 1.6} cy={cy + eo.y * 0.6 - 1.8} r={1.5 * s} fill="#fff" />
-          </>
-        ) : null}
+      );
+    }
+    if (blink) {
+      return (
+        <rect
+          key={x}
+          x={x - 5 * s}
+          y={cy - 1.4 * s}
+          width={10 * s}
+          height={2.8 * s}
+          rx={1.4 * s}
+          fill={FACE}
+        />
+      );
+    }
+    const w = (held ? 10 : 8.6) * s;
+    const h = (held ? 17 : 14.5) * s;
+    return (
+      <g key={x}>
+        <rect x={x - w / 2} y={cy - h / 2} width={w} height={h} rx={w / 2} fill={FACE} />
+        <circle
+          cx={x + eo.x * 0.8}
+          cy={cy - 3 * s + eo.y * 0.8}
+          r={1.9 * s}
+          fill="#fff"
+          opacity={0.95}
+        />
       </g>
     );
+  };
 
   let mouth: React.ReactNode;
   if (mood === "talking") {
     mouth = (
       <ellipse
         cx={cx}
-        cy={cy + 22 * s}
-        rx={7 * s}
-        ry={6 * s}
+        cy={cy + 19 * s}
+        rx={5.5 * s}
+        ry={4.5 * s}
         fill={FACE}
         style={{
           animation: "mascot-talkmouth .28s ease-in-out infinite",
-          transformOrigin: `${cx}px ${cy + 22 * s}px`,
+          transformOrigin: `${cx}px ${cy + 19 * s}px`,
         }}
       />
     );
   } else if (mood === "thinking" || held) {
-    mouth = <circle cx={cx} cy={cy + 22 * s} r={(held ? 4.5 : 3.5) * s} fill={FACE} />;
+    mouth = (
+      <rect
+        x={cx - 4.5 * s}
+        y={cy + 17.5 * s}
+        width={9 * s}
+        height={2.8 * s}
+        rx={1.4 * s}
+        fill={FACE}
+      />
+    );
   } else if (mood === "happy") {
     mouth = (
       <path
-        d={`M${cx - 11 * s},${cy + 17 * s} Q${cx},${cy + 32 * s} ${cx + 11 * s},${cy + 17 * s} Z`}
-        fill={FACE}
+        d={`M${cx - 9 * s},${cy + 15 * s} Q${cx},${cy + 25 * s} ${cx + 9 * s},${cy + 15 * s}`}
+        stroke={FACE}
+        strokeWidth={3.4 * s}
+        fill="none"
+        strokeLinecap="round"
       />
     );
   } else {
     mouth = (
       <path
-        d={`M${cx - 9 * s},${cy + 19 * s} Q${cx},${cy + 27 * s} ${cx + 9 * s},${cy + 19 * s}`}
+        d={`M${cx - 7 * s},${cy + 16 * s} Q${cx},${cy + 22 * s} ${cx + 7 * s},${cy + 16 * s}`}
         stroke={FACE}
         strokeWidth={3 * s}
         fill="none"
@@ -185,25 +216,9 @@ function Face({
 
   return (
     <g>
-      {eye(cx - 15 * s)}
-      {eye(cx + 15 * s)}
+      {eye(cx - 14 * s)}
+      {eye(cx + 14 * s)}
       {mouth}
-      <ellipse
-        cx={cx - 26 * s}
-        cy={cy + 12 * s}
-        rx={5.5 * s}
-        ry={3.5 * s}
-        fill="#FF8FB1"
-        opacity={0.6}
-      />
-      <ellipse
-        cx={cx + 26 * s}
-        cy={cy + 12 * s}
-        rx={5.5 * s}
-        ry={3.5 * s}
-        fill="#FF8FB1"
-        opacity={0.6}
-      />
     </g>
   );
 }
@@ -213,7 +228,7 @@ export interface MascotSvgProps {
   size: number;
   mood?: MascotMood;
   blink?: boolean;
-  /** Pupil offset (eye-follow), in viewBox units, max ~5. */
+  /** Eye-follow offset (glides the eye highlights), in viewBox units, max ~5. */
   ex?: number;
   ey?: number;
   /** Warm amber drop-shadow glow (hero, FAB). */
@@ -399,7 +414,46 @@ interface Burst {
   star: boolean;
 }
 
-const BOOP_WORDS = ["boop!", "hehe!", "eee!", "again!", "that tickles!"];
+const BOOP_WORDS = [
+  "boop!",
+  "hehe!",
+  "eee!",
+  "again!",
+  "that tickles!",
+  "at your service!",
+  "sparkle sparkle!",
+  "you found my button!",
+  "careful — i'm pointy!",
+  "star power!",
+  "5 stars, always",
+  "shiny AND helpful",
+  "ooh, do that again!",
+  "free delivery on boops",
+  "twinkle twinkle!",
+];
+
+const FLING_WORDS = [
+  "wheee!",
+  "zoom!",
+  "i'm a shooting star!",
+  "so dizzy!",
+  "again again!",
+  "catch me!",
+];
+
+const GREETINGS = [
+  "hi! i'm Nova!",
+  "psst… try booping me",
+  "ask me anything!",
+  "grab me — i sparkle",
+  "what are we shopping for?",
+];
+
+const LISTENING_WORDS = ["i'm all ears!", "go on…", "ooh, tell me!", "every word — promise!"];
+
+const THINKING_WORDS = ["hmm…", "let me think…", "consulting the stars…", "one sec…"];
+
+const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -490,7 +544,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     ]);
     setSquash(true);
     setBoopMood("happy");
-    const word = BOOP_WORDS[Math.floor(Math.random() * BOOP_WORDS.length)];
+    const word = pick(BOOP_WORDS);
     setTransient(word);
     later(() => setSquash(false), 620);
     later(() => setBoopMood(null), 1100);
@@ -535,8 +589,9 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       springRaf.current = window.requestAnimationFrame(step);
     };
     navigator.vibrate?.([8, 40, 8]);
-    setTransient("wheee!");
-    later(() => setTransient((b) => (b === "wheee!" ? null : b)), 1400);
+    const word = pick(FLING_WORDS);
+    setTransient(word);
+    later(() => setTransient((b) => (b === word ? null : b)), 1400);
     springRaf.current = window.requestAnimationFrame(step);
   }, [boop, later]);
 
@@ -666,10 +721,20 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     : `rotate(${pos.dx * 0.08}deg)`;
 
   // Speech bubble, derived: gesture words beat mood lines beat the greeting
-  // (big hero only — it sits on the empty thread, so "hi!" is its idle line).
-  const moodBubble =
-    renderMood === "listening" ? "i'm all ears!" : renderMood === "thinking" ? "hmm…" : null;
-  const greeting = !compact && renderMood === "idle" ? "hi! i'm Nova!" : null;
+  // (big hero only — it sits on the empty thread, so a hello is its idle
+  // line). Mood lines re-roll per mood change; the greeting per mount —
+  // memoized so a random pick can't jitter across re-renders.
+  const moodBubble = React.useMemo(
+    () =>
+      renderMood === "listening"
+        ? pick(LISTENING_WORDS)
+        : renderMood === "thinking"
+          ? pick(THINKING_WORDS)
+          : null,
+    [renderMood],
+  );
+  const [helloWord] = React.useState(() => pick(GREETINGS));
+  const greeting = !compact && renderMood === "idle" ? helloWord : null;
   const bubble = dragging ? null : (transient ?? moodBubble ?? greeting);
 
   return (
