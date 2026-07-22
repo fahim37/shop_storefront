@@ -77,12 +77,17 @@
   --shadow-card: 0 1px 2px rgb(24 30 48 / 0.05), 0 10px 24px -16px rgb(24 30 48 / 0.22);
   --shadow-pop: 0 16px 40px -12px rgb(24 30 48 / 0.28);
 
-  /* Nova — the shopping-assistant mascot (a gold star sprite). Body gradient
-   * + face derive from the brand palette (amber accent, navy ink) so a
-   * rebrand recolors the character too. */
-  --mascot-body-1: color-mix(in oklch, var(--amber) 45%, white);
-  --mascot-body-2: var(--amber);
-  --mascot-face: var(--navy);
+  /* Nova — the shopping-assistant mascot (a friendly shopping robot). Shell,
+   * visor and glow derive from the brand palette (blue accents, navy ink) so
+   * a rebrand recolors the character too. */
+  --mascot-shell-1: #ffffff;
+  --mascot-shell-2: oklch(0.89 0.024 255); /* soft steel shading ≈ #D5E2F4 */
+  --mascot-visor: var(--navy);
+  --mascot-visor-hi: color-mix(in oklch, var(--blue) 35%, var(--navy));
+  --mascot-glow: color-mix(in oklch, var(--blue) 42%, white); /* eye/LED glow */
+  --mascot-accent: var(--blue);
+  --mascot-outline: color-mix(in oklch, var(--blue) 18%, var(--hairline));
+  --mascot-sad: color-mix(in oklch, var(--red) 55%, white); /* error face */
 }
 
 /* -----------------------------------------------------------------------------
@@ -412,11 +417,13 @@
   }
 }
 
-/* Nova, the shopping-assistant mascot (components/assistant/mascot.tsx).
- * Idle float + body wobble run forever; boing (boop squash), flyup (heart/
- * star bursts) and talkmouth/dotb/wavebar/spinstar are mood-driven. All are
- * referenced by inline `animation:` styles from the component and collapse
- * under the reduced-motion rule at the bottom of this file. */
+/* Nova, the shopping-assistant robot mascot (components/assistant/mascot.tsx).
+ * Idle float + breathe run forever; boing (boop squash), flyup (heart/star
+ * bursts), wave/nod/hop/shake (gesture + mood rigs), glowpulse (antenna LED),
+ * zfloat (sleep Zzz) and orbit (shopping icons circling the hero) are
+ * mood-driven. All are referenced by inline `animation:` styles from the
+ * component and collapse under the reduced-motion rule at the bottom of this
+ * file (the decorative orbit hides itself entirely via motion-reduce). */
 @keyframes mascot-floaty {
   0%,
   100% {
@@ -486,23 +493,125 @@
     opacity: 0;
   }
 }
-@keyframes mascot-twinkle {
+@keyframes mascot-glowpulse {
   0%,
   100% {
-    opacity: 0.2;
-    transform: scale(0.65);
+    opacity: 0.45;
   }
   50% {
     opacity: 1;
-    transform: scale(1.2);
   }
 }
-@keyframes mascot-spinstar {
-  from {
-    transform: rotate(0deg);
+@keyframes mascot-wave {
+  0%,
+  100% {
+    transform: rotate(-14deg);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    transform: rotate(14deg);
+  }
+}
+@keyframes mascot-nod {
+  0%,
+  100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes mascot-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+  70% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes mascot-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes mascot-zfloat {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(14px, -30px);
+    opacity: 0;
+  }
+}
+/* Elliptical orbit for the hero's shopping icons: 8 waypoints around an
+ * ellipse of radii --orb-rx/--orb-ry (set inline by OrbitRing). Scale +
+ * opacity fake depth; the discrete z-index steps swap items in front of
+ * (bottom arc, z 3) and behind (top arc, z 1) the character at z 2. */
+@keyframes mascot-orbit {
+  0% {
+    transform: translate(var(--orb-rx), 0) scale(1);
+    opacity: 0.95;
+    z-index: 3;
+  }
+  12.5% {
+    transform: translate(calc(var(--orb-rx) * 0.71), calc(var(--orb-ry) * 0.71)) scale(1.08);
+    opacity: 1;
+    z-index: 3;
+  }
+  25% {
+    transform: translate(0, var(--orb-ry)) scale(1.15);
+    opacity: 1;
+    z-index: 3;
+  }
+  37.5% {
+    transform: translate(calc(var(--orb-rx) * -0.71), calc(var(--orb-ry) * 0.71)) scale(1.08);
+    opacity: 1;
+    z-index: 3;
+  }
+  50% {
+    transform: translate(calc(var(--orb-rx) * -1), 0) scale(0.98);
+    opacity: 0.9;
+    z-index: 3;
+  }
+  62.5% {
+    transform: translate(calc(var(--orb-rx) * -0.71), calc(var(--orb-ry) * -0.71)) scale(0.85);
+    opacity: 0.5;
+    z-index: 1;
+  }
+  75% {
+    transform: translate(0, calc(var(--orb-ry) * -1)) scale(0.78);
+    opacity: 0.4;
+    z-index: 1;
+  }
+  87.5% {
+    transform: translate(calc(var(--orb-rx) * 0.71), calc(var(--orb-ry) * -0.71)) scale(0.85);
+    opacity: 0.55;
+    z-index: 1;
+  }
+  100% {
+    transform: translate(var(--orb-rx), 0) scale(1);
+    opacity: 0.95;
+    z-index: 3;
   }
 }
 @keyframes mascot-wavebar {

@@ -32,21 +32,26 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const genKey = () => `p_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
 /**
- * Drag-and-drop photo uploader for the review dialog. Uploads land in the
- * public R2 bucket via `ownerType: "review"`, immediately (so previews and
- * submit are instant); the parent owns the list and links/unlinks them to the
- * review on save.
+ * Drag-and-drop photo uploader for the review + return dialogs. Files upload
+ * immediately under `ownerType` (so previews and submit are instant); the
+ * parent owns the list and links/unlinks the media ids on save.
  */
 export function ReviewPhotoUploader({
   photos,
   onChange,
   max = 6,
   disabled = false,
+  ownerType = "review",
+  hint = "Show shoppers the real thing — helps your review stand out (optional).",
 }: {
   photos: ReviewPhoto[];
   onChange: React.Dispatch<React.SetStateAction<ReviewPhoto[]>>;
   max?: number;
   disabled?: boolean;
+  /** Media owner type the uploads are stored under (default "review"). */
+  ownerType?: string;
+  /** Helper copy under the "Add photos" heading. */
+  hint?: string;
 }) {
   const upload = useUploadMedia();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -74,7 +79,7 @@ export function ReviewPhotoUploader({
       const previewUrl = URL.createObjectURL(file);
       onChange((prev) => [...prev, { key, status: "uploading", previewUrl }]);
       upload
-        .mutateAsync({ file, ownerType: "review" })
+        .mutateAsync({ file, ownerType })
         .then((media) => {
           onChange((prev) =>
             prev.map((p) =>
@@ -108,9 +113,7 @@ export function ReviewPhotoUploader({
           {photos.length}/{max}
         </span>
       </div>
-      <p className="text-xs text-sub">
-        Show shoppers the real thing — helps your review stand out (optional).
-      </p>
+      <p className="text-xs text-sub">{hint}</p>
 
       <div
         onDragOver={(e) => {

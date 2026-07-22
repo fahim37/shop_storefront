@@ -10,7 +10,15 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
 import { AssistantComposer } from "./assistant-composer";
 import { AssistantThread } from "./assistant-thread";
-import { MASCOT_STATUS, MascotSvg, useBlink, useMascotMood, useMascotUi } from "./mascot";
+import {
+  MASCOT_STATUS,
+  MascotSvg,
+  MascotZzz,
+  useBlink,
+  useMascotMood,
+  useMascotUi,
+  useSleepDriver,
+} from "./mascot";
 
 /**
  * Global AI shopping-assistant surface: a floating launcher (FAB) plus a
@@ -57,6 +65,8 @@ function AssistantFab() {
   const open = useAssistantStore((s) => s.open);
   const setOpen = useAssistantStore((s) => s.setOpen);
   const blink = useBlink();
+  // After a while with no page input Nova dozes off right on the launcher.
+  const sleepy = useMascotUi((s) => s.sleepy);
   // Smaller launcher on phones — 64px crowded the bottom nav corner.
   const isDesktop = useIsDesktop();
   if (open) return null;
@@ -67,13 +77,23 @@ function AssistantFab() {
       aria-label="Open shopping assistant"
       className="group fixed right-4 z-40 animate-pop transition-transform duration-150 hover:scale-105 active:scale-95 bottom-[calc(var(--bottom-nav-h,0px)+16px)] md:bottom-6 motion-reduce:animate-none"
     >
-      {/* Nova bobs gently while waiting to be opened. */}
+      {/* Nova bobs gently while waiting to be opened (unless napping). */}
       <span
         aria-hidden
-        className="block"
-        style={{ animation: "mascot-floaty 3.6s .3s ease-in-out infinite" }}
+        className="relative block"
+        style={{ animation: sleepy ? "none" : "mascot-floaty 3.6s .3s ease-in-out infinite" }}
       >
-        <MascotSvg size={isDesktop ? 64 : 46} blink={blink} glow />
+        <MascotSvg
+          size={isDesktop ? 64 : 46}
+          mood={sleepy ? "sleepy" : "idle"}
+          blink={blink}
+          glow
+        />
+        {sleepy ? (
+          <span className="absolute -top-2 right-0">
+            <MascotZzz small />
+          </span>
+        ) : null}
       </span>
     </button>
   );
@@ -104,13 +124,14 @@ function MascotBadge() {
         transformOrigin: "50% 88%",
       }}
     >
-      <MascotSvg size={44} mood={mood} blink={blink} halo />
+      <MascotSvg size={44} mood={mood} blink={blink} halo headshot />
     </button>
   );
 }
 
 export function AssistantDock() {
   useAuthIdentityBridge();
+  useSleepDriver();
   const isDesktop = useIsDesktop();
 
   const open = useAssistantStore((s) => s.open);
@@ -158,7 +179,17 @@ export function AssistantDock() {
               <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
                 Nova — Shopping Assistant
                 <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
-                  <span className="size-1.5 animate-badge-pulse rounded-full bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)] motion-reduce:animate-none" />
+                  {/* Status LED mirrors the mood: red on a snag, amber asleep,
+                      green otherwise. */}
+                  <span
+                    className={`size-1.5 animate-badge-pulse rounded-full motion-reduce:animate-none ${
+                      mood === "error"
+                        ? "bg-red shadow-[0_0_6px_2px_oklch(0.6_0.19_25/0.5)]"
+                        : mood === "sleepy"
+                          ? "bg-amber shadow-[0_0_6px_2px_oklch(0.8_0.15_78/0.5)]"
+                          : "bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)]"
+                    }`}
+                  />
                   {MASCOT_STATUS[mood]}
                 </span>
               </SheetTitle>

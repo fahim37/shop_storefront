@@ -3,10 +3,19 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, MapPin, PackageX, PencilLine, Star, Truck } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  PackageX,
+  PencilLine,
+  Star,
+  Truck,
+  Undo2,
+} from "lucide-react";
 import { useCancelOrder, useOrder, useOrderTracking } from "@/lib/api/orders";
 import { useAddresses } from "@/lib/api/account";
 import { useMyReviews } from "@/lib/api/reviews";
+import { useReturnEligibilities } from "@/lib/api/returns";
 import {
   SUBORDER_STATUS,
   STATUS_TONE_CLASS,
@@ -16,6 +25,7 @@ import {
 } from "@/lib/order-status";
 import { OrderTracker } from "@/components/account/order-tracker";
 import { WriteReviewDialog } from "@/components/account/write-review-dialog";
+import { RequestReturnDialog } from "@/components/account/request-return-dialog";
 import {
   CANCEL_REASONS,
   cancelReasonText,
@@ -51,6 +61,7 @@ import type {
   MyReview,
   OrderItem,
   OrderView,
+  ReturnEligibility,
   TrackingSubOrder,
 } from "@/lib/api/types";
 
@@ -224,6 +235,7 @@ function OrderDetail({
         {subOrders.map((sub) => (
           <SubOrderSection
             key={sub.id}
+            orderId={order.id}
             sub={sub}
             tracking={tracking?.subOrders.find(
               (t) => t.subOrderNumber === sub.subOrderNumber,
@@ -257,10 +269,12 @@ function OrderDetail({
 /* ------------------------------------------------------------------ */
 
 function SubOrderSection({
+  orderId,
   sub,
   tracking,
   reviewByKey,
 }: {
+  orderId: string;
   sub: HydratedSubOrder;
   tracking: TrackingSubOrder | undefined;
   reviewByKey: Map<string, MyReview>;
@@ -269,6 +283,15 @@ function SubOrderSection({
   const toneClass = STATUS_TONE_CLASS[meta.tone];
   const delivered = sub.status === "delivered";
   const [reviewItem, setReviewItem] = React.useState<OrderItem | null>(null);
+  const [returnItem, setReturnItem] = React.useState<OrderItem | null>(null);
+
+  // Per-item return eligibility — only meaningful once the parcel arrived
+  // (the backend also accepts "returned" for partially-returned sub-orders).
+  const returnable = sub.status === "delivered" || sub.status === "returned";
+  const returnEligibility = useReturnEligibilities(
+    orderId,
+    returnable ? sub.items.map((it) => it.id) : [],
+  );
 
   const reviewFor = (item: OrderItem) =>
     reviewByKey.get(reviewKey(sub.id, item.productId)) ?? null;
@@ -327,6 +350,8 @@ function SubOrderSection({
               canReview={delivered}
               hasReview={!!reviewFor(item)}
               onReview={() => setReviewItem(item)}
+              returnElig={returnEligibility.get(item.id)}
+              onReturn={() => setReturnItem(item)}
             />
           </li>
         ))}
@@ -350,6 +375,20 @@ function SubOrderSection({
           existingReview={reviewFor(reviewItem)}
         />
       )}
+
+      {/* Request-a-return dialog */}
+      {returnItem && (
+        <RequestReturnDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReturnItem(null);
+          }}
+          orderId={orderId}
+          sub={sub}
+          primaryItem={returnItem}
+          eligibility={returnEligibility}
+        />
+      )}
     </section>
   );
 }
@@ -359,12 +398,17 @@ function OrderItemRow({
   canReview,
   hasReview,
   onReview,
+  returnElig,
+  onReturn,
 }: {
   item: OrderItem;
   canReview: boolean;
   /** True when the user already has a review for this item — show "Edit". */
   hasReview: boolean;
   onReview: () => void;
+  /** Return eligibility for this line (undefined while loading / not delivered). */
+  returnElig: ReturnEligibility | undefined;
+  onReturn: () => void;
 }) {
   // Reserved "_<Option>Hex" keys carry swatch colors, not display values.
   const attrs = item.attributesSnapshot
@@ -423,26 +467,51 @@ function OrderItemRow({
         <p className="text-sm font-extrabold text-ink">
           {formatPaisa(item.lineTotalPaisa)}
         </p>
-        {canReview && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 px-3 text-xs"
-            onClick={onReview}
-          >
-            {hasReview ? (
-              <>
-                <PencilLine className="size-3.5" />
-                Edit review
-              </>
-            ) : (
-              <>
-                <Star className="size-3.5" />
-                Review
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {canReview && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-xs"
+              onClick={onReview}
+            >
+              {hasReview ? (
+                <>
+                  <PencilLine className="size-3.5" />
+                  Edit review
+                </>
+              ) : (
+                <>
+                  <Star className="size-3.5" />
+                  Review
+                </>
+              )}
+            </Button>
+          )}
+          {returnElig?.eligible ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-xs"
+              onClick={onReturn}
+            >
+              <Undo2 className="size-3.5" />
+              Return
+            </Button>
+          ) : returnElig?.reason === "return_already_in_progress" ? (
+            <Button
+              asChild
+              variant="soft"
+              size="sm"
+              className="h-8 px-3 text-xs"
+            >
+              <Link href="/account/returns">
+                <Undo2 className="size-3.5" />
+                Return in progress
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

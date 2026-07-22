@@ -5,7 +5,6 @@ const ORDER_KEY_PREFIXES = [
   "sub_order.",
   "shipment.",
   "payment.",
-  "return.",
 ];
 
 function isOrderKey(key: string): boolean {
@@ -27,6 +26,11 @@ export function notificationHref(
   resolveOrderId?: (orderNumber: string) => string | undefined,
 ): string {
   const key = n.templateKey;
+
+  // Return lifecycle updates (requested/approved/rejected/refunded) all live
+  // on the returns page. Payloads only carry the reason code, so there's no
+  // per-return deep link to build.
+  if (key.startsWith("return.")) return "/account/returns";
 
   if (isOrderKey(key)) {
     const vars = (n.payload?.vars ?? {}) as Record<string, unknown>;

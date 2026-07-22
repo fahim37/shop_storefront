@@ -1,79 +1,160 @@
 "use client";
 
 import * as React from "react";
+import { Heart, Package, ShoppingBag, Tag } from "lucide-react";
 import { create } from "zustand";
 
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 
 /* ----------------------------------------------------------------------------
- * Nova — the shopping-assistant mascot, a gold star sprite.
+ * Nova — the shopping-assistant mascot, a friendly little shopping robot.
  *
- * A hand-drawn SVG four-point star with moods (idle / listening / thinking /
- * talking / happy / held), a blink cycle, calm pill eyes whose highlights
- * follow pointer, taps and device tilt, a boop interaction (squash +
- * heart/star bursts + speech bubble + haptics) and a grab-and-fling drag
- * with a spring return.
+ * A hand-drawn SVG bot (white shell, navy visor, glowing brand-blue eyes,
+ * floating arms, a cart emblem on the chest) with moods (idle / listening /
+ * thinking / talking / happy / held / sleepy / error), a blink cycle, eyes
+ * whose highlights follow pointer, taps and device tilt, arm gestures (a
+ * hello wave on open, a "take a look!" point when a reply brings product
+ * cards), a boop interaction (squash + heart/star bursts + speech bubble +
+ * haptics), a grab-and-fling drag with a spring return, a doze-off sleep
+ * state after page inactivity (Zzz on the FAB too) and an orbit of shopping
+ * icons around the empty-thread hero.
  * Keyframes live in globals.css under the `mascot-*` prefix and collapse
- * under prefers-reduced-motion. Colors come from the `--mascot-*` tokens
- * (amber body, navy face) so a rebrand recolors her automatically.
+ * under prefers-reduced-motion (the purely decorative orbit hides entirely).
+ * Colors come from the `--mascot-*` tokens (white shell, navy visor, blue
+ * glow) so a rebrand recolors the robot automatically.
  *
- * Three surfaces consume this module:
+ * Surfaces consuming this module:
  *   - MascotHero    — the big interactive character in the dock thread
- *   - MascotAvatar  — static mini face beside assistant bubbles
+ *   - MascotAvatar  — static mini headshot beside assistant bubbles
  *   - MascotSvg     — raw renderer (FAB, header badge)
- * plus useMascotMood/useMascotUi to sync mood across all of them.
+ * plus useMascotMood/useMascotUi/useSleepDriver to sync mood across them.
  * ------------------------------------------------------------------------- */
 
-export type MascotMood = "idle" | "listening" | "thinking" | "talking" | "happy" | "held";
+export type MascotMood =
+  | "idle"
+  | "listening"
+  | "thinking"
+  | "talking"
+  | "happy"
+  | "held"
+  | "sleepy"
+  | "error";
 
-/* ── Cross-surface UI bits (composer focus, boop relay) ─────────────────── */
+/* ── Cross-surface UI bits (composer focus, boop relay, sleep) ──────────── */
 
 interface MascotUiState {
   /** Composer focus → "listening" mood on every Nova on screen. */
   composerFocused: boolean;
   /** Bumped by remote boopers (header badge) — the hero plays the boop. */
   boopTick: number;
+  /** Ambient doze — set by useSleepDriver after page inactivity. */
+  sleepy: boolean;
   setComposerFocused: (v: boolean) => void;
   boop: () => void;
+  setSleepy: (v: boolean) => void;
 }
 
 export const useMascotUi = create<MascotUiState>((set) => ({
   composerFocused: false,
   boopTick: 0,
+  sleepy: false,
   setComposerFocused: (v) => set({ composerFocused: v }),
   boop: () => set((s) => ({ boopTick: s.boopTick + 1 })),
+  setSleepy: (v) => set({ sleepy: v }),
 }));
+
+const SLEEP_AFTER_MS = 30_000;
+
+/**
+ * Ambient sleep loop, mounted once from AssistantDock: after 30s without any
+ * page input Nova dozes off (FAB and dock alike); pointer/key/scroll input,
+ * assistant activity, boops or composer focus wake the robot. Listeners are
+ * passive and the timer re-arms at most once a second, so this costs nothing.
+ */
+export function useSleepDriver(): void {
+  React.useEffect(() => {
+    let timer = 0;
+    let lastArm = 0;
+    const arm = () => {
+      lastArm = Date.now();
+      window.clearTimeout(timer);
+      timer = window.setTimeout(doze, SLEEP_AFTER_MS);
+    };
+    const doze = () => {
+      const busy =
+        useAssistantStore.getState().isStreaming ||
+        useMascotUi.getState().composerFocused;
+      if (busy) arm();
+      else useMascotUi.getState().setSleepy(true);
+    };
+    const wake = () => {
+      if (useMascotUi.getState().sleepy) useMascotUi.getState().setSleepy(false);
+      if (Date.now() - lastArm > 1000) arm();
+    };
+    arm();
+    const events = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, wake, { passive: true }));
+    const unsubStore = useAssistantStore.subscribe((s, prev) => {
+      if (s.isStreaming !== prev.isStreaming || s.messages !== prev.messages) wake();
+    });
+    const unsubUi = useMascotUi.subscribe((s, prev) => {
+      if (s.composerFocused !== prev.composerFocused || s.boopTick !== prev.boopTick) {
+        wake();
+      }
+    });
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, wake));
+      unsubStore();
+      unsubUi();
+    };
+  }, []);
+}
 
 /**
  * Mood derived from the assistant stream: waiting/tool-running reads as
- * "thinking", token flow as "talking", a finished reply flashes "happy",
- * a focused composer is "listening". "held" is local to the hero (dragging).
+ * "thinking", token flow as "talking", a finished reply flashes "happy", a
+ * failed one flashes "error" (with a shake), a focused composer is
+ * "listening", page inactivity is "sleepy". "held" is local to the hero.
  */
 export function useMascotMood(): MascotMood {
   const isStreaming = useAssistantStore((s) => s.isStreaming);
   const hasLiveText = useAssistantStore((s) => s.streamText.length > 0 && !s.streamStale);
   const composerFocused = useMascotUi((s) => s.composerFocused);
+  const sleepy = useMascotUi((s) => s.sleepy);
 
-  // "Happy" is a 1.4s afterglow when a stream finishes — driven off the
-  // store subscription (an external system) rather than render state.
+  // "Happy" is a 1.4s afterglow when a stream finishes; "error" a 4.2s flash
+  // when a turn fails — both driven off the store subscription (an external
+  // system) rather than render state.
   const [happy, setHappy] = React.useState(false);
+  const [errorFlash, setErrorFlash] = React.useState(false);
   React.useEffect(() => {
-    let timer = 0;
+    let happyTimer = 0;
+    let errorTimer = 0;
     const unsub = useAssistantStore.subscribe((s, prev) => {
-      if (!prev.isStreaming || s.isStreaming) return;
-      setHappy(true);
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => setHappy(false), 1400);
+      if (prev.isStreaming && !s.isStreaming) {
+        setHappy(true);
+        window.clearTimeout(happyTimer);
+        happyTimer = window.setTimeout(() => setHappy(false), 1400);
+      }
+      if (s.error && s.error !== prev.error) {
+        setErrorFlash(true);
+        window.clearTimeout(errorTimer);
+        errorTimer = window.setTimeout(() => setErrorFlash(false), 4200);
+      }
     });
     return () => {
       unsub();
-      window.clearTimeout(timer);
+      window.clearTimeout(happyTimer);
+      window.clearTimeout(errorTimer);
     };
   }, []);
 
   if (isStreaming) return hasLiveText ? "talking" : "thinking";
+  if (errorFlash) return "error";
   if (happy) return "happy";
   if (composerFocused) return "listening";
+  if (sleepy) return "sleepy";
   return "idle";
 }
 
@@ -82,11 +163,20 @@ export const MASCOT_STATUS: Record<MascotMood, string> = {
   listening: "Listening…",
   thinking: "Thinking…",
   talking: "Typing…",
-  happy: "Giggling",
+  happy: "Beep! Happy to help",
   held: "Wheee!",
+  sleepy: "Power saving… say hi",
+  error: "Hit a snag — try again",
 };
 
 /* ── SVG renderer ───────────────────────────────────────────────────────── */
+
+const GLOW = "var(--mascot-glow)";
+const ACCENT = "var(--mascot-accent)";
+const SAD = "var(--mascot-sad)";
+const OUTLINE = "var(--mascot-outline)";
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 function starPath(cx: number, cy: number, r: number): string {
   return (
@@ -96,69 +186,77 @@ function starPath(cx: number, cy: number, r: number): string {
   );
 }
 
-const FACE = "var(--mascot-face)";
-
-function Face({
+/** Eyes centers (82/118, 59) + mouth (100, ~75), all inside the visor. */
+function RobotFace({
   mood,
   blink,
   ex,
   ey,
-  cx = 100,
-  cy = 94,
-  s = 0.8,
+  gid,
+  still,
 }: {
   mood: MascotMood;
   blink: boolean;
   ex: number;
   ey: number;
-  cx?: number;
-  cy?: number;
-  /** Overall face scale — Nova's star body has a narrow waist, so ~0.8. */
-  s?: number;
+  gid: string;
+  still: boolean;
 }) {
   const held = mood === "held";
   // Thinking looks up-and-away instead of tracking the pointer. Follow input
-  // is damped and clamped — the pills stay put, only the highlight glides.
+  // is damped and clamped — the eyes barely move, the highlight glides more.
   const eo =
     mood === "thinking"
-      ? { x: 1.2, y: -2.5 }
-      : { x: clamp(ex * 0.45, -2.4, 2.4), y: clamp(ey * 0.35, -1.8, 1.8) };
+      ? { x: 1.4, y: -2.6 }
+      : { x: clamp(ex * 0.5, -3, 3), y: clamp(ey * 0.4, -2.2, 2.2) };
 
   const eye = (x: number) => {
-    if (mood === "happy" && !blink) {
+    if (mood === "error") {
       return (
         <path
           key={x}
-          d={`M${x - 6.5 * s},${cy + 2.5 * s} Q${x},${cy - 6.5 * s} ${x + 6.5 * s},${cy + 2.5 * s}`}
-          stroke={FACE}
-          strokeWidth={3.4 * s}
+          d={`M${x - 7},56 Q${x},63.5 ${x + 7},56`}
+          stroke={SAD}
+          strokeWidth={3.4}
           fill="none"
           strokeLinecap="round"
         />
       );
     }
-    if (blink) {
+    if (mood === "sleepy" || blink) {
       return (
-        <rect
+        <path
           key={x}
-          x={x - 5 * s}
-          y={cy - 1.4 * s}
-          width={10 * s}
-          height={2.8 * s}
-          rx={1.4 * s}
-          fill={FACE}
+          d={`M${x - 7},59.5 Q${x},63.5 ${x + 7},59.5`}
+          stroke={GLOW}
+          strokeWidth={3.2}
+          fill="none"
+          strokeLinecap="round"
+          opacity={0.85}
         />
       );
     }
-    const w = (held ? 10 : 8.6) * s;
-    const h = (held ? 17 : 14.5) * s;
+    if (mood === "happy") {
+      return (
+        <path
+          key={x}
+          d={`M${x - 7.5},62 Q${x},52.5 ${x + 7.5},62`}
+          stroke={GLOW}
+          strokeWidth={3.6}
+          fill="none"
+          strokeLinecap="round"
+        />
+      );
+    }
+    const r = held ? 9.5 : 8;
     return (
       <g key={x}>
-        <rect x={x - w / 2} y={cy - h / 2} width={w} height={h} rx={w / 2} fill={FACE} />
+        <circle cx={x + eo.x} cy={59 + eo.y} r={r + 3.5} fill={ACCENT} opacity={0.14} />
+        <circle cx={x + eo.x} cy={59 + eo.y} r={r} fill={`url(#${gid}-eye)`} />
         <circle
-          cx={x + eo.x * 0.8}
-          cy={cy - 3 * s + eo.y * 0.8}
-          r={1.9 * s}
+          cx={x + eo.x * 1.5 + 2.6}
+          cy={56.5 + eo.y * 1.5}
+          r={2.4}
           fill="#fff"
           opacity={0.95}
         />
@@ -166,48 +264,76 @@ function Face({
     );
   };
 
+  const browY = held ? 41.5 : 45;
+  const brows =
+    mood === "error" ? (
+      <g opacity={0.85}>
+        <path d="M75,47 L89,42.5" stroke={GLOW} strokeWidth={3} strokeLinecap="round" />
+        <path d="M111,42.5 L125,47" stroke={GLOW} strokeWidth={3} strokeLinecap="round" />
+      </g>
+    ) : mood === "sleepy" ? null : (
+      <g opacity={0.75}>
+        <path
+          d={`M74,${browY} Q82,${browY - 4} 90,${browY}`}
+          stroke={GLOW}
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d={`M110,${browY} Q118,${browY - 4} 126,${browY}`}
+          stroke={GLOW}
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+        />
+      </g>
+    );
+
   let mouth: React.ReactNode;
   if (mood === "talking") {
     mouth = (
-      <ellipse
-        cx={cx}
-        cy={cy + 19 * s}
-        rx={5.5 * s}
-        ry={4.5 * s}
-        fill={FACE}
-        style={{
-          animation: "mascot-talkmouth .28s ease-in-out infinite",
-          transformOrigin: `${cx}px ${cy + 19 * s}px`,
-        }}
-      />
-    );
-  } else if (mood === "thinking" || held) {
-    mouth = (
       <rect
-        x={cx - 4.5 * s}
-        y={cy + 17.5 * s}
-        width={9 * s}
-        height={2.8 * s}
-        rx={1.4 * s}
-        fill={FACE}
+        x={94}
+        y={70.5}
+        width={12}
+        height={9.5}
+        rx={4.5}
+        fill={GLOW}
+        style={
+          still
+            ? undefined
+            : {
+                animation: "mascot-talkmouth .28s ease-in-out infinite",
+                transformOrigin: "100px 75px",
+              }
+        }
       />
     );
   } else if (mood === "happy") {
+    mouth = <path d="M90,72 Q100,87 110,72 Z" fill={GLOW} />;
+  } else if (held) {
+    mouth = <circle cx={100} cy={76} r={4.5} stroke={GLOW} strokeWidth={3.4} fill="none" />;
+  } else if (mood === "error") {
+    mouth = <circle cx={100} cy={76.5} r={4} stroke={SAD} strokeWidth={3} fill="none" />;
+  } else if (mood === "thinking" || mood === "sleepy") {
     mouth = (
-      <path
-        d={`M${cx - 9 * s},${cy + 15 * s} Q${cx},${cy + 25 * s} ${cx + 9 * s},${cy + 15 * s}`}
-        stroke={FACE}
-        strokeWidth={3.4 * s}
-        fill="none"
-        strokeLinecap="round"
+      <rect
+        x={94.5}
+        y={74.5}
+        width={11}
+        height={3}
+        rx={1.5}
+        fill={GLOW}
+        opacity={mood === "sleepy" ? 0.7 : 1}
       />
     );
   } else {
     mouth = (
       <path
-        d={`M${cx - 7 * s},${cy + 16 * s} Q${cx},${cy + 22 * s} ${cx + 7 * s},${cy + 16 * s}`}
-        stroke={FACE}
-        strokeWidth={3 * s}
+        d="M91,73 Q100,80.5 109,73"
+        stroke={GLOW}
+        strokeWidth={3}
         fill="none"
         strokeLinecap="round"
       />
@@ -216,27 +342,101 @@ function Face({
 
   return (
     <g>
-      {eye(cx - 14 * s)}
-      {eye(cx + 14 * s)}
+      {brows}
+      {eye(82)}
+      {eye(118)}
       {mouth}
     </g>
   );
 }
 
+/** Arm pose per mood/gesture — degrees around the shoulder anchor. */
+function armPose(
+  mood: MascotMood,
+  gesture: "wave" | "point" | null | undefined,
+): { l: number; r: number; waving: boolean } {
+  if (gesture === "wave") return { l: 10, r: -158, waving: true };
+  if (gesture === "point") return { l: 10, r: -100, waving: false };
+  if (mood === "happy") return { l: 148, r: -148, waving: false };
+  if (mood === "held") return { l: 138, r: -138, waving: false };
+  if (mood === "sleepy" || mood === "error") return { l: 2, r: -2, waving: false };
+  return { l: 10, r: -10, waving: false };
+}
+
+function RobotArm({
+  side,
+  deg,
+  waving,
+  still,
+  gid,
+}: {
+  side: "l" | "r";
+  deg: number;
+  waving: boolean;
+  still: boolean;
+  gid: string;
+}) {
+  const sx = side === "l" ? 54 : 146;
+  return (
+    <g
+      style={{
+        transform: `rotate(${deg}deg)`,
+        transformOrigin: `${sx}px 110px`,
+        transition: "transform .55s cubic-bezier(.34,1.56,.64,1)",
+      }}
+    >
+      <g
+        style={
+          waving && !still
+            ? {
+                animation: "mascot-wave .9s ease-in-out infinite",
+                transformOrigin: `${sx}px 110px`,
+              }
+            : undefined
+        }
+      >
+        <rect
+          x={sx - 6.5}
+          y={105}
+          width={13}
+          height={26}
+          rx={6.5}
+          fill={`url(#${gid}-shell)`}
+          stroke={OUTLINE}
+          strokeWidth={1.25}
+        />
+        <circle
+          cx={sx}
+          cy={134}
+          r={9}
+          fill={`url(#${gid}-shell)`}
+          stroke={OUTLINE}
+          strokeWidth={1.25}
+        />
+        <circle cx={sx} cy={134} r={3.2} fill={ACCENT} opacity={0.85} />
+      </g>
+    </g>
+  );
+}
+
 export interface MascotSvgProps {
-  /** Rendered size in px (the star is symmetric — width = height). */
+  /** Rendered size in px (the robot viewBox is square — width = height). */
   size: number;
   mood?: MascotMood;
   blink?: boolean;
   /** Eye-follow offset (glides the eye highlights), in viewBox units, max ~5. */
   ex?: number;
   ey?: number;
-  /** Warm amber drop-shadow glow (hero, FAB). */
+  /** Cool blue drop-shadow glow (hero, FAB). */
   glow?: boolean;
   /** White halo, for placement on the colored header. */
   halo?: boolean;
   /** Disables the always-on animations (used by the tiny static avatars). */
   still?: boolean;
+  /** Crop to the head — keeps avatars/badges legible at tiny sizes. */
+  headshot?: boolean;
+  /** Arm gesture override (hero): a hello wave or a "look at this" point. */
+  gesture?: "wave" | "point" | null;
   className?: string;
 }
 
@@ -249,22 +449,26 @@ export function MascotSvg({
   glow = false,
   halo = false,
   still = false,
+  headshot = false,
+  gesture = null,
   className,
 }: MascotSvgProps) {
-  // Gradient defs need document-unique ids — one sprite per React instance.
+  // Gradient defs need document-unique ids — one robot per React instance.
   const gid = `mascot-${React.useId().replace(/[^a-zA-Z0-9-]/g, "")}`;
-  // No ambient 0-offset halo — it washed the character out to a white blur.
-  // glow is just a faint warm shadow beneath her; halo is a much quieter
-  // white edge for the colored header.
   const filter = halo
     ? `drop-shadow(0 0 ${Math.round(size * 0.1)}px rgb(255 255 255 / 0.4))`
     : glow
-      ? `drop-shadow(0 4px ${Math.round(size * 0.08)}px color-mix(in oklch, var(--amber-deep) 22%, transparent))`
+      ? `drop-shadow(0 5px ${Math.round(size * 0.08)}px color-mix(in oklch, var(--blue) 28%, transparent))`
       : undefined;
+
+  const arms = armPose(mood, gesture);
+  const sleepy = mood === "sleepy";
+  const headTilt =
+    mood === "thinking" ? "rotate(-4deg)" : sleepy ? "rotate(3.5deg)" : "none";
 
   return (
     <svg
-      viewBox="0 0 200 200"
+      viewBox={headshot ? "24 -24 152 152" : "0 0 200 200"}
       width={size}
       height={size}
       className={className}
@@ -272,99 +476,159 @@ export function MascotSvg({
       aria-hidden
     >
       <defs>
-        <radialGradient id={gid} cx="35%" cy="30%" r="90%">
-          <stop offset="0%" style={{ stopColor: "var(--mascot-body-1)" }} />
-          <stop offset="100%" style={{ stopColor: "var(--mascot-body-2)" }} />
+        <radialGradient id={`${gid}-shell`} cx="35%" cy="26%" r="95%">
+          <stop offset="0%" style={{ stopColor: "var(--mascot-shell-1)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-shell-2)" }} />
         </radialGradient>
+        <radialGradient id={`${gid}-visor`} cx="32%" cy="16%" r="120%">
+          <stop offset="0%" style={{ stopColor: "var(--mascot-visor-hi)" }} />
+          <stop offset="75%" style={{ stopColor: "var(--mascot-visor)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-visor)" }} />
+        </radialGradient>
+        <radialGradient id={`${gid}-eye`} cx="35%" cy="30%" r="85%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="45%" style={{ stopColor: "var(--mascot-glow)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-accent)" }} />
+        </radialGradient>
+        <linearGradient id={`${gid}-line`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0} />
+          <stop offset="50%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0.85} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0} />
+        </linearGradient>
       </defs>
-      {mood === "thinking" ? (
-        <g
-          style={{
-            animation: "mascot-spinstar 1.6s linear infinite",
-            transformOrigin: "154px 30px",
-          }}
-        >
-          <path d={starPath(154, 30, 10)} fill="var(--blue)" />
-          <path d={starPath(154, 30, 4.5)} fill="var(--blue-soft)" />
-        </g>
-      ) : null}
+
       <g
         style={
           still
             ? undefined
             : {
-                animation: "mascot-breathe 3.4s ease-in-out infinite",
+                animation: "mascot-breathe 3.6s ease-in-out infinite",
                 transformOrigin: "100px 100px",
               }
         }
       >
-        <path
-          d="M100,10 C112,68 132,88 190,100 C132,112 112,132 100,190 C88,132 68,112 10,100 C68,88 88,68 100,10 Z"
-          fill={`url(#${gid})`}
-        />
-        {/* Blue twinkle satellites riding her points — the brand-blue tie-in. */}
-        <circle
-          cx={160}
-          cy={42}
-          r={6}
-          fill="var(--blue)"
-          style={
-            still
-              ? { opacity: 0.6 }
-              : {
-                  animation: "mascot-twinkle 2.1s ease-in-out infinite",
-                  transformOrigin: "160px 42px",
-                }
-          }
-        />
-        <circle
-          cx={38}
-          cy={156}
-          r={4.5}
-          fill="var(--blue)"
-          style={
-            still
-              ? { opacity: 0.6 }
-              : {
-                  animation: "mascot-twinkle 2.7s .4s ease-in-out infinite",
-                  transformOrigin: "38px 156px",
-                }
-          }
-        />
-        <Face mood={mood} blink={blink} ex={ex} ey={ey} />
-      </g>
-      {/* Ambient stardust over her top-right shoulder — hidden on the tiny
-          still avatars, and while thinking (the spinning star owns that spot). */}
-      {!still && mood !== "thinking" ? (
-        <g aria-hidden>
-          <path
-            d={starPath(158, 24, 7)}
-            fill="var(--amber)"
-            style={{
-              animation: "mascot-twinkle 2.1s ease-in-out infinite",
-              transformOrigin: "158px 24px",
-            }}
+        {/* Torso (skipped by the headshot crop) */}
+        {!headshot ? (
+          <g>
+            <rect x={90} y={95} width={20} height={10} rx={3} fill="var(--mascot-visor)" />
+            <rect
+              x={58}
+              y={103}
+              width={84}
+              height={62}
+              rx={28}
+              fill={`url(#${gid}-shell)`}
+              stroke={OUTLINE}
+              strokeWidth={1.5}
+            />
+            {/* Cart emblem — the "shopping" in shopping robot */}
+            <circle
+              cx={100}
+              cy={129}
+              r={17.5}
+              fill="var(--mascot-shell-1)"
+              stroke={OUTLINE}
+              strokeWidth={2}
+            />
+            <path
+              d="M91.5 122.5 h3.4 l2.9 10.6 h10.6 l2.6 -8 H96.2"
+              fill="none"
+              stroke={ACCENT}
+              strokeWidth={2.3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx={100.2} cy={137} r={1.9} fill={ACCENT} />
+            <circle cx={106.6} cy={137} r={1.9} fill={ACCENT} />
+            <rect
+              x={78}
+              y={156.5}
+              width={44}
+              height={3.4}
+              rx={1.7}
+              fill={`url(#${gid}-line)`}
+              opacity={0.8}
+            />
+          </g>
+        ) : null}
+
+        {/* Head — tilts while thinking/sleeping, nods while talking */}
+        <g
+          style={{
+            transform: headTilt,
+            transformOrigin: "100px 96px",
+            transition: "transform .45s ease",
+            animation:
+              !still && mood === "talking" ? "mascot-nod 1.1s ease-in-out infinite" : "none",
+          }}
+        >
+          {/* Antenna — the status LED pulses (fast while thinking, dim asleep,
+              red on error) */}
+          <rect x={78} y={6} width={44} height={14} rx={7} fill={ACCENT} />
+          <rect
+            x={89}
+            y={10.5}
+            width={22}
+            height={5}
+            rx={2.5}
+            fill={mood === "error" ? SAD : GLOW}
+            opacity={sleepy ? 0.25 : undefined}
+            style={
+              still || sleepy
+                ? undefined
+                : {
+                    animation: `mascot-glowpulse ${
+                      mood === "thinking" ? ".55s" : "2.6s"
+                    } ease-in-out infinite`,
+                  }
+            }
           />
-          <path
-            d={starPath(186, 62, 5)}
-            fill="var(--amber)"
-            style={{
-              animation: "mascot-twinkle 2.7s .4s ease-in-out infinite",
-              transformOrigin: "186px 62px",
-            }}
+          {/* Ear pods */}
+          <rect
+            x={30}
+            y={46}
+            width={16}
+            height={28}
+            rx={7}
+            fill={`url(#${gid}-shell)`}
+            stroke={OUTLINE}
+            strokeWidth={1.25}
           />
-          <circle
-            cx={134}
-            cy={12}
-            r={3.2}
-            fill="var(--blue)"
-            style={{
-              animation: "mascot-twinkle 1.8s .8s ease-in-out infinite",
-              transformOrigin: "134px 12px",
-            }}
+          <rect x={35} y={53} width={6} height={14} rx={3} fill={GLOW} opacity={sleepy ? 0.3 : 0.9} />
+          <rect
+            x={154}
+            y={46}
+            width={16}
+            height={28}
+            rx={7}
+            fill={`url(#${gid}-shell)`}
+            stroke={OUTLINE}
+            strokeWidth={1.25}
           />
+          <rect x={159} y={53} width={6} height={14} rx={3} fill={GLOW} opacity={sleepy ? 0.3 : 0.9} />
+          {/* Shell + visor */}
+          <rect
+            x={42}
+            y={22}
+            width={116}
+            height={76}
+            rx={34}
+            fill={`url(#${gid}-shell)`}
+            stroke={OUTLINE}
+            strokeWidth={1.5}
+          />
+          <rect x={55} y={32} width={90} height={56} rx={20} fill={`url(#${gid}-visor)`} />
+          <RobotFace mood={mood} blink={blink} ex={ex} ey={ey} gid={gid} still={still} />
         </g>
-      ) : null}
+
+        {/* Arms last so raised poses read in front of the shell */}
+        {!headshot ? (
+          <>
+            <RobotArm side="l" deg={arms.l} waving={false} still={still} gid={gid} />
+            <RobotArm side="r" deg={arms.r} waving={arms.waving} still={still} gid={gid} />
+          </>
+        ) : null}
+      </g>
     </svg>
   );
 }
@@ -400,7 +664,40 @@ export function MascotAvatar({
 }) {
   return (
     <span className={className ?? "mt-0.5 shrink-0"}>
-      <MascotSvg size={size} mood={mood} still />
+      <MascotSvg size={size} mood={mood} still headshot />
+    </span>
+  );
+}
+
+/* ── Floating Zzz (sleepy overlay — hero + FAB) ─────────────────────────── */
+
+export function MascotZzz({ small = false }: { small?: boolean }) {
+  const zs = small
+    ? [
+        { fs: 9, left: 0, top: 12, delay: "0s" },
+        { fs: 13, left: 9, top: 0, delay: "1.3s" },
+      ]
+    : [
+        { fs: 11, left: 0, top: 24, delay: "0s" },
+        { fs: 15, left: 12, top: 10, delay: ".8s" },
+        { fs: 20, left: 26, top: -5, delay: "1.6s" },
+      ];
+  return (
+    <span aria-hidden className="pointer-events-none absolute font-black text-blue/80">
+      {zs.map((z, i) => (
+        <span
+          key={i}
+          className="absolute"
+          style={{
+            left: z.left,
+            top: z.top,
+            fontSize: z.fs,
+            animation: `mascot-zfloat 2.6s ${z.delay} ease-out infinite`,
+          }}
+        >
+          Z
+        </span>
+      ))}
     </span>
   );
 }
@@ -416,26 +713,26 @@ interface Burst {
 
 const BOOP_WORDS = [
   "boop!",
-  "hehe!",
-  "eee!",
+  "beep!",
+  "hehe, that tickles!",
+  "boop received!",
   "again!",
-  "that tickles!",
+  "systems: happy!",
   "at your service!",
-  "sparkle sparkle!",
   "you found my button!",
-  "careful — i'm pointy!",
-  "star power!",
-  "5 stars, always",
-  "shiny AND helpful",
-  "ooh, do that again!",
   "free delivery on boops",
-  "twinkle twinkle!",
+  "circuits go brrr!",
+  "add me to cart?",
+  "*happy robot noises*",
+  "ooh, do that again!",
+  "beep boop!",
 ];
 
 const FLING_WORDS = [
   "wheee!",
   "zoom!",
-  "i'm a shooting star!",
+  "thrusters on!",
+  "zero gravity!",
   "so dizzy!",
   "again again!",
   "catch me!",
@@ -443,19 +740,20 @@ const FLING_WORDS = [
 
 const GREETINGS = [
   "hi! i'm Nova!",
+  "beep boop — welcome!",
   "psst… try booping me",
   "ask me anything!",
-  "grab me — i sparkle",
   "what are we shopping for?",
+  "systems online!",
 ];
 
 const LISTENING_WORDS = ["i'm all ears!", "go on…", "ooh, tell me!", "every word — promise!"];
 
-const THINKING_WORDS = ["hmm…", "let me think…", "consulting the stars…", "one sec…"];
+const THINKING_WORDS = ["hmm…", "let me check…", "scanning the shelves…", "one sec…"];
+
+const ERROR_WORDS = ["oops!", "ow, my circuits…", "that wasn't the plan", "let's try again?"];
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
-
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 function HeartBit() {
   return (
@@ -476,8 +774,45 @@ function StarBit() {
   );
 }
 
+/** Shopping icons orbiting the hero (decorative — hidden on reduced motion). */
+const ORBITERS = [ShoppingBag, Package, Heart, Tag];
+
+function OrbitRing() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-[61%] motion-reduce:hidden"
+      style={{ "--orb-rx": "108px", "--orb-ry": "26px" } as React.CSSProperties}
+    >
+      {/* The orbit path itself, echoed as two faint rings */}
+      <span
+        className="absolute rounded-full border border-blue-soft"
+        style={{ left: -108, top: -26, width: 216, height: 52 }}
+      />
+      <span
+        className="absolute rounded-full border border-blue-soft/60"
+        style={{ left: -86, top: -19, width: 172, height: 38 }}
+      />
+      {ORBITERS.map((Icon, i) => (
+        <span
+          key={i}
+          className="absolute"
+          style={{
+            animation: "mascot-orbit 22s linear infinite",
+            animationDelay: `${-i * 5.5}s`,
+          }}
+        >
+          <span className="grid size-8.5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-blue-soft bg-card text-blue-strong shadow-(--shadow-card)">
+            <Icon className="size-4" strokeWidth={2.2} />
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function MascotHero({ compact = false }: { compact?: boolean }) {
-  const size = compact ? 120 : 192;
+  const size = compact ? 120 : 176;
   const mood = useMascotMood();
   const blink = useBlink();
 
@@ -490,6 +825,10 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
   /** Short-lived bubble line (boop word / "wheee!") — beats the mood line. */
   const [transient, setTransient] = React.useState<string | null>(null);
   const [bursts, setBursts] = React.useState<Burst[]>([]);
+  /** Hello wave for a few seconds after the dock opens (like the prototype). */
+  const [greet, setGreet] = React.useState(true);
+  /** "Take a look!" point when a finished reply carries product cards. */
+  const [pointFlash, setPointFlash] = React.useState(false);
 
   // Canonical gesture state — owned and mutated ONLY by the pointer handlers
   // and the spring loop; the setState calls above mirror it for rendering.
@@ -503,6 +842,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
   const springRaf = React.useRef(0);
   const burstSeq = React.useRef(0);
   const timers = React.useRef<number[]>([]);
+  const pointTimer = React.useRef(0);
 
   const later = React.useCallback((fn: () => void, ms: number) => {
     timers.current.push(window.setTimeout(fn, ms));
@@ -511,10 +851,33 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
   React.useEffect(() => {
     const pending = timers.current;
     const raf = springRaf;
+    const pt = pointTimer;
     return () => {
       pending.forEach((t) => window.clearTimeout(t));
       window.cancelAnimationFrame(raf.current);
+      window.clearTimeout(pt.current);
     };
+  }, []);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setGreet(false), 3400);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  // Point at the freshly-arrived goods: when a stream ends and the final
+  // message carries rich content (product cards, order rows), Nova points at
+  // it for a beat.
+  React.useEffect(() => {
+    const unsub = useAssistantStore.subscribe((s, prev) => {
+      if (!prev.isStreaming || s.isStreaming) return;
+      const lastM = s.messages[s.messages.length - 1];
+      if (lastM?.role === "assistant" && lastM.richContent) {
+        setPointFlash(true);
+        window.clearTimeout(pointTimer.current);
+        pointTimer.current = window.setTimeout(() => setPointFlash(false), 2600);
+      }
+    });
+    return unsub;
   }, []);
 
   const tiltPermAsked = React.useRef(false);
@@ -650,7 +1013,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     };
     // Tap: glance toward the touch, hold a beat, then look back at the
     // camera — on a phone there is no "mouse leaving", so the return glance
-    // is what keeps her from staring at the last tapped corner forever.
+    // is what keeps the robot from staring at the last tapped corner forever.
     const onDown = (e: PointerEvent) => {
       lastInput = Date.now();
       if (gesture.current.dragging) return;
@@ -720,28 +1083,70 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
     ? `scale(${1 + dist / 800}, ${1 - dist / 900}) rotate(${pos.dx * 0.08}deg)`
     : `rotate(${pos.dx * 0.08}deg)`;
 
-  // Speech bubble, derived: gesture words beat mood lines beat the greeting
-  // (big hero only — it sits on the empty thread, so a hello is its idle
-  // line). Mood lines re-roll per mood change; the greeting per mount —
-  // memoized so a random pick can't jitter across re-renders.
+  // Rig animation per mood: happy hops, error shakes (twice, like the
+  // prototype), sleepy just breathes (the SVG's inner breathe), else floats.
+  const rigAnim = dragging
+    ? "none"
+    : renderMood === "happy"
+      ? "mascot-hop .8s ease-in-out infinite"
+      : renderMood === "error"
+        ? "mascot-shake .55s ease-in-out 2"
+        : renderMood === "sleepy"
+          ? "none"
+          : "mascot-floaty 3.6s ease-in-out infinite";
+
+  // Arm gesture: gestures pause while dragging; a rich reply points, and the
+  // first seconds after open wave hello.
+  const armGesture: "wave" | "point" | null = dragging
+    ? null
+    : pointFlash
+      ? "point"
+      : greet && (renderMood === "idle" || renderMood === "listening")
+        ? "wave"
+        : null;
+
+  // Waking up gets a little transient hello.
+  const prevMoodRef = React.useRef(renderMood);
+  React.useEffect(() => {
+    if (prevMoodRef.current === "sleepy" && renderMood !== "sleepy") {
+      const w = "oh! hi again!";
+      setTransient(w);
+      later(() => setTransient((b) => (b === w ? null : b)), 1600);
+    }
+    prevMoodRef.current = renderMood;
+  }, [renderMood, later]);
+
+  // Speech bubble, derived: gesture words beat the point line beat mood lines
+  // beat the greeting (big hero only — it sits on the empty thread, so a
+  // hello is its idle line). Mood lines re-roll per mood change; the greeting
+  // per mount — memoized so a random pick can't jitter across re-renders.
   const moodBubble = React.useMemo(
     () =>
       renderMood === "listening"
         ? pick(LISTENING_WORDS)
         : renderMood === "thinking"
           ? pick(THINKING_WORDS)
-          : null,
+          : renderMood === "error"
+            ? pick(ERROR_WORDS)
+            : null,
     [renderMood],
   );
   const [helloWord] = React.useState(() => pick(GREETINGS));
   const greeting = !compact && renderMood === "idle" ? helloWord : null;
-  const bubble = dragging ? null : (transient ?? moodBubble ?? greeting);
+  const bubble =
+    dragging || renderMood === "sleepy"
+      ? null
+      : (transient ?? (pointFlash ? "take a look!" : null) ?? moodBubble ?? greeting);
 
   return (
     <div
       className="relative grid place-items-center"
       style={{ minHeight: size + 16, padding: "4px 0" }}
     >
+      {/* Orbiting shopping icons — empty-thread hero only. Front-pass items
+          animate to z 3, the character sits at z 2, back-pass at z 1. */}
+      {!compact ? <OrbitRing /> : null}
+
       <div
         ref={heroRef}
         role="button"
@@ -754,7 +1159,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
             boop();
           }
         }}
-        className="relative select-none outline-none"
+        className="relative z-2 select-none outline-none"
         style={{
           cursor: dragging ? "grabbing" : "grab",
           touchAction: "none",
@@ -762,7 +1167,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
           transition: dragging ? "none" : "transform .1s linear",
         }}
       >
-        <div style={{ animation: dragging ? "none" : "mascot-floaty 3.6s ease-in-out infinite" }}>
+        <div style={{ animation: rigAnim }}>
           <div
             className="relative"
             style={{
@@ -770,7 +1175,15 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
               transformOrigin: "50% 88%",
             }}
           >
-            <MascotSvg size={size} mood={renderMood} blink={blink} ex={eye.x} ey={eye.y} glow />
+            <MascotSvg
+              size={size}
+              mood={renderMood}
+              blink={blink}
+              ex={eye.x}
+              ey={eye.y}
+              gesture={armGesture}
+              glow
+            />
 
             {/* Thinking — drifting thought dots by the head */}
             {renderMood === "thinking" ? (
@@ -788,6 +1201,13 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
                     }}
                   />
                 ))}
+              </div>
+            ) : null}
+
+            {/* Sleeping — floating Zzz over the head */}
+            {renderMood === "sleepy" ? (
+              <div aria-hidden className="absolute right-[8%] top-[2%]">
+                <MascotZzz />
               </div>
             ) : null}
 
@@ -846,7 +1266,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
 
       {/* Speech bubble */}
       {bubble ? (
-        <div className="pointer-events-none absolute right-1/2 top-1 z-2 translate-x-[calc(100%+48px)] animate-pop whitespace-nowrap rounded-2xl rounded-bl-xs border-2 border-amber-soft bg-card px-3 py-1.5 text-13 font-extrabold text-amber-deep shadow-[var(--shadow-card)] motion-reduce:animate-none">
+        <div className="pointer-events-none absolute right-1/2 top-1 z-4 translate-x-[calc(100%+48px)] animate-pop whitespace-nowrap rounded-2xl rounded-bl-xs border-2 border-blue-soft bg-card px-3 py-1.5 text-13 font-extrabold text-blue-strong shadow-(--shadow-card) motion-reduce:animate-none">
           {bubble}
         </div>
       ) : null}

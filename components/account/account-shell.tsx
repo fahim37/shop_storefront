@@ -13,6 +13,7 @@ import {
   Package,
   Star,
   Store,
+  Undo2,
 } from "lucide-react";
 import { AccountIcon, BellIcon } from "@/components/icons/nav-icons";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/account", icon: LayoutDashboard, exact: true },
   { label: "Personal information", href: "/account/profile", icon: AccountIcon },
   { label: "Order history", href: "/account/orders", icon: Package },
+  { label: "Returns & refunds", href: "/account/returns", icon: Undo2 },
   { label: "My wishlist", href: "/account/wishlist", icon: Heart },
   { label: "Followed stores", href: "/account/followed-stores", icon: Store },
   { label: "Addresses", href: "/account/addresses", icon: MapPin },

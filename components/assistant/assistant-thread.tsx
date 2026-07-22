@@ -176,7 +176,7 @@ export function AssistantThread() {
             </p>
             <p className="mx-auto mt-1 max-w-72 text-xs font-medium text-sub">
               Ask me about products, deals, orders, returns — anything in the
-              store. Or grab me — I sparkle.
+              store. Or boop me — I&apos;m very boopable.
             </p>
           </div>
           <div className="flex flex-col gap-2">

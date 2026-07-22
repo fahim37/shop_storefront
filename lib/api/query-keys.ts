@@ -62,6 +62,12 @@ export const qk = {
   order: (id: string) => ["order", id] as const,
   orderTracking: (id: string) => ["order", id, "tracking"] as const,
 
+  // returns
+  myReturns: () => ["returns", "mine"] as const,
+  returnDetail: (id: string) => ["returns", "detail", id] as const,
+  returnEligibility: (orderItemId: string) =>
+    ["returns", "eligibility", orderItemId] as const,
+
   // reviews & qa
   reviews: (productId: string) => ["reviews", productId] as const,
   /** Paged/sorted/filtered PDP list — prefix-invalidated by `reviews(id)`. */

@@ -470,6 +470,109 @@ export interface OrderTracking {
 }
 
 /* ----------------------------------------------------------------------- */
+/* Returns & refunds                                                       */
+/* ----------------------------------------------------------------------- */
+
+/** Mirrors ReturnReasonCodes in store_backend/src/modules/return/return.policy.ts. */
+export type ReturnReasonCode =
+  | "damaged_in_transit"
+  | "wrong_item"
+  | "defective"
+  | "not_as_described"
+  | "changed_mind"
+  | "better_price_elsewhere";
+
+/** requested → approved → in_transit → at_hub → refunded (or rejected/disputed). */
+export type ReturnStatus =
+  | "requested"
+  | "approved"
+  | "rejected"
+  | "in_transit"
+  | "at_hub"
+  | "refunded"
+  | "disputed";
+
+export type RefundPreference = "original_method" | "wallet";
+
+/** GET /orders/:id/items/:itemId/return — can this line still be returned? */
+export interface ReturnEligibility {
+  eligible: boolean;
+  /** Machine reason when ineligible, e.g. "return_window_expired". */
+  reason?: string;
+  windowDaysRemaining: number;
+}
+
+export interface ReturnRequest {
+  id: string;
+  subOrderId: string;
+  customerId: string;
+  reasonCode: ReturnReasonCode;
+  description: string | null;
+  /** Media-asset ids of the customer's evidence photos. */
+  photos: string[] | null;
+  refundPreference: RefundPreference;
+  status: ReturnStatus;
+  approvalPath: "auto" | "manual" | null;
+  approverId: string | null;
+  /** Admin notes — shown to the customer when the return is rejected. */
+  approvalNotes: string | null;
+  approvedAt: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** /me/returns list rows — the request plus a one-line display summary. */
+export interface ReturnListItem extends ReturnRequest {
+  vendorName: string | null;
+  itemCount: number;
+  firstThumbnailMediaId: string | null;
+  firstProductTitle: string | null;
+}
+
+/** One returned line, hydrated with product info for display. */
+export interface ReturnLineItem {
+  id: string;
+  returnRequestId: string;
+  orderItemId: string;
+  quantity: number;
+  reasonCode: ReturnReasonCode | null;
+  terminalAt: string | null;
+  createdAt: string;
+  productId: string | null;
+  productSlug: string | null;
+  productTitle: string | null;
+  thumbnailMediaId: string | null;
+}
+
+/** Reverse (customer → hub) shipment for an approved return. */
+export interface ReturnShipmentInfo {
+  id: string;
+  returnRequestId: string;
+  courier: string;
+  trackingNumber: string | null;
+  status:
+    | "scheduled"
+    | "picked_up"
+    | "in_transit"
+    | "at_hub"
+    | "qc_passed"
+    | "qc_failed";
+  qcOutcome: "pass" | "fail" | null;
+  qcNotes: string | null;
+  qcAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** GET /me/returns/:id */
+export interface ReturnView {
+  request: ReturnRequest;
+  items: ReturnLineItem[];
+  shipment: ReturnShipmentInfo | null;
+}
+
+/* ----------------------------------------------------------------------- */
 /* Reviews & Q&A                                                           */
 /* ----------------------------------------------------------------------- */
 
