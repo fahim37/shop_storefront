@@ -5,7 +5,7 @@
  * GCL — "Bold Bazar" design tokens 
  * -----------------------------------------------------------------------------
  * Two layers:
- *   1. RAW PALETTE  (--blue-*, --amber, --navy …) — the brand's source colors,
+ *   1. RAW PALETTE  (--blue-*,, --amber, --navy …) — the brand's source colors,
  *      authored in oklch. Change one of these and the whole app recolors.
  *   2. SEMANTIC      (--primary, --background, --border …) — role-based tokens
  *      that components consume. They reference the raw palette, so swapping a
