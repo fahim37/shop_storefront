@@ -77,17 +77,21 @@
   --shadow-card: 0 1px 2px rgb(24 30 48 / 0.05), 0 10px 24px -16px rgb(24 30 48 / 0.22);
   --shadow-pop: 0 16px 40px -12px rgb(24 30 48 / 0.28);
 
-  /* Nova — the shopping-assistant mascot (a friendly shopping robot). Shell,
-   * visor and glow derive from the brand palette (blue accents, navy ink) so
-   * a rebrand recolors the character too. */
-  --mascot-shell-1: #ffffff;
-  --mascot-shell-2: oklch(0.89 0.024 255); /* soft steel shading ≈ #D5E2F4 */
-  --mascot-visor: var(--navy);
-  --mascot-visor-hi: color-mix(in oklch, var(--blue) 35%, var(--navy));
-  --mascot-glow: color-mix(in oklch, var(--blue) 42%, white); /* eye/LED glow */
-  --mascot-accent: var(--blue);
-  --mascot-outline: color-mix(in oklch, var(--blue) 18%, var(--hairline));
-  --mascot-sad: color-mix(in oklch, var(--red) 55%, white); /* error face */
+  /* Nova — the shopping-assistant mascot (a friendly shopping robot), Gold
+   * Edition: warm ivory shell, deep navy visor, gold eyes/accents with a soft
+   * gold glow, and a supporting blue kept for the ear lights. The whole
+   * character (FAB, dock hero, avatars, its overlays and speech bubble) draws
+   * from these tokens, so recoloring here recolors it everywhere. */
+  --mascot-shell-1: #fffdf6; /* warm ivory */
+  --mascot-shell-2: #ebe1cb; /* cream shading */
+  --mascot-outline: #c7b98f;
+  --mascot-visor: #171d3a;
+  --mascot-visor-hi: #3a4272;
+  --mascot-accent: #dfae45; /* gold */
+  --mascot-accent-deep: #a97f26; /* engraved gold — cart emblem linework */
+  --mascot-glow: #ffd97a; /* eye/LED glow */
+  --mascot-blue-glow: #9bb8ff; /* ear-pod lights */
+  --mascot-sad: #e86a6a; /* error face */
 }
 
 /* -----------------------------------------------------------------------------
@@ -563,55 +567,118 @@
     opacity: 0;
   }
 }
-/* Elliptical orbit for the hero's shopping icons: 8 waypoints around an
- * ellipse of radii --orb-rx/--orb-ry (set inline by OrbitRing). Scale +
- * opacity fake depth; the discrete z-index steps swap items in front of
- * (bottom arc, z 3) and behind (top arc, z 1) the character at z 2. */
-@keyframes mascot-orbit {
+/* Elliptical orbit for the hero's shopping icons, split across the nested
+ * wrappers in OrbitRing so each leg can carry a true sine easing: -x is the
+ * cosine leg and -y the sine leg a quarter-turn out of phase — together they
+ * trace a smooth ellipse of radii --orb-rx/--orb-ry (set inline by
+ * OrbitRing) instead of the visible polygon a single multi-waypoint
+ * keyframe produces. -depth scales/fades/blurs the chip with nearness, -z
+ * pins the whole near half in front of the character (z 3 over its z 2) and
+ * the far half behind (z 1) — the swaps land at the far left/right edges
+ * where the icon clears the robot, so they read as passing around it. -bob
+ * is a slow per-icon hover on top. The beziers are easeInSine/easeOutSine. */
+@keyframes mascot-orbit-x {
   0% {
-    transform: translate(var(--orb-rx), 0) scale(1);
-    opacity: 0.95;
-    z-index: 3;
-  }
-  12.5% {
-    transform: translate(calc(var(--orb-rx) * 0.71), calc(var(--orb-ry) * 0.71)) scale(1.08);
-    opacity: 1;
-    z-index: 3;
+    transform: translateX(var(--orb-rx));
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
   }
   25% {
-    transform: translate(0, var(--orb-ry)) scale(1.15);
-    opacity: 1;
-    z-index: 3;
-  }
-  37.5% {
-    transform: translate(calc(var(--orb-rx) * -0.71), calc(var(--orb-ry) * 0.71)) scale(1.08);
-    opacity: 1;
-    z-index: 3;
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
   }
   50% {
-    transform: translate(calc(var(--orb-rx) * -1), 0) scale(0.98);
-    opacity: 0.9;
-    z-index: 3;
-  }
-  62.5% {
-    transform: translate(calc(var(--orb-rx) * -0.71), calc(var(--orb-ry) * -0.71)) scale(0.85);
-    opacity: 0.5;
-    z-index: 1;
+    transform: translateX(calc(var(--orb-rx) * -1));
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
   }
   75% {
-    transform: translate(0, calc(var(--orb-ry) * -1)) scale(0.78);
-    opacity: 0.4;
-    z-index: 1;
-  }
-  87.5% {
-    transform: translate(calc(var(--orb-rx) * 0.71), calc(var(--orb-ry) * -0.71)) scale(0.85);
-    opacity: 0.55;
-    z-index: 1;
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
   }
   100% {
-    transform: translate(var(--orb-rx), 0) scale(1);
-    opacity: 0.95;
+    transform: translateX(var(--orb-rx));
+  }
+}
+@keyframes mascot-orbit-y {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+  25% {
+    transform: translateY(var(--orb-ry));
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+  75% {
+    transform: translateY(calc(var(--orb-ry) * -1));
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+@keyframes mascot-orbit-z {
+  0%,
+  49.9% {
     z-index: 3;
+  }
+  50%,
+  100% {
+    z-index: 1;
+  }
+}
+@keyframes mascot-orbit-depth {
+  0% {
+    transform: scale(1);
+    opacity: 0.92;
+    filter: blur(0px);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+  25% {
+    transform: scale(1.16);
+    opacity: 1;
+    filter: blur(0px);
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.92;
+    filter: blur(0px);
+    animation-timing-function: cubic-bezier(0.61, 1, 0.88, 1);
+  }
+  75% {
+    transform: scale(0.76);
+    opacity: 0.45;
+    filter: blur(1.2px);
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+    filter: blur(0px);
+  }
+}
+@keyframes mascot-orb-bob {
+  0%,
+  100% {
+    transform: translateY(2.5px);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+/* Gold sparkles twinkling around the hero (rotated squares, staggered). */
+@keyframes mascot-twinkle {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: rotate(45deg) scale(0.7);
+  }
+  50% {
+    opacity: 0.95;
+    transform: rotate(45deg) scale(1.15);
   }
 }
 @keyframes mascot-wavebar {

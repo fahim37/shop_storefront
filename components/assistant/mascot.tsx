@@ -9,8 +9,8 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 /* ----------------------------------------------------------------------------
  * Nova — the shopping-assistant mascot, a friendly little shopping robot.
  *
- * A hand-drawn SVG bot (white shell, navy visor, glowing brand-blue eyes,
- * floating arms, a cart emblem on the chest) with moods (idle / listening /
+ * A hand-drawn SVG bot (warm ivory shell, navy visor, glowing gold eyes,
+ * floating arms, a gold cart emblem on the chest) with moods (idle / listening /
  * thinking / talking / happy / held / sleepy / error), a blink cycle, eyes
  * whose highlights follow pointer, taps and device tilt, arm gestures (a
  * hello wave on open, a "take a look!" point when a reply brings product
@@ -19,9 +19,9 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
  * state after page inactivity (Zzz on the FAB too) and an orbit of shopping
  * icons around the empty-thread hero.
  * Keyframes live in globals.css under the `mascot-*` prefix and collapse
- * under prefers-reduced-motion (the purely decorative orbit hides entirely).
- * Colors come from the `--mascot-*` tokens (white shell, navy visor, blue
- * glow) so a rebrand recolors the robot automatically.
+ * under prefers-reduced-motion (the purely decorative orbit and sparkles
+ * hide entirely). Colors come from the `--mascot-*` tokens (ivory shell,
+ * navy visor, gold glow) so a rebrand recolors the robot automatically.
  *
  * Surfaces consuming this module:
  *   - MascotHero    — the big interactive character in the dock thread
@@ -163,7 +163,7 @@ export const MASCOT_STATUS: Record<MascotMood, string> = {
   listening: "Listening…",
   thinking: "Thinking…",
   talking: "Typing…",
-  happy: "Beep! Happy to help",
+  happy: "Happy to help!",
   held: "Wheee!",
   sleepy: "Power saving… say hi",
   error: "Hit a snag — try again",
@@ -173,6 +173,10 @@ export const MASCOT_STATUS: Record<MascotMood, string> = {
 
 const GLOW = "var(--mascot-glow)";
 const ACCENT = "var(--mascot-accent)";
+const ACCENT_DEEP = "var(--mascot-accent-deep)";
+const EAR_LIGHT = "var(--mascot-blue-glow)";
+/** Lit antenna LED — near-white warm gold, lighter than the antenna itself. */
+const LED_LIT = "color-mix(in srgb, var(--mascot-glow) 40%, white)";
 const SAD = "var(--mascot-sad)";
 const OUTLINE = "var(--mascot-outline)";
 
@@ -251,7 +255,7 @@ function RobotFace({
     const r = held ? 9.5 : 8;
     return (
       <g key={x}>
-        <circle cx={x + eo.x} cy={59 + eo.y} r={r + 3.5} fill={ACCENT} opacity={0.14} />
+        <circle cx={x + eo.x} cy={59 + eo.y} r={r + 3.5} fill={ACCENT} opacity={0.16} />
         <circle cx={x + eo.x} cy={59 + eo.y} r={r} fill={`url(#${gid}-eye)`} />
         <circle
           cx={x + eo.x * 1.5 + 2.6}
@@ -413,7 +417,7 @@ function RobotArm({
           stroke={OUTLINE}
           strokeWidth={1.25}
         />
-        <circle cx={sx} cy={134} r={3.2} fill={ACCENT} opacity={0.85} />
+        <circle cx={sx} cy={134} r={3.2} fill={ACCENT} opacity={0.9} />
       </g>
     </g>
   );
@@ -458,7 +462,7 @@ export function MascotSvg({
   const filter = halo
     ? `drop-shadow(0 0 ${Math.round(size * 0.1)}px rgb(255 255 255 / 0.4))`
     : glow
-      ? `drop-shadow(0 5px ${Math.round(size * 0.08)}px color-mix(in oklch, var(--blue) 28%, transparent))`
+      ? `drop-shadow(0 ${Math.round(size * 0.05)}px ${Math.round(size * 0.14)}px color-mix(in srgb, var(--mascot-accent) 32%, transparent))`
       : undefined;
 
   const arms = armPose(mood, gesture);
@@ -492,8 +496,12 @@ export function MascotSvg({
         </radialGradient>
         <linearGradient id={`${gid}-line`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0} />
-          <stop offset="50%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0.85} />
+          <stop offset="50%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0.9} />
           <stop offset="100%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0} />
+        </linearGradient>
+        <linearGradient id={`${gid}-antenna`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" style={{ stopColor: "var(--mascot-glow)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--mascot-accent)" }} />
         </linearGradient>
       </defs>
 
@@ -521,25 +529,26 @@ export function MascotSvg({
               stroke={OUTLINE}
               strokeWidth={1.5}
             />
-            {/* Cart emblem — the "shopping" in shopping robot */}
+            {/* Cart emblem — the "shopping" in shopping robot; gold ring with
+                engraved-gold linework */}
             <circle
               cx={100}
               cy={129}
               r={17.5}
               fill="var(--mascot-shell-1)"
-              stroke={OUTLINE}
+              stroke={ACCENT}
               strokeWidth={2}
             />
             <path
               d="M91.5 122.5 h3.4 l2.9 10.6 h10.6 l2.6 -8 H96.2"
               fill="none"
-              stroke={ACCENT}
+              stroke={ACCENT_DEEP}
               strokeWidth={2.3}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <circle cx={100.2} cy={137} r={1.9} fill={ACCENT} />
-            <circle cx={106.6} cy={137} r={1.9} fill={ACCENT} />
+            <circle cx={100.2} cy={137} r={1.9} fill={ACCENT_DEEP} />
+            <circle cx={106.6} cy={137} r={1.9} fill={ACCENT_DEEP} />
             <rect
               x={78}
               y={156.5}
@@ -547,7 +556,7 @@ export function MascotSvg({
               height={3.4}
               rx={1.7}
               fill={`url(#${gid}-line)`}
-              opacity={0.8}
+              opacity={0.85}
             />
           </g>
         ) : null}
@@ -562,16 +571,16 @@ export function MascotSvg({
               !still && mood === "talking" ? "mascot-nod 1.1s ease-in-out infinite" : "none",
           }}
         >
-          {/* Antenna — the status LED pulses (fast while thinking, dim asleep,
-              red on error) */}
-          <rect x={78} y={6} width={44} height={14} rx={7} fill={ACCENT} />
+          {/* Antenna — gold-gradient bar; the status LED pulses (fast while
+              thinking, dim asleep, red on error) */}
+          <rect x={78} y={6} width={44} height={14} rx={7} fill={`url(#${gid}-antenna)`} />
           <rect
             x={89}
             y={10.5}
             width={22}
             height={5}
             rx={2.5}
-            fill={mood === "error" ? SAD : GLOW}
+            fill={mood === "error" ? SAD : LED_LIT}
             opacity={sleepy ? 0.25 : undefined}
             style={
               still || sleepy
@@ -594,7 +603,7 @@ export function MascotSvg({
             stroke={OUTLINE}
             strokeWidth={1.25}
           />
-          <rect x={35} y={53} width={6} height={14} rx={3} fill={GLOW} opacity={sleepy ? 0.3 : 0.9} />
+          <rect x={35} y={53} width={6} height={14} rx={3} fill={EAR_LIGHT} opacity={sleepy ? 0.3 : 0.95} />
           <rect
             x={154}
             y={46}
@@ -605,7 +614,7 @@ export function MascotSvg({
             stroke={OUTLINE}
             strokeWidth={1.25}
           />
-          <rect x={159} y={53} width={6} height={14} rx={3} fill={GLOW} opacity={sleepy ? 0.3 : 0.9} />
+          <rect x={159} y={53} width={6} height={14} rx={3} fill={EAR_LIGHT} opacity={sleepy ? 0.3 : 0.95} />
           {/* Shell + visor */}
           <rect
             x={42}
@@ -618,6 +627,18 @@ export function MascotSvg({
             strokeWidth={1.5}
           />
           <rect x={55} y={32} width={90} height={56} rx={20} fill={`url(#${gid}-visor)`} />
+          {/* Gold visor rim */}
+          <rect
+            x={55}
+            y={32}
+            width={90}
+            height={56}
+            rx={20}
+            fill="none"
+            stroke={ACCENT}
+            strokeWidth={1.6}
+            opacity={0.55}
+          />
           <RobotFace mood={mood} blink={blink} ex={ex} ey={ey} gid={gid} still={still} />
         </g>
 
@@ -683,7 +704,11 @@ export function MascotZzz({ small = false }: { small?: boolean }) {
         { fs: 20, left: 26, top: -5, delay: "1.6s" },
       ];
   return (
-    <span aria-hidden className="pointer-events-none absolute font-black text-blue/80">
+    <span
+      aria-hidden
+      className="pointer-events-none absolute font-black"
+      style={{ color: "var(--mascot-accent)" }}
+    >
       {zs.map((z, i) => (
         <span
           key={i}
@@ -722,6 +747,7 @@ const BOOP_WORDS = [
   "you found my button!",
   "free delivery on boops",
   "circuits go brrr!",
+  "systems: golden!",
   "add me to cart?",
   "*happy robot noises*",
   "ooh, do that again!",
@@ -738,20 +764,20 @@ const FLING_WORDS = [
   "catch me!",
 ];
 
+/* Proactive lines stay professional — the playful BOOP/FLING words above are
+ * easter-egg rewards that only show once someone discovers the interaction. */
 const GREETINGS = [
-  "hi! i'm Nova!",
-  "beep boop — welcome!",
-  "psst… try booping me",
-  "ask me anything!",
-  "what are we shopping for?",
-  "systems online!",
+  "Hi, I'm Nova!",
+  "Welcome! How can I help?",
+  "Ask me anything",
+  "What are we shopping for?",
 ];
 
-const LISTENING_WORDS = ["i'm all ears!", "go on…", "ooh, tell me!", "every word — promise!"];
+const LISTENING_WORDS = ["I'm listening…", "Go on…", "Tell me more…", "I'm all ears!"];
 
-const THINKING_WORDS = ["hmm…", "let me check…", "scanning the shelves…", "one sec…"];
+const THINKING_WORDS = ["Hmm…", "Let me check…", "Checking the store…", "One sec…"];
 
-const ERROR_WORDS = ["oops!", "ow, my circuits…", "that wasn't the plan", "let's try again?"];
+const ERROR_WORDS = ["Oops!", "Something went wrong…", "Let's try again?"];
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
@@ -776,38 +802,96 @@ function StarBit() {
 
 /** Shopping icons orbiting the hero (decorative — hidden on reduced motion). */
 const ORBITERS = [ShoppingBag, Package, Heart, Tag];
+const ORBIT_SECONDS = 24;
 
 function OrbitRing() {
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute left-1/2 top-[61%] motion-reduce:hidden"
-      style={{ "--orb-rx": "108px", "--orb-ry": "26px" } as React.CSSProperties}
+      style={{ "--orb-rx": "108px", "--orb-ry": "30px" } as React.CSSProperties}
     >
       {/* The orbit path itself, echoed as two faint rings */}
       <span
         className="absolute rounded-full border border-blue-soft"
-        style={{ left: -108, top: -26, width: 216, height: 52 }}
+        style={{ left: -108, top: -30, width: 216, height: 60 }}
       />
       <span
         className="absolute rounded-full border border-blue-soft/60"
-        style={{ left: -86, top: -19, width: 172, height: 38 }}
+        style={{ left: -86, top: -24, width: 172, height: 48 }}
       />
-      {ORBITERS.map((Icon, i) => (
+      {ORBITERS.map((Icon, i) => {
+        // The keyframes hold the phase-locked sine legs (see globals.css);
+        // every leg shares one clock so the ellipse, the depth cues and the
+        // front/back swap stay in sync.
+        const sync = `${ORBIT_SECONDS}s linear ${(-i * ORBIT_SECONDS) / ORBITERS.length}s infinite`;
+        return (
+          // Nested wrappers because each leg animates `transform`: X + the
+          // front/back z swap, then Y, a static centering shim, a per-icon
+          // hover bob, and the depth scale/fade on the chip itself.
+          <span
+            key={i}
+            className="absolute"
+            style={{ animation: `mascot-orbit-x ${sync}, mascot-orbit-z ${sync}` }}
+          >
+            <span className="block" style={{ animation: `mascot-orbit-y ${sync}` }}>
+              <span className="block -translate-x-1/2 -translate-y-1/2">
+                <span
+                  className="block"
+                  style={{
+                    animation: `mascot-orb-bob ${2.6 + i * 0.45}s ${-i * 0.9}s ease-in-out infinite`,
+                  }}
+                >
+                  <span
+                    className="grid size-8.5 place-items-center rounded-full border border-blue-soft bg-card text-blue-strong shadow-(--shadow-card)"
+                    style={{ animation: `mascot-orbit-depth ${sync}` }}
+                  >
+                    <Icon className="size-4" strokeWidth={2.2} />
+                  </span>
+                </span>
+              </span>
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Gold sparkles twinkling around the hero (decorative — hidden on reduced
+ * motion). Coordinates come from the design mockup at a 200px robot and scale
+ * with the rendered size; they live inside the hero so they ride along when
+ * the robot is dragged.
+ */
+const SPARKLES = [
+  { l: -26, t: 30, s: 9, d: "0s" },
+  { l: 212, t: 56, s: 7, d: ".9s" },
+  { l: -10, t: 162, s: 6, d: "1.6s" },
+  { l: 224, t: 152, s: 10, d: ".4s" },
+  { l: 100, t: -2, s: 7, d: "2.1s" },
+];
+
+function SparkleField({ size }: { size: number }) {
+  const k = size / 200;
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0 motion-reduce:hidden">
+      {SPARKLES.map((z, i) => (
         <span
           key={i}
           className="absolute"
           style={{
-            animation: "mascot-orbit 22s linear infinite",
-            animationDelay: `${-i * 5.5}s`,
+            left: z.l * k,
+            top: z.t * k,
+            width: z.s * k,
+            height: z.s * k,
+            borderRadius: 2,
+            background: "var(--mascot-glow)",
+            animation: `mascot-twinkle ${2.4 + i * 0.5}s ${z.d} ease-in-out infinite`,
           }}
-        >
-          <span className="grid size-8.5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-blue-soft bg-card text-blue-strong shadow-(--shadow-card)">
-            <Icon className="size-4" strokeWidth={2.2} />
-          </span>
-        </span>
+        />
       ))}
-    </div>
+    </span>
   );
 }
 
@@ -1049,11 +1133,15 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       timeouts.add(t);
     }, 3200);
 
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-    window.addEventListener("deviceorientation", onTilt);
+    // Passive across the board: none of these handlers preventDefault (the
+    // robot drag relies on touch-action:none, not cancellation), so the
+    // browser can keep scrolling/composited work off the main thread — this
+    // is what keeps eye-follow judder-free on low-end touch devices.
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("pointerup", onUp, { passive: true });
+    window.addEventListener("pointercancel", onUp, { passive: true });
+    window.addEventListener("deviceorientation", onTilt, { passive: true });
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
@@ -1109,7 +1197,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
   const prevMoodRef = React.useRef(renderMood);
   React.useEffect(() => {
     if (prevMoodRef.current === "sleepy" && renderMood !== "sleepy") {
-      const w = "oh! hi again!";
+      const w = "Welcome back!";
       setTransient(w);
       later(() => setTransient((b) => (b === w ? null : b)), 1600);
     }
@@ -1136,22 +1224,25 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
   const bubble =
     dragging || renderMood === "sleepy"
       ? null
-      : (transient ?? (pointFlash ? "take a look!" : null) ?? moodBubble ?? greeting);
+      : (transient ?? (pointFlash ? "Take a look!" : null) ?? moodBubble ?? greeting);
 
   return (
+    // Full width (not shrink-to-fit) so the speech bubble can clamp its
+    // max-width against the panel edge instead of overflowing it.
     <div
-      className="relative grid place-items-center"
+      className="relative grid w-full place-items-center"
       style={{ minHeight: size + 16, padding: "4px 0" }}
     >
-      {/* Orbiting shopping icons — empty-thread hero only. Front-pass items
-          animate to z 3, the character sits at z 2, back-pass at z 1. */}
+      {/* Orbiting shopping icons — empty-thread hero only. Icons on the near
+          arc ride above the character (z 3 over its z 2), the far arc slips
+          behind (z 1) — including while the robot is being dragged around. */}
       {!compact ? <OrbitRing /> : null}
 
       <div
         ref={heroRef}
         role="button"
         tabIndex={0}
-        aria-label="Nova — tap for a boop"
+        aria-label="Nova — your shopping assistant"
         onPointerDown={grab}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1167,6 +1258,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
           transition: dragging ? "none" : "transform .1s linear",
         }}
       >
+        {!compact ? <SparkleField size={size} /> : null}
         <div style={{ animation: rigAnim }}>
           <div
             className="relative"
@@ -1191,12 +1283,13 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="absolute rounded-full bg-blue-soft"
+                    className="absolute rounded-full"
                     style={{
                       left: i * 13,
                       top: -i * 12,
                       width: 11 - i * 3,
                       height: 11 - i * 3,
+                      background: "var(--mascot-accent)",
                       animation: `mascot-dotb 1.2s ${i * 0.18}s ease-in-out infinite`,
                     }}
                   />
@@ -1221,8 +1314,9 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
                 {[0, 1, 2, 3, 4].map((i) => (
                   <span
                     key={i}
-                    className="w-1 rounded-sm bg-primary"
+                    className="w-1 rounded-sm"
                     style={{
+                      background: "var(--mascot-accent)",
                       height: 15,
                       animation: `mascot-wavebar ${0.5 + (i % 3) * 0.15}s ${i * 0.08}s ease-in-out infinite`,
                       transformOrigin: "bottom",
@@ -1258,15 +1352,25 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
           style={{
             width: size * 0.5,
             height: 10,
-            background: "radial-gradient(ellipse, rgb(22 29 63 / 0.35), transparent 70%)",
+            background:
+              "radial-gradient(ellipse, color-mix(in srgb, var(--mascot-accent) 35%, transparent), transparent 70%)",
             animation: "mascot-shadowpulse 3.6s ease-in-out infinite",
           }}
         />
       </div>
 
-      {/* Speech bubble */}
+      {/* Speech bubble — width-capped against the panel's right edge and
+          allowed to wrap, so a long line can never push the thread into
+          horizontal scrolling. */}
       {bubble ? (
-        <div className="pointer-events-none absolute right-1/2 top-1 z-4 translate-x-[calc(100%+48px)] animate-pop whitespace-nowrap rounded-2xl rounded-bl-xs border-2 border-blue-soft bg-card px-3 py-1.5 text-13 font-extrabold text-blue-strong shadow-(--shadow-card) motion-reduce:animate-none">
+        <div
+          className="pointer-events-none absolute left-[calc(50%+40px)] top-1 z-4 max-w-[calc(50%-52px)] animate-pop rounded-2xl rounded-bl-xs border-2 px-3 py-1.5 text-center text-13 font-extrabold leading-snug text-balance shadow-(--shadow-card) motion-reduce:animate-none"
+          style={{
+            borderColor: "var(--mascot-accent)",
+            background: "var(--mascot-shell-1)",
+            color: "var(--mascot-visor)",
+          }}
+        >
           {bubble}
         </div>
       ) : null}

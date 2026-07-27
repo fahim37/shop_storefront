@@ -165,7 +165,7 @@ export function AssistantThread() {
     <div
       ref={containerRef}
       onScroll={onScroll}
-      className="flex-1 space-y-3 overflow-y-auto bg-surface px-3 py-3.5"
+      className="flex-1 space-y-3 overflow-x-hidden overflow-y-auto bg-surface px-3 py-3.5"
     >
       {messages.length === 0 && !isStreaming ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
@@ -176,7 +176,7 @@ export function AssistantThread() {
             </p>
             <p className="mx-auto mt-1 max-w-72 text-xs font-medium text-sub">
               Ask me about products, deals, orders, returns — anything in the
-              store. Or boop me — I&apos;m very boopable.
+              store.
             </p>
           </div>
           <div className="flex flex-col gap-2">

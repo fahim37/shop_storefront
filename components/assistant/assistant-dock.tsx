@@ -3,7 +3,13 @@
 import * as React from "react";
 import { RotateCcw } from "lucide-react";
 
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetGrabber,
+  SheetTitle,
+  sheetDragHandleProps,
+} from "@/components/ui/sheet";
 import { CloseButton } from "@/components/ui/close-button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
@@ -112,7 +118,7 @@ function MascotBadge() {
   return (
     <button
       type="button"
-      aria-label="Boop Nova"
+      aria-label="Nova"
       onClick={() => {
         boop();
         setSquash(true);
@@ -166,50 +172,68 @@ export function AssistantDock() {
         <SheetContent
           side={isDesktop ? "right" : "bottom"}
           hideClose
-          className={isDesktop ? "p-0 sm:max-w-md" : "h-[85dvh] p-0"}
+          // Mobile only: the thread carries a horizontal product-card scroller,
+          // which a whole-panel horizontal swipe would fight — the bottom
+          // sheet's gesture is scoped to its header instead.
+          swipeToClose={!isDesktop}
+          className={
+            isDesktop
+              ? "p-0 sm:max-w-md"
+              : // overflow-hidden so the header clips to the sheet's rounded top
+                // instead of squaring it off; border-t-0 kills the hairline that
+                // read as a stray white line above the header.
+                "h-[85dvh] overflow-hidden rounded-t-4xl border-t-0 p-0"
+          }
         >
           <div className="flex h-full flex-col">
-            {/* Header — brand blue (not navy) with a soft radial glow */}
-            <div className="relative flex items-center gap-2.5 overflow-hidden bg-linear-to-r from-blue-strong via-blue to-[oklch(0.58_0.19_255)] px-3.5 py-2.5 text-white">
+            {/* Header — brand blue (not navy) with a soft radial glow. On
+                mobile it doubles as the sheet's drag handle. */}
+            <div
+              {...(isDesktop ? {} : sheetDragHandleProps)}
+              className="relative flex flex-col overflow-hidden bg-linear-to-r from-blue-strong via-blue to-[oklch(0.58_0.19_255)] text-white"
+            >
               <span
                 aria-hidden
                 className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-white/10"
               />
-              <MascotBadge />
-              <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
-                Nova — Shopping Assistant
-                <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
-                  {/* Status LED mirrors the mood: red on a snag, amber asleep,
-                      green otherwise. */}
-                  <span
-                    className={`size-1.5 animate-badge-pulse rounded-full motion-reduce:animate-none ${
-                      mood === "error"
-                        ? "bg-red shadow-[0_0_6px_2px_oklch(0.6_0.19_25/0.5)]"
-                        : mood === "sleepy"
-                          ? "bg-amber shadow-[0_0_6px_2px_oklch(0.8_0.15_78/0.5)]"
-                          : "bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)]"
-                    }`}
+              {!isDesktop ? <SheetGrabber className="relative mt-2 bg-white/40" /> : null}
+              <div className="relative flex items-center gap-2.5 px-3.5 py-2.5">
+                <MascotBadge />
+                <SheetTitle className="relative flex flex-col text-15 font-extrabold leading-tight text-white">
+                  Nova — Shopping Assistant
+                  <span className="flex items-center gap-1.5 text-11 font-semibold text-white/75">
+                    {/* Status LED mirrors the mood: red on a snag, amber asleep,
+                        green otherwise. */}
+                    <span
+                      className={`size-1.5 animate-badge-pulse rounded-full motion-reduce:animate-none ${
+                        mood === "error"
+                          ? "bg-red shadow-[0_0_6px_2px_oklch(0.6_0.19_25/0.5)]"
+                          : mood === "sleepy"
+                            ? "bg-amber shadow-[0_0_6px_2px_oklch(0.8_0.15_78/0.5)]"
+                            : "bg-green-soft shadow-[0_0_6px_2px_oklch(0.86_0.12_160/0.55)]"
+                      }`}
+                    />
+                    {MASCOT_STATUS[mood]}
+                  </span>
+                </SheetTitle>
+                <div className="relative ml-auto flex items-center gap-1.5">
+                  {hasMessages ? (
+                    <button
+                      type="button"
+                      onClick={reset}
+                      aria-label="Start a new chat"
+                      title="New chat"
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-[transform,background-color,border-color] duration-200 ease-out hover:border-white/30 hover:bg-white/20 active:scale-[0.85] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                    >
+                      <RotateCcw className="size-4" />
+                    </button>
+                  ) : null}
+                  <CloseButton
+                    tone="overlay"
+                    onClick={() => setOpen(false)}
+                    aria-label="Close assistant"
                   />
-                  {MASCOT_STATUS[mood]}
-                </span>
-              </SheetTitle>
-              <div className="relative ml-auto flex items-center gap-1.5">
-                {hasMessages ? (
-                  <button
-                    type="button"
-                    onClick={reset}
-                    aria-label="Start a new chat"
-                    title="New chat"
-                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-[transform,background-color,border-color] duration-200 ease-out hover:border-white/30 hover:bg-white/20 active:scale-[0.85] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  >
-                    <RotateCcw className="size-4" />
-                  </button>
-                ) : null}
-                <CloseButton
-                  tone="overlay"
-                  onClick={() => setOpen(false)}
-                  aria-label="Close assistant"
-                />
+                </div>
               </div>
             </div>
 

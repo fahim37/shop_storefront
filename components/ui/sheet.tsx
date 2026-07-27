@@ -56,16 +56,42 @@ const sheetVariants = cva(
 );
 
 /**
- * Finger drag-to-dismiss for horizontal sheets. The panel tracks the finger
- * 1:1 via inline transform writes (no React re-renders on move) while the
- * overlay dims proportionally; release settles with a velocity-aware
- * transition. `touch-action: pan-y` on the panel keeps vertical scrolling
- * native — the browser only lets horizontal-dominant gestures reach us and
- * pointercancels the rest, which doubles as our intent detection.
+ * Marks a region of a bottom sheet as its drag handle — a drag starting here
+ * dismisses the sheet. `touch-action: none` is the load-bearing half: it stops
+ * the browser from claiming the vertical gesture as a scroll before we see it.
+ */
+export const sheetDragHandleProps = {
+  "data-sheet-drag-handle": "",
+  style: { touchAction: "none" as const },
+};
+
+/** The grabber pill — the standard "you can drag this" bottom-sheet cue. */
+export function SheetGrabber({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn("mx-auto h-1 w-9 shrink-0 rounded-full bg-current/30", className)}
+    />
+  );
+}
+
+/**
+ * Finger drag-to-dismiss. The panel tracks the finger 1:1 via inline transform
+ * writes (no React re-renders on move) while the overlay dims proportionally;
+ * release settles with a velocity-aware transition.
+ *
+ * Horizontal sheets track the whole panel: `touch-action: pan-y` keeps vertical
+ * scrolling native — the browser only lets horizontal-dominant gestures reach
+ * us and pointercancels the rest, which doubles as our intent detection. A
+ * bottom sheet can't lean on that, since down is also the scroll direction, so
+ * it tracks only gestures starting on a `data-sheet-drag-handle` region and
+ * leaves the sheet's own content scrolling untouched.
  */
 function useSwipeToClose(
   enabled: boolean,
-  dir: 1 | -1, // x direction that dismisses: -1 = left sheet, +1 = right sheet
+  axis: "x" | "y",
+  dir: 1 | -1, // direction that dismisses: -1 = left sheet, +1 = right/bottom
+  handleOnly: boolean,
   contentRef: React.RefObject<HTMLDivElement | null>,
   overlayRef: React.RefObject<HTMLDivElement | null>,
   dismissRef: React.RefObject<HTMLButtonElement | null>,
@@ -75,37 +101,47 @@ function useSwipeToClose(
     startX: 0,
     startY: 0,
     claimed: false,
-    width: 1,
-    tx: 0,
-    samples: [] as { t: number; x: number }[],
+    size: 1,
+    offset: 0,
+    samples: [] as { t: number; p: number }[],
     settling: false,
     detach: null as (() => void) | null,
   });
 
   React.useEffect(() => () => drag.current.detach?.(), []);
 
+  /** Component of a vector along the dismiss axis. */
+  const along = (x: number, y: number) => (axis === "x" ? x : y);
+  /** …and across it. */
+  const across = (x: number, y: number) => (axis === "x" ? y : x);
+
   return (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!enabled || d.settling || d.detach || e.pointerType === "mouse" || !e.isPrimary)
       return;
+    if (handleOnly && !(e.target as Element).closest?.("[data-sheet-drag-handle]")) return;
     d.pointerId = e.pointerId;
     d.startX = e.clientX;
     d.startY = e.clientY;
     d.claimed = false;
-    d.tx = 0;
-    d.samples = [{ t: e.timeStamp, x: e.clientX }];
+    d.offset = 0;
+    d.samples = [{ t: e.timeStamp, p: along(e.clientX, e.clientY) }];
 
     const onMove = (ev: PointerEvent) => {
       const content = contentRef.current;
       if (ev.pointerId !== d.pointerId || !content) return;
       const dx = ev.clientX - d.startX;
       const dy = ev.clientY - d.startY;
+      const move = along(dx, dy);
+      const drift = across(dx, dy);
       if (!d.claimed) {
-        // Claim only clearly horizontal moves; vertical ones become native
-        // scrolls and the browser pointercancels this tracker.
-        if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+        // Claim only moves clearly along the dismiss axis; off-axis ones stay
+        // with the browser (a horizontal sheet's cross-axis drag becomes a
+        // native scroll and pointercancels this tracker).
+        if (Math.abs(move) < 12 || Math.abs(move) < Math.abs(drift) * 1.2) return;
         d.claimed = true;
-        d.width = content.getBoundingClientRect().width || 1;
+        const box = content.getBoundingClientRect();
+        d.size = (axis === "x" ? box.width : box.height) || 1;
         // Cancel any running enter animation so inline transforms win. A
         // WAAPI-cancelled CSS animation stays dead until animation-name
         // changes, so the data-state=closed exit animation still plays —
@@ -117,15 +153,18 @@ function useSwipeToClose(
           el.style.transition = "none";
         }
       }
-      const toward = dx * dir; // >0 = moving toward dismissal
-      d.tx = toward > 0 ? dx : dx * 0.15; // rubber-band against the wrong way
-      content.style.transform = `translate3d(${d.tx}px,0,0)`;
+      const toward = move * dir; // >0 = moving toward dismissal
+      d.offset = toward > 0 ? move : move * 0.15; // rubber-band the wrong way
+      content.style.transform =
+        axis === "x"
+          ? `translate3d(${d.offset}px,0,0)`
+          : `translate3d(0,${d.offset}px,0)`;
       const overlay = overlayRef.current;
       if (overlay)
         overlay.style.opacity = String(
-          1 - Math.min(1, Math.max(0, toward) / d.width),
+          1 - Math.min(1, Math.max(0, toward) / d.size),
         );
-      d.samples.push({ t: ev.timeStamp, x: ev.clientX });
+      d.samples.push({ t: ev.timeStamp, p: along(ev.clientX, ev.clientY) });
       while (d.samples.length > 2 && ev.timeStamp - d.samples[0].t > 100)
         d.samples.shift();
     };
@@ -159,23 +198,29 @@ function useSwipeToClose(
       const first = d.samples[0];
       const last = d.samples[d.samples.length - 1];
       const velocity =
-        last.t > first.t ? ((last.x - first.x) / (last.t - first.t)) * dir : 0;
-      const progress = (d.tx * dir) / d.width;
+        last.t > first.t ? ((last.p - first.p) / (last.t - first.t)) * dir : 0;
+      const progress = (d.offset * dir) / d.size;
+      // A bottom sheet is tall, so 42% of its travel is an unreasonably long
+      // drag — it lets go earlier than a side sheet does.
+      const threshold = axis === "y" ? 0.24 : 0.42;
       const dismiss =
-        !forceCancel && (progress > 0.42 || (velocity > 0.5 && progress > 0.05));
+        !forceCancel && (progress > threshold || (velocity > 0.5 && progress > 0.05));
       d.settling = true;
 
       if (dismiss) {
         // Finish the travel at (roughly) the fling's own speed.
         const ms = Math.round(
-          Math.min(320, Math.max(130, (d.width * (1 - progress)) / Math.max(velocity, 0.7))),
+          Math.min(320, Math.max(130, (d.size * (1 - progress)) / Math.max(velocity, 0.7))),
         );
         // The dialog stays technically open (and the overlay transparent but
         // interactive) until the dismiss click below — without this, every tap
         // in that window lands on the invisible overlay and dies.
         content.style.pointerEvents = "none";
         content.style.transition = `transform ${ms}ms ${SHEET_EASE}`;
-        content.style.transform = `translate3d(${dir * d.width}px,0,0)`;
+        content.style.transform =
+          axis === "x"
+            ? `translate3d(${dir * d.size}px,0,0)`
+            : `translate3d(0,${dir * d.size}px,0)`;
         if (overlay) {
           overlay.style.pointerEvents = "none";
           overlay.style.transition = `opacity ${ms}ms linear`;
@@ -222,7 +267,11 @@ export interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   hideClose?: boolean;
-  /** Let a touch drag on the panel dismiss it (left/right sheets only). */
+  /**
+   * Let a touch drag dismiss the panel. Left/right sheets drag from anywhere;
+   * a bottom sheet drags down from whatever the consumer marks with
+   * `sheetDragHandleProps`, so its content can still scroll.
+   */
   swipeToClose?: boolean;
 }
 
@@ -242,7 +291,9 @@ export const SheetContent = React.forwardRef<
     },
     ref,
   ) => {
-    const swipeEnabled = swipeToClose && (side === "left" || side === "right");
+    const swipeEnabled =
+      swipeToClose && (side === "left" || side === "right" || side === "bottom");
+    const axis = side === "bottom" ? "y" : "x";
     const contentRef = React.useRef<HTMLDivElement | null>(null);
     const overlayRef = React.useRef<HTMLDivElement | null>(null);
     const dismissRef = React.useRef<HTMLButtonElement | null>(null);
@@ -255,9 +306,11 @@ export const SheetContent = React.forwardRef<
       },
       [ref],
     );
-    const handleSwipeDown = useSwipeToClose(
+    const onSwipePointerDown = useSwipeToClose(
       swipeEnabled,
+      axis,
       side === "left" ? -1 : 1,
+      axis === "y",
       contentRef,
       overlayRef,
       dismissRef,
@@ -270,12 +323,14 @@ export const SheetContent = React.forwardRef<
           ref={composedRef}
           className={cn(
             sheetVariants({ side }),
-            swipeEnabled && "touch-pan-y",
+            // Vertical sheets can't hand the browser an axis — their gesture
+            // is scoped to the drag handle, which sets its own touch-action.
+            swipeEnabled && axis === "x" && "touch-pan-y",
             className,
           )}
           onPointerDown={(e) => {
             onPointerDown?.(e);
-            handleSwipeDown(e);
+            onSwipePointerDown(e);
           }}
           {...props}
         >

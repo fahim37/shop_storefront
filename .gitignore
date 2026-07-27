@@ -40,3 +40,4 @@ next-env.d.ts
 # Local dev-server logs (Claude Code launch redirects) — not for commit
 _dev.out.log
 _dev.err.log
+config.bat
