@@ -77,21 +77,24 @@
   --shadow-card: 0 1px 2px rgb(24 30 48 / 0.05), 0 10px 24px -16px rgb(24 30 48 / 0.22);
   --shadow-pop: 0 16px 40px -12px rgb(24 30 48 / 0.28);
 
-  /* Nova — the shopping-assistant mascot (a friendly shopping robot), Gold
-   * Edition: warm ivory shell, deep navy visor, gold eyes/accents with a soft
-   * gold glow, and a supporting blue kept for the ear lights. The whole
-   * character (FAB, dock hero, avatars, its overlays and speech bubble) draws
-   * from these tokens, so recoloring here recolors it everywhere. */
-  --mascot-shell-1: #fffdf6; /* warm ivory */
-  --mascot-shell-2: #ebe1cb; /* cream shading */
-  --mascot-outline: #c7b98f;
-  --mascot-visor: #171d3a;
-  --mascot-visor-hi: #3a4272;
-  --mascot-accent: #dfae45; /* gold */
-  --mascot-accent-deep: #a97f26; /* engraved gold — cart emblem linework */
-  --mascot-glow: #ffd97a; /* eye/LED glow */
-  --mascot-blue-glow: #9bb8ff; /* ear-pod lights */
-  --mascot-sad: #e86a6a; /* error face */
+  /* Nova — the shopping-assistant mascot (a friendly shopping robot), Coral
+   * Edition: pearl-white shell, glossy near-black visor rimmed in coral red,
+   * soft-white glowing eyes, red smile/ear pods/shoulder caps and a graphite
+   * neck. The whole character (3D hero, FAB, badges, avatars, overlays and
+   * speech bubble) draws from these tokens — the three.js rig reads them at
+   * mount — so recoloring here recolors it everywhere. */
+  --mascot-shell-1: #f8f9fd; /* pearl white */
+  --mascot-shell-2: #dde3ef; /* cool shading */
+  --mascot-outline: #c3cbdb;
+  --mascot-visor: #0f1322;
+  --mascot-visor-hi: #2b3352;
+  --mascot-accent: #ff4b5c; /* coral red */
+  --mascot-accent-deep: #d63447; /* wrist bands, engraved linework */
+  --mascot-glow: #eef8ff; /* eye glow */
+  --mascot-eye-deep: #b9d3f2; /* eye edge (2D gradient only) */
+  --mascot-ear: #ff6b7a; /* ear-pod lights */
+  --mascot-joint: #2a2f3f; /* neck / elbows (3D) */
+  --mascot-sad: #ff7b7b; /* error face */
 }
 
 /* -----------------------------------------------------------------------------
