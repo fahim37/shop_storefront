@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { Heart, Package, ShoppingBag, Tag } from "lucide-react";
 import { create } from "zustand";
 
@@ -9,24 +10,28 @@ import { useAssistantStore } from "@/lib/assistant/use-assistant-store";
 /* ----------------------------------------------------------------------------
  * Nova — the shopping-assistant mascot, a friendly little shopping robot.
  *
- * A hand-drawn SVG bot (warm ivory shell, navy visor, glowing gold eyes,
- * floating arms, a gold cart emblem on the chest) with moods (idle / listening /
- * thinking / talking / happy / held / sleepy / error), a blink cycle, eyes
- * whose highlights follow pointer, taps and device tilt, arm gestures (a
- * hello wave on open, a "take a look!" point when a reply brings product
- * cards), a boop interaction (squash + heart/star bursts + speech bubble +
- * haptics), a grab-and-fling drag with a spring return, a doze-off sleep
- * state after page inactivity (Zzz on the FAB too) and an orbit of shopping
- * icons around the empty-thread hero.
+ * A pearl-white helmet bot with a glossy near-black visor rimmed in coral
+ * red, glowing pill eyes, a red smile, red ear pods and shoulder caps and a
+ * heartbeat panel on the chest. The dock hero renders it in real 3D
+ * (three.js, see nova-3d.tsx — lazy-loaded, SVG fallback without WebGL);
+ * the FAB, header badge and avatars use the lightweight SVG twin so no page
+ * carries a WebGL context just for a launcher button.
+ * Moods (idle / listening / thinking / talking / happy / held / sleepy /
+ * error), a blink cycle, eyes that follow pointer, taps and device tilt,
+ * arm gestures (a hello wave on open, a "take a look!" point when a reply
+ * brings product cards), a boop interaction (squash + heart/star bursts +
+ * speech bubble + haptics), a grab-and-fling drag with a spring return, a
+ * doze-off sleep state after page inactivity (Zzz on the FAB too) and an
+ * orbit of shopping icons around the empty-thread hero.
  * Keyframes live in globals.css under the `mascot-*` prefix and collapse
  * under prefers-reduced-motion (the purely decorative orbit and sparkles
- * hide entirely). Colors come from the `--mascot-*` tokens (ivory shell,
- * navy visor, gold glow) so a rebrand recolors the robot automatically.
+ * hide entirely). Colors come from the `--mascot-*` tokens (pearl shell,
+ * black visor, coral accent) so a rebrand recolors both renderers.
  *
  * Surfaces consuming this module:
- *   - MascotHero    — the big interactive character in the dock thread
+ *   - MascotHero    — the big interactive 3D character in the dock thread
  *   - MascotAvatar  — static mini headshot beside assistant bubbles
- *   - MascotSvg     — raw renderer (FAB, header badge)
+ *   - MascotSvg     — 2D renderer (FAB, header badge, 3D fallback)
  * plus useMascotMood/useMascotUi/useSleepDriver to sync mood across them.
  * ------------------------------------------------------------------------- */
 
@@ -174,9 +179,10 @@ export const MASCOT_STATUS: Record<MascotMood, string> = {
 const GLOW = "var(--mascot-glow)";
 const ACCENT = "var(--mascot-accent)";
 const ACCENT_DEEP = "var(--mascot-accent-deep)";
-const EAR_LIGHT = "var(--mascot-blue-glow)";
-/** Lit antenna LED — near-white warm gold, lighter than the antenna itself. */
+const EAR_LIGHT = "var(--mascot-ear)";
+/** Lit antenna LED — near-white, lighter than the antenna itself. */
 const LED_LIT = "color-mix(in srgb, var(--mascot-glow) 40%, white)";
+const EYE_DEEP = "var(--mascot-eye-deep)";
 const SAD = "var(--mascot-sad)";
 const OUTLINE = "var(--mascot-outline)";
 
@@ -303,7 +309,7 @@ function RobotFace({
         width={12}
         height={9.5}
         rx={4.5}
-        fill={GLOW}
+        fill={ACCENT}
         style={
           still
             ? undefined
@@ -315,9 +321,9 @@ function RobotFace({
       />
     );
   } else if (mood === "happy") {
-    mouth = <path d="M90,72 Q100,87 110,72 Z" fill={GLOW} />;
+    mouth = <path d="M90,72 Q100,87 110,72 Z" fill={ACCENT} />;
   } else if (held) {
-    mouth = <circle cx={100} cy={76} r={4.5} stroke={GLOW} strokeWidth={3.4} fill="none" />;
+    mouth = <circle cx={100} cy={76} r={4.5} stroke={ACCENT} strokeWidth={3.4} fill="none" />;
   } else if (mood === "error") {
     mouth = <circle cx={100} cy={76.5} r={4} stroke={SAD} strokeWidth={3} fill="none" />;
   } else if (mood === "thinking" || mood === "sleepy") {
@@ -328,7 +334,7 @@ function RobotFace({
         width={11}
         height={3}
         rx={1.5}
-        fill={GLOW}
+        fill={ACCENT}
         opacity={mood === "sleepy" ? 0.7 : 1}
       />
     );
@@ -336,7 +342,7 @@ function RobotFace({
     mouth = (
       <path
         d="M91,73 Q100,80.5 109,73"
-        stroke={GLOW}
+        stroke={ACCENT}
         strokeWidth={3}
         fill="none"
         strokeLinecap="round"
@@ -417,7 +423,7 @@ function RobotArm({
           stroke={OUTLINE}
           strokeWidth={1.25}
         />
-        <circle cx={sx} cy={134} r={3.2} fill={ACCENT} opacity={0.9} />
+        <circle cx={sx} cy={134} r={3.2} fill={ACCENT_DEEP} opacity={0.9} />
       </g>
     </g>
   );
@@ -492,7 +498,7 @@ export function MascotSvg({
         <radialGradient id={`${gid}-eye`} cx="35%" cy="30%" r="85%">
           <stop offset="0%" stopColor="#ffffff" />
           <stop offset="45%" style={{ stopColor: "var(--mascot-glow)" }} />
-          <stop offset="100%" style={{ stopColor: "var(--mascot-accent)" }} />
+          <stop offset="100%" style={{ stopColor: EYE_DEEP }} />
         </radialGradient>
         <linearGradient id={`${gid}-line`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" style={{ stopColor: "var(--mascot-accent)" }} stopOpacity={0} />
@@ -529,26 +535,26 @@ export function MascotSvg({
               stroke={OUTLINE}
               strokeWidth={1.5}
             />
-            {/* Cart emblem — the "shopping" in shopping robot; gold ring with
-                engraved-gold linework */}
-            <circle
-              cx={100}
-              cy={129}
-              r={17.5}
+            {/* Chest panel — a heartbeat pulse, the same emblem the 3D rig
+                wears; the store's "always on" heartbeat */}
+            <rect
+              x={81}
+              y={115}
+              width={38}
+              height={30}
+              rx={7}
               fill="var(--mascot-shell-1)"
-              stroke={ACCENT}
-              strokeWidth={2}
+              stroke={OUTLINE}
+              strokeWidth={1.5}
             />
             <path
-              d="M91.5 122.5 h3.4 l2.9 10.6 h10.6 l2.6 -8 H96.2"
+              d="M86 130 h7 l2.5 -5 l3 10 l3.5 -14 l3 12 l2.5 -3 h6.5"
               fill="none"
-              stroke={ACCENT_DEEP}
-              strokeWidth={2.3}
+              stroke={ACCENT}
+              strokeWidth={2.4}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <circle cx={100.2} cy={137} r={1.9} fill={ACCENT_DEEP} />
-            <circle cx={106.6} cy={137} r={1.9} fill={ACCENT_DEEP} />
             <rect
               x={78}
               y={156.5}
@@ -729,6 +735,16 @@ export function MascotZzz({ small = false }: { small?: boolean }) {
 
 /* ── Hero — the interactive character ───────────────────────────────────── */
 
+/**
+ * The three.js rig lives in its own chunk: three is ~150 KB gzipped and only
+ * the dock hero needs it, so it loads when the dock first opens. The SVG
+ * twin renders until then (and stays if WebGL turns out to be unavailable).
+ */
+const Nova3D = dynamic(() => import("./nova-3d").then((m) => m.Nova3D), {
+  ssr: false,
+  loading: () => null,
+});
+
 interface Burst {
   key: string;
   ang: number;
@@ -886,7 +902,7 @@ function SparkleField({ size }: { size: number }) {
             width: z.s * k,
             height: z.s * k,
             borderRadius: 2,
-            background: "var(--mascot-glow)",
+            background: "var(--mascot-accent)",
             animation: `mascot-twinkle ${2.4 + i * 0.5}s ${z.d} ease-in-out infinite`,
           }}
         />
@@ -896,9 +912,14 @@ function SparkleField({ size }: { size: number }) {
 }
 
 export function MascotHero({ compact = false }: { compact?: boolean }) {
-  const size = compact ? 120 : 176;
+  const size = compact ? 128 : 196;
   const mood = useMascotMood();
   const blink = useBlink();
+  // WebGL missing (or the context refused) → stay on the SVG twin.
+  const [flat, setFlat] = React.useState(false);
+  const goFlat = React.useCallback(() => setFlat(true), []);
+  /** Bumped per boop so the 3D rig plays its own squash. */
+  const [boopTick, setBoopTick] = React.useState(0);
 
   const heroRef = React.useRef<HTMLDivElement>(null);
   const [eye, setEye] = React.useState({ x: 0, y: 0 });
@@ -990,6 +1011,7 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
       })),
     ]);
     setSquash(true);
+    setBoopTick((n) => n + 1);
     setBoopMood("happy");
     const word = pick(BOOP_WORDS);
     setTransient(word);
@@ -1263,19 +1285,41 @@ export function MascotHero({ compact = false }: { compact?: boolean }) {
           <div
             className="relative"
             style={{
-              animation: squash ? "mascot-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
+              // The 3D rig squashes itself; the CSS boing is the SVG's.
+              animation:
+                squash && flat ? "mascot-boing .6s cubic-bezier(.36,.07,.19,.97) both" : "none",
               transformOrigin: "50% 88%",
             }}
           >
-            <MascotSvg
-              size={size}
-              mood={renderMood}
-              blink={blink}
-              ex={eye.x}
-              ey={eye.y}
-              gesture={armGesture}
-              glow
-            />
+            {flat ? (
+              <MascotSvg
+                size={size}
+                mood={renderMood}
+                blink={blink}
+                ex={eye.x}
+                ey={eye.y}
+                gesture={armGesture}
+                glow
+              />
+            ) : (
+              <div className="relative" style={{ width: size, height: size }}>
+                <Nova3D
+                  size={size}
+                  mood={renderMood}
+                  blink={blink}
+                  ex={eye.x}
+                  ey={eye.y}
+                  gesture={armGesture}
+                  boopTick={boopTick}
+                  onUnavailable={goFlat}
+                  style={{
+                    filter: `drop-shadow(0 ${Math.round(size * 0.05)}px ${Math.round(
+                      size * 0.14,
+                    )}px color-mix(in srgb, var(--mascot-accent) 28%, transparent))`,
+                  }}
+                />
+              </div>
+            )}
 
             {/* Thinking — drifting thought dots by the head */}
             {renderMood === "thinking" ? (
