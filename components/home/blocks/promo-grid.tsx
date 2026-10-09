@@ -6,7 +6,7 @@ import type { HomepagePromoCard } from "@/lib/api/types";
 
 /* ----------------------------------------------------------------------------
  * Promo grid — 1–4 promo cards (admin-managed replacement for the hardcoded
- * "Sell on GCL" / "৳100 off first order" duo). Each card carries its own tone,
+ * "Sell on Cartivo" / "৳100 off first order" duo). Each card carries its own tone,
  * icon, copy, and CTA. Server component.
  * ------------------------------------------------------------------------- */
 

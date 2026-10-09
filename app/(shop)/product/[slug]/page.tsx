@@ -32,6 +32,7 @@ import {
   NotFoundError,
 } from "@/lib/api/server";
 import type { Category, RecResponse } from "@/lib/api/types";
+import { BRAND } from "@/lib/brand";
 
 // Fallback only — review/price/stock/image events revalidate the page's
 // cache tags on demand via /api/revalidate (see lib/api/server.ts).
@@ -67,13 +68,14 @@ export async function generateMetadata({
     const { product } = await getProductBySlug(slug);
     const description =
       product.description?.slice(0, 160) ??
-      `Buy ${product.title} on GCL — cash on delivery across Bangladesh.`;
+      `Buy ${product.title} on Cartivo — cash on delivery across Bangladesh.`;
     return {
-      title: `${product.title} — GCL`,
+      title: product.title,
       description,
       openGraph: {
         title: product.title,
         description,
+        siteName: BRAND.name,
         type: "website",
       },
     };

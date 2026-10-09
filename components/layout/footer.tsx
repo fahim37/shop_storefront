@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
+import { BRAND } from "@/lib/brand";
 
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {
@@ -39,7 +40,10 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
           <div>
             <Logo light size="sm" />
-            <p className="mt-3 max-w-xs text-13 leading-relaxed opacity-65">
+            <p className="mt-3 font-display text-base font-bold text-white">
+              {BRAND.tagline}
+            </p>
+            <p className="mt-2 max-w-xs text-13 leading-relaxed opacity-65">
               Bangladesh&apos;s marketplace for verified local sellers. Cash on
               delivery, nationwide shipping, 7-day easy returns.
             </p>
@@ -62,7 +66,7 @@ export function Footer() {
           ))}
         </div>
         <div className="mt-9 flex flex-col justify-between gap-2 border-t border-white/10 pt-4 text-xs opacity-55 sm:flex-row">
-          <span>© 2026 GCL Ltd. Dhaka, Bangladesh</span>
+          <span>© {new Date().getFullYear()} {BRAND.name}. Dhaka, Bangladesh</span>
           <span>
             <span className="bn">বাংলা</span> · English &nbsp;·&nbsp;{" "}
             <span className="bn">৳</span> BDT

@@ -39,7 +39,7 @@ export function CampaignPanel({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-col lg:items-stretch lg:justify-center lg:gap-4 lg:py-4">
             <div className="min-w-0 sm:col-span-2 lg:text-center">
               <span className="inline-block -rotate-2 rounded-md bg-amber px-2.5 py-0.5 font-display text-11 font-extrabold tracking-wide text-blue-deep shadow-[2.5px_2.5px_0_oklch(0.3_0.12_262)] sm:px-3 sm:py-1 sm:text-13">
-                GCL
+                Cartivo
               </span>
               <h2 className="mt-2 font-display text-lg font-extrabold uppercase leading-none tracking-tight text-white sm:mt-2.5 sm:text-2xl lg:text-28">
                 {title}

@@ -13,6 +13,7 @@ import {
   NotFoundError,
 } from "@/lib/api/server";
 import type { Category, CategoryNode, ProductCardRow } from "@/lib/api/types";
+import { BRAND } from "@/lib/brand";
 
 // Fallback only — category and product events revalidate the page's cache
 // tags on demand via /api/revalidate (see lib/api/server.ts).
@@ -47,17 +48,18 @@ export async function generateMetadata({
     const category = await getCategoryBySlug(slug);
     const description =
       category.description ??
-      `Shop ${category.name} on GCL — authentic products from verified Bangladeshi sellers, cash on delivery nationwide.`;
+      `Shop ${category.name} on Cartivo — authentic products from verified Bangladeshi sellers, cash on delivery nationwide.`;
     return {
-      title: `${category.name} — GCL`,
+      title: category.name,
       description,
       openGraph: {
-        title: `${category.name} — GCL`,
+        title: `${category.name} — Cartivo`,
         description,
+        siteName: BRAND.name,
       },
     };
   } catch {
-    return { title: "Category — GCL" };
+    return { title: "Category" };
   }
 }
 

@@ -63,7 +63,7 @@ const DEFAULT_USP: HomepageUspItem[] = [
 
 const DEFAULT_PROMOS: HomepagePromoCard[] = [
   {
-    title: "Sell on GCL",
+    title: "Sell on Cartivo",
     subtitle: "1,200+ sellers already ship to all 64 districts.",
     ctaLabel: "Open a store",
     ctaHref: "/pages/about",

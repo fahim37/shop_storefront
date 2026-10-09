@@ -1005,7 +1005,7 @@ function QuestionsTab({ productId }: { productId: string }) {
 
 const ROLE_LABEL: Record<string, string> = {
   vendor: "Seller",
-  admin: "GCL",
+  admin: "Cartivo",
   customer: "Buyer",
 };
 

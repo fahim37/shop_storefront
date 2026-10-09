@@ -9,8 +9,8 @@ import type { ProductCardRow } from "@/lib/api/types";
 export const revalidate = 3600;
 
 export const metadata = {
-  title: "Shop — GCL",
-  description: "Browse the full GCL catalog: best sellers, new arrivals and more.",
+  title: "Shop",
+  description: "Browse the full Cartivo catalog: best sellers, new arrivals and more.",
 };
 
 export default async function ShopPage() {

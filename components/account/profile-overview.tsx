@@ -38,8 +38,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
+import { SITE_URL } from "@/lib/brand";
 
-const PLACEHOLDER_PHOTO = "https://gcl.com.bd/avatar.png";
+const PLACEHOLDER_PHOTO = new URL("/avatar.svg", SITE_URL).href;
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -126,7 +127,7 @@ function EditProfileDialog({ me }: { me: Me }) {
         fullName: name,
         gender: gender || undefined,
         dateOfBirth: dateOfBirth || undefined,
-        photoUrl: me.profile?.photoUrl ?? PLACEHOLDER_PHOTO,
+        photoUrl: me.profile?.photoUrl || PLACEHOLDER_PHOTO,
       });
       toast.success("Profile updated", {
         description: "Your personal information has been saved.",

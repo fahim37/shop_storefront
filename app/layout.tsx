@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Manrope, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { BRAND, SITE_URL } from "@/lib/brand";
 
 /* Display / headings */
 const bricolage = Bricolage_Grotesque({
@@ -28,18 +29,23 @@ const notoBengali = Noto_Sans_Bengali({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gcl.com.bd"),
+  metadataBase: new URL(SITE_URL),
+  applicationName: BRAND.name,
   title: {
-    default: "GCL — Bangladesh's marketplace",
-    template: "%s · GCL",
+    default: BRAND.title,
+    template: `%s · ${BRAND.name}`,
   },
-  description:
-    "Shop 36,000+ products from 1,200 verified Bangladeshi sellers. Cash on delivery, 64-district shipping, 7-day easy returns.",
+  description: BRAND.description,
   openGraph: {
-    title: "GCL — Bangladesh's marketplace",
-    description:
-      "Big brands. Local prices. Cash on delivery, everywhere in Bangladesh.",
+    title: BRAND.title,
+    description: BRAND.description,
+    siteName: BRAND.name,
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: BRAND.title,
+    description: BRAND.description,
   },
 };
 

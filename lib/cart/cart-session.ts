@@ -5,6 +5,7 @@
  * `POST /cart/merge`, after which the token is cleared.
  */
 
+// Retain the legacy namespace so existing guest carts survive the rebrand.
 const STORAGE_KEY = "gcl.cart.session";
 
 /** Subscribers notified when the token is minted or cleared in this tab. */

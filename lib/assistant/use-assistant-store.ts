@@ -26,6 +26,7 @@ import type { AssistantMessage, RichContent } from "./types";
  * guest conversations) but the transcript stays visible until reload.
  * ------------------------------------------------------------------------- */
 
+// Legacy persistence keys preserve shoppers' conversation history on rebrand.
 const STORAGE_KEY = "gcl.assistant.conv";
 
 function readStoredConversationId(): string | null {

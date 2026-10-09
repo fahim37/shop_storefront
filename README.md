@@ -1,7 +1,9 @@
-# GCL — Storefront
+# Cartivo — Storefront
 
-Customer-facing storefront for the GCL multivendor marketplace (Bangladesh). Built to the **"Bold Bazar"**
+Customer-facing storefront for the Cartivo multivendor marketplace (Bangladesh). Built to the **"Bold Bazar"**
 design (deep blue + amber) and wired to the `store_backend` API.
+
+**Brand:** Cartivo · *Your everyday finds, all together.* Logo sources, icon assets and generation prompts are documented in [BRANDING.md](BRANDING.md). Shared identity settings live in `lib/brand.ts`.
 
 **Stack:** Next.js 16 (App Router) · TypeScript strict · Tailwind v4 + shadcn-style primitives + Radix + lucide ·
 TanStack Query (server state) · Zustand (ephemeral UI) · URL search params (filters/sort) · React Hook Form + Zod (auth).
@@ -19,15 +21,19 @@ npm install
 npm run dev                     # http://localhost:3000
 ```
 
+On Windows PowerShell, use `npm.cmd run dev` if `npm.ps1` is blocked by the execution policy. Command Prompt supports `npm run dev` directly. Node.js must be installed and available on PATH; reopen the terminal after installing it.
+
 Config: `.env.local` → `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:4000/v1`),
 `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (optional, enables Google sign-in).
+
+Set `NEXT_PUBLIC_SITE_URL` to the actual storefront origin for production metadata and local profile-placeholder URLs. Development defaults to `http://localhost:3000`; Vercel deployments can use `VERCEL_PROJECT_PRODUCTION_URL` automatically.
 
 The backend's `CORS_ORIGINS` must include `http://localhost:3000` (it already does).
 
 ## Architecture
 
 - **Design tokens** — `app/globals.css`: a raw brand palette (oklch) → semantic tokens → Tailwind `@theme`.
-  Change one variable to recolor the whole app. Fonts (Sora/Manrope/Noto Bengali) load via `next/font` in `app/layout.tsx`.
+  Change one variable to recolor the whole app. Fonts (Bricolage Grotesque/Manrope/Noto Bengali) load via `next/font` in `app/layout.tsx`.
 - **API layer** — `lib/api/`:
   - `http.ts` — typed fetch wrapper: injects the in-memory Bearer token, single-flight 401 refresh, unwraps `{ data }`.
   - `server.ts` — `server-only` fetchers for **public** catalog/content (used by Server Components for SEO + ISR).

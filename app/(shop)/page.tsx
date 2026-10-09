@@ -70,7 +70,7 @@ export default async function HomePage() {
       {/* Hero — admin-managed banners when published, designed fallback otherwise.
           Full-bleed (edge to edge) on mobile; stays inside the wrap on md+. */}
       <section className="wrap">
-        <h1 className="sr-only">GCL — Bangladesh&apos;s online marketplace</h1>
+        <h1 className="sr-only">Cartivo — Bangladesh&apos;s online marketplace</h1>
         <div className="-mx-4 md:mx-0">
           {heroSlides.length > 0 ? (
             <HeroBanners carousel={{ slides: heroSlides }} banners={heroBanners} />

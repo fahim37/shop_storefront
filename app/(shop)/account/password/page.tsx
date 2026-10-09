@@ -118,7 +118,7 @@ export default function ChangePasswordPage() {
         <div className="text-sm text-sub">
           <p className="font-bold text-ink">Keeping your account safe</p>
           <p className="mt-0.5">
-            GCL will never ask for your password by email, phone or chat.
+            Cartivo will never ask for your password by email, phone or chat.
             Only follow reset links you requested yourself, and never share the
             link with anyone.
           </p>

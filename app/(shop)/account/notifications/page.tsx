@@ -491,7 +491,7 @@ function PreferencesCard() {
         <CardTitle className="font-display text-base font-extrabold">
           Preferences
         </CardTitle>
-        <p className="text-sm text-sub">Choose how GCL keeps you up to date.</p>
+        <p className="text-sm text-sub">Choose how Cartivo keeps you up to date.</p>
       </CardHeader>
 
       <CardContent>

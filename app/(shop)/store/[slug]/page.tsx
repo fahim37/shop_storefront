@@ -13,6 +13,7 @@ import type {
   StorePagePayload,
 } from "@/lib/api/types";
 import { fromProductRow, type CardProduct } from "@/lib/api/card";
+import { BRAND } from "@/lib/brand";
 import {
   defaultDocumentFor,
   StorePageRenderer,
@@ -45,18 +46,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const payload = await loadPayload(slug);
-  if (!payload) return { title: "Store not found — GCL" };
+  if (!payload) return { title: "Store not found" };
   const { vendor } = payload;
   const description =
     vendor.tagline ??
     vendor.about?.slice(0, 160) ??
-    `Shop ${vendor.storeName} on GCL — ${vendor.productCount} products.`;
+    `Shop ${vendor.storeName} on Cartivo — ${vendor.productCount} products.`;
   return {
-    title: `${vendor.storeName} — GCL`,
+    title: vendor.storeName,
     description,
     openGraph: {
       title: vendor.storeName,
       description,
+      siteName: BRAND.name,
       images: vendor.storeBannerUrl
         ? [vendor.storeBannerUrl]
         : vendor.storeLogoUrl

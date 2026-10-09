@@ -489,7 +489,7 @@ export default function CheckoutPage() {
               <Link href="/pages/privacy" className="font-bold text-primary">
                 Privacy
               </Link>{" "}
-              and Return policies of GCL.
+              and Return policies of Cartivo.
             </span>
           </label>
 

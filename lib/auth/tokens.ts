@@ -46,6 +46,7 @@ export function hasAccessToken(): boolean {
  * when absent. Worst case (user clears storage but still has a valid cookie)
  * they simply appear logged out until they sign in again.
  */
+// Retain the legacy namespace so returning shoppers keep their session hint.
 const SESSION_HINT_KEY = "gcl.hadSession";
 
 export function markSessionHint(): void {
