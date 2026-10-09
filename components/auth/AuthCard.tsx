@@ -14,7 +14,7 @@ export interface AuthCardProps {
 
 /**
  * Centered auth card: bold heading, optional muted subtitle, content, and an
- * optional footer. Used standalone (full-page) and inside the auth modal. test vercel trigger kk
+ * optional footer. Used standalone (full-page) and inside the auth modal. test vercel trigg
  */
 export function AuthCard({
   title,
